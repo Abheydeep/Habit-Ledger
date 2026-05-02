@@ -24,3 +24,9 @@ The local app runs on `http://127.0.0.1:3005`.
 ```bash
 NEXT_PUBLIC_BASE_PATH=/Habit-Ledger npm run build
 ```
+
+## Deploy
+
+GitHub Pages serves the static export from the `gh-pages` branch:
+
+https://abheydeep.github.io/Habit-Ledger/
