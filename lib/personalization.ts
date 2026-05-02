@@ -294,14 +294,21 @@ function getOutfit(input: OnboardingInput) {
 }
 
 function getPalette(input: OnboardingInput) {
-  const map: Record<OnboardingInput["preferredTone"], string> = {
-    calm: "sage, cream, and soft blue accents",
-    direct: "teal, navy, and amber accents",
-    friendly: "fresh green, warm yellow, and sky blue accents",
-    premium: "deep teal, ivory, and muted gold accents"
+  const modeMap: Record<OnboardingInput["routineType"], string> = {
+    student: "lavender notebook, warm yellow, and soft ink-blue accents",
+    "working-professional": "teal, clean sky blue, and amber workday accents",
+    homemaker: "rose, peach, cream, and warm home-stationery accents",
+    "field-worker": "sunny orange, fresh green, and practical blue accents",
+    "business-owner": "deep teal, ivory, muted gold, and ledger-green accents"
+  };
+  const toneMap: Record<OnboardingInput["preferredTone"], string> = {
+    calm: "with a soft calm finish",
+    direct: "with sharper high-contrast details",
+    friendly: "with bright friendly highlights",
+    premium: "with a polished premium finish"
   };
 
-  return map[input.preferredTone];
+  return `${modeMap[input.routineType]} ${toneMap[input.preferredTone]}`;
 }
 
 function cleanName(value: string) {

@@ -6,7 +6,6 @@ import {
   ArrowRight,
   ArrowUp,
   CalendarDays,
-  CheckCircle2,
   CircleDot,
   Download,
   FileUp,
@@ -83,6 +82,88 @@ const constraintOptions = [
   "cash and UPI expenses",
   "limited alone time"
 ];
+const lifeModeThemes: Record<
+  OnboardingInput["routineType"],
+  {
+    label: string;
+    kicker: string;
+    headline: string;
+    microcopy: string;
+    primary: string;
+    secondary: string;
+    accent: string;
+    surface: string;
+    soft: string;
+    hair: string;
+    skin: string;
+  }
+> = {
+  student: {
+    label: "Study mode",
+    kicker: "Notebook setup",
+    headline: "Build a plan that survives classes, exams, and hostel chaos",
+    microcopy: "A lighter academic routine with focus, sleep, movement, and screen control balanced together.",
+    primary: "#7c3aed",
+    secondary: "#a78bfa",
+    accent: "#fbbf24",
+    surface: "#fbf5ff",
+    soft: "#eef2ff",
+    hair: "#342057",
+    skin: "#f2b891"
+  },
+  "working-professional": {
+    label: "Workday mode",
+    kicker: "Workday setup",
+    headline: "Shape a routine around meetings, screens, and actual energy",
+    microcopy: "A crisp office-friendly plan for focus blocks, movement breaks, food choices, and sleep protection.",
+    primary: "#0f766e",
+    secondary: "#38bdf8",
+    accent: "#f59e0b",
+    surface: "#effaf8",
+    soft: "#e0f2fe",
+    hair: "#25323b",
+    skin: "#f0b389"
+  },
+  homemaker: {
+    label: "Home rhythm",
+    kicker: "Home rhythm setup",
+    headline: "Make space for care, calm, and a little time for yourself",
+    microcopy: "A warm routine for water, walks, home reset, rest, and small self-care moments.",
+    primary: "#db2777",
+    secondary: "#f9a8d4",
+    accent: "#fb923c",
+    surface: "#fff3f7",
+    soft: "#fff7ed",
+    hair: "#4a2a24",
+    skin: "#e9a77c"
+  },
+  "field-worker": {
+    label: "On-the-go mode",
+    kicker: "Travel day setup",
+    headline: "Create habits that work even when the day keeps moving",
+    microcopy: "A practical plan for hydration, meals, money logs, movement, and flexible rest windows.",
+    primary: "#ea580c",
+    secondary: "#22c55e",
+    accent: "#0284c7",
+    surface: "#fff7ed",
+    soft: "#ecfdf5",
+    hair: "#2f241d",
+    skin: "#d9966f"
+  },
+  "business-owner": {
+    label: "Owner mode",
+    kicker: "Founder setup",
+    headline: "Turn busy business days into a clean personal operating rhythm",
+    microcopy: "A premium routine for focus, finance clarity, inventory glance, movement, and real wind-down.",
+    primary: "#0f2f2e",
+    secondary: "#d6b45f",
+    accent: "#0f766e",
+    surface: "#fbfaf3",
+    soft: "#f4f1df",
+    hair: "#1f2933",
+    skin: "#edb184"
+  }
+};
 
 type CompletionCelebration = {
   id: number;
@@ -235,6 +316,7 @@ export function HabitTracker() {
     () => countMonthProgress(monthDays, activeHabits, tracker),
     [monthDays, activeHabits, tracker]
   );
+  const shouldShowPersonalizer = personalizerOpen;
 
   const triggerCompletionCelebration = useCallback(
     (habit: Habit, moodOption: (typeof moodOptions)[number] | undefined) => {
@@ -710,15 +792,15 @@ export function HabitTracker() {
             <Download size={18} aria-hidden="true" />
             Export
           </button>
-          <button className="icon-text-button" type="button" onClick={() => setPersonalizerOpen((open) => !open)}>
-            <Wand2 size={18} aria-hidden="true" />
-            Personalize
-          </button>
           <label className="icon-text-button file-button">
             <FileUp size={18} aria-hidden="true" />
             Import
             <input type="file" accept="application/json" onChange={importBackup} />
           </label>
+          <button className="icon-text-button" type="button" onClick={() => setPersonalizerOpen((open) => !open)}>
+            <Wand2 size={18} aria-hidden="true" />
+            Personalize
+          </button>
           <button className="icon-text-button hot" type="button" onClick={() => setSettingsOpen(true)}>
             <Settings2 size={18} aria-hidden="true" />
             Habits
@@ -726,19 +808,21 @@ export function HabitTracker() {
         </div>
       </section>
 
-      <PersonalizerPanel
-        isOpen={personalizerOpen}
-        onboarding={onboarding}
-        photoPreview={photoPreview}
-        snapshot={personalizationSnapshot}
-        onToggle={() => setPersonalizerOpen((open) => !open)}
-        onUpdate={updateOnboarding}
-        onToggleListItem={toggleOnboardingListItem}
-        onPhotoChange={handlePhotoReference}
-        onPhotoClear={clearPhotoReference}
-        onLoadSample={loadSampleCase}
-        onApply={applyPersonalizedPlan}
-      />
+      {shouldShowPersonalizer ? (
+        <PersonalizerPanel
+          isOpen={personalizerOpen}
+          onboarding={onboarding}
+          photoPreview={photoPreview}
+          snapshot={personalizationSnapshot}
+          onToggle={() => setPersonalizerOpen(false)}
+          onUpdate={updateOnboarding}
+          onToggleListItem={toggleOnboardingListItem}
+          onPhotoChange={handlePhotoReference}
+          onPhotoClear={clearPhotoReference}
+          onLoadSample={loadSampleCase}
+          onApply={applyPersonalizedPlan}
+        />
+      ) : null}
 
       <section className="dashboard-grid" aria-label="Habit tracker dashboard">
         <section className={`today-panel${dayOpen ? " open" : " collapsed"}`} aria-labelledby="today-title">
@@ -1117,21 +1201,36 @@ function PersonalizerPanel({
   const summary = createPersonalizationSummary(snapshot?.input ?? onboarding);
   const hasName = onboarding.displayName.trim().length > 0;
   const hasPhotoReference = Boolean(photoPreview);
+  const modeTheme = lifeModeThemes[onboarding.routineType];
+  const panelStyle = {
+    "--mode-primary": modeTheme.primary,
+    "--mode-secondary": modeTheme.secondary,
+    "--mode-accent": modeTheme.accent,
+    "--mode-surface": modeTheme.surface,
+    "--mode-soft": modeTheme.soft,
+    "--mode-hair": modeTheme.hair,
+    "--mode-skin": modeTheme.skin
+  } as CSSProperties;
 
   return (
-    <section className={`personalizer-panel${isOpen ? " open" : " collapsed"}`} aria-labelledby="personalizer-title">
+    <section
+      className={`personalizer-panel mode-${onboarding.routineType}${isOpen ? " open" : " collapsed"}`}
+      style={panelStyle}
+      aria-labelledby="personalizer-title"
+    >
       <div className="personalizer-header">
         <div className="personalizer-title">
           <div className="personalizer-icon">
             <Wand2 size={22} aria-hidden="true" />
           </div>
           <div>
-            <span className="section-kicker">Personalized launch flow</span>
-            <h2 id="personalizer-title">Build a habit plan in under a minute</h2>
+            <span className="section-kicker">{modeTheme.kicker}</span>
+            <h2 id="personalizer-title">{modeTheme.headline}</h2>
+            <p className="personalizer-lede">{modeTheme.microcopy}</p>
           </div>
         </div>
         <button className="icon-text-button" type="button" onClick={onToggle}>
-          {isOpen ? "Hide" : "Customize"}
+          {isOpen ? "Close" : "Personalize"}
         </button>
       </div>
 
@@ -1192,6 +1291,11 @@ function PersonalizerPanel({
                   <strong>{onboarding.dailyAvailableMinutes} min</strong>
                 </div>
               </label>
+            </div>
+
+            <div className="life-mode-strip" aria-live="polite">
+              <strong>{modeTheme.label}</strong>
+              <span>{modeTheme.microcopy}</span>
             </div>
 
             <label>
@@ -1293,22 +1397,6 @@ function PersonalizerPanel({
               <span>No-photo users still get an answer-based character. If a photo is uploaded, it stays in this browser for the demo; production should delete raw photos after avatar generation.</span>
             </div>
 
-            <div className="architecture-notes">
-              <span>Launch stack for first 500 users</span>
-              <div>
-                <CheckCircle2 size={16} aria-hidden="true" />
-                Static frontend on GitHub Pages
-              </div>
-              <div>
-                <CheckCircle2 size={16} aria-hidden="true" />
-                Supabase Auth/Postgres when sync starts
-              </div>
-              <div>
-                <CheckCircle2 size={16} aria-hidden="true" />
-                R2/Supabase Storage for generated avatars
-              </div>
-            </div>
-
             <button className="icon-text-button hot full" type="button" onClick={onApply}>
               <Wand2 size={18} aria-hidden="true" />
               Create my habit plan
@@ -1327,49 +1415,57 @@ function AnswerCharacter({
   input: OnboardingInput;
   photoReferenceLoaded: boolean;
 }) {
-  const palette = characterPalettes[input.preferredTone];
+  const theme = lifeModeThemes[input.routineType];
   const style = {
-    "--char-primary": palette.primary,
-    "--char-secondary": palette.secondary,
-    "--char-accent": palette.accent,
-    "--char-bg": palette.bg
+    "--char-primary": theme.primary,
+    "--char-secondary": theme.secondary,
+    "--char-accent": theme.accent,
+    "--char-bg": theme.surface,
+    "--char-soft": theme.soft,
+    "--char-hair": theme.hair,
+    "--char-skin": theme.skin
   } as CSSProperties;
 
   return (
     <div
-      className={`answer-character routine-${input.routineType}${photoReferenceLoaded ? " photo-guided" : ""}`}
+      className={`answer-character routine-${input.routineType} tone-${input.preferredTone}${photoReferenceLoaded ? " photo-guided" : ""}`}
       style={style}
       aria-hidden="true"
     >
+      <span className="character-orb left" />
+      <span className="character-orb right" />
       <span className="character-spark one" />
       <span className="character-spark two" />
       <span className="character-spark three" />
+      <span className="character-back-detail" />
       <div className="character-head">
         <span className="character-hair" />
+        <span className="character-hair-shine" />
         <span className="character-face" />
+        <span className="character-brow left" />
+        <span className="character-brow right" />
         <span className="character-eye left" />
         <span className="character-eye right" />
+        <span className="character-cheek left" />
+        <span className="character-cheek right" />
         <span className="character-smile" />
+        <span className="character-accessory" />
       </div>
+      <span className="character-arm left" />
+      <span className="character-arm right" />
       <div className="character-body">
         <span className="character-collar" />
         <span className="character-sash" />
+        <span className="character-pattern one" />
+        <span className="character-pattern two" />
       </div>
       <span className="character-prop" />
+      <span className="character-secondary-prop" />
+      <span className="character-floor-shadow" />
       {photoReferenceLoaded ? <span className="reference-glow" /> : null}
     </div>
   );
 }
-
-const characterPalettes: Record<
-  OnboardingInput["preferredTone"],
-  { primary: string; secondary: string; accent: string; bg: string }
-> = {
-  calm: { primary: "#0f766e", secondary: "#bfdbfe", accent: "#fef3c7", bg: "#effaf6" },
-  direct: { primary: "#1d4ed8", secondary: "#99f6e4", accent: "#fbbf24", bg: "#f0f7ff" },
-  friendly: { primary: "#16a34a", secondary: "#bae6fd", accent: "#fde68a", bg: "#f4fbf2" },
-  premium: { primary: "#0f2f2e", secondary: "#f5e8bd", accent: "#d97706", bg: "#fbfaf3" }
-};
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
