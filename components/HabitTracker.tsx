@@ -12,6 +12,7 @@ import {
   Plus,
   RotateCcw,
   Settings2,
+  Sparkles,
   Trash2,
   X
 } from "lucide-react";
@@ -44,6 +45,13 @@ const COOKIE_KEY = "pro_habit_tracker_india_v1";
 const HISTORY_STATE_KEY = "proHabitTrackerIndiaStateV1";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
 
+type CompletionCelebration = {
+  id: number;
+  habitId: string;
+  tone: string;
+  message: string;
+};
+
 export function HabitTracker() {
   const [tracker, setTracker] = useState<TrackerState>(() => createDefaultState());
   const trackerRef = useRef(tracker);
@@ -57,6 +65,8 @@ export function HabitTracker() {
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
   const [dayOpen, setDayOpen] = useState(true);
   const [monthOpen, setMonthOpen] = useState(true);
+  const [celebration, setCelebration] = useState<CompletionCelebration | null>(null);
+  const celebrationTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const stored = readSavedTrackerState();
@@ -67,6 +77,7 @@ export function HabitTracker() {
         if (isTrackerState(parsed)) {
           const storedTracker = normalizeImportedState(parsed);
           trackerRef.current = storedTracker;
+          saveTrackerState(storedTracker);
           setTracker(storedTracker);
         }
       } catch {
@@ -87,6 +98,14 @@ export function HabitTracker() {
     syncMonthState();
     query.addEventListener("change", syncMonthState);
     return () => query.removeEventListener("change", syncMonthState);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (celebrationTimeoutRef.current) {
+        window.clearTimeout(celebrationTimeoutRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -157,6 +176,34 @@ export function HabitTracker() {
   const monthProgress = useMemo(
     () => countMonthProgress(monthDays, activeHabits, tracker),
     [monthDays, activeHabits, tracker]
+  );
+
+  const triggerCompletionCelebration = useCallback(
+    (habit: Habit, moodOption: (typeof moodOptions)[number] | undefined) => {
+      const messages = ["Momentum banked", "Ledger updated", "Clean finish", "Progress logged"];
+
+      if (celebrationTimeoutRef.current) {
+        window.clearTimeout(celebrationTimeoutRef.current);
+      }
+
+      setCelebration({
+        id: Date.now(),
+        habitId: habit.id,
+        tone: moodOption?.tone ?? habit.color,
+        message: messages[Math.floor(Math.random() * messages.length)]
+      });
+
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate([12, 32, 18]);
+      }
+
+      playCompletionSound(moodOption?.tone ?? habit.color);
+
+      celebrationTimeoutRef.current = window.setTimeout(() => {
+        setCelebration(null);
+      }, 1500);
+    },
+    []
   );
 
   const updateHabitMood = useCallback(
@@ -317,7 +364,7 @@ export function HabitTracker() {
     }
 
     const dateLabel = formatPrettyDate(selectedDate);
-    const habitRows = activeHabits.slice(0, 14);
+    const habitRows = activeHabits.slice(0, 10);
     const completed = habitRows.filter((habit) => isHabitComplete(selectedRecord, habit.id)).length;
     const gradient = context.createLinearGradient(0, 0, 1080, 1620);
     gradient.addColorStop(0, "#f8faf6");
@@ -504,7 +551,7 @@ export function HabitTracker() {
             </div>
             <h1 id="tracker-title">Habit Ledger</h1>
             <p>
-              A clean tracker for health, focus, money, family, and screen-time routines in everyday India.
+              A clean tracker for health, focus, money, learning, and screen-time routines in everyday India.
             </p>
           </div>
         </div>
@@ -566,7 +613,9 @@ export function HabitTracker() {
                 const moodMenuOpen = expandedHabitId === habit.id;
                 return (
                   <article
-                    className={`habit-card${done ? " done" : ""}${moodMenuOpen ? " expanded" : ""}`}
+                    className={`habit-card${done ? " done" : ""}${moodMenuOpen ? " expanded" : ""}${
+                      celebration?.habitId === habit.id ? " celebrating" : ""
+                    }`}
                     key={habit.id}
                     style={{ "--habit": habit.color } as CSSProperties}
                   >
@@ -603,7 +652,11 @@ export function HabitTracker() {
                             style={{ "--mood": mood.tone } as CSSProperties}
                             type="button"
                             onClick={() => {
+                              const shouldCelebrate = habitMood !== mood.key && isCompletionMood(mood.key);
                               updateHabitMood(habit.id, mood.key);
+                              if (shouldCelebrate) {
+                                triggerCompletionCelebration(habit, mood);
+                              }
                               setExpandedHabitId(null);
                             }}
                             aria-label={`${mood.label} status for ${habit.name}`}
@@ -613,6 +666,9 @@ export function HabitTracker() {
                           </button>
                         ))}
                       </div>
+                    ) : null}
+                    {celebration?.habitId === habit.id ? (
+                      <CompletionBurst key={celebration.id} message={celebration.message} tone={celebration.tone} />
                     ) : null}
                   </article>
                 );
@@ -872,6 +928,25 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className="stat-card">
       <span>{label}</span>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+function CompletionBurst({ message, tone }: { message: string; tone: string }) {
+  return (
+    <div className="completion-burst" style={{ "--celebration": tone } as CSSProperties} aria-live="polite">
+      <span className="burst-orbit one" />
+      <span className="burst-orbit two" />
+      <span className="burst-orbit three" />
+      <span className="burst-orbit four" />
+      <span className="burst-dot one" />
+      <span className="burst-dot two" />
+      <span className="burst-dot three" />
+      <span className="burst-dot four" />
+      <span className="completion-toast">
+        <Sparkles size={14} aria-hidden="true" />
+        {message}
+      </span>
     </div>
   );
 }
@@ -1180,7 +1255,67 @@ function removeHabitMood(moods: DayRecord["habitMoods"], habitId: string) {
 
 function isHabitComplete(record: DayRecord, habitId: string) {
   const status = record.habitMoods?.[habitId];
-  return Boolean(status && status !== "skipped" && status !== "rest");
+  return Boolean(status && isCompletionMood(status));
+}
+
+function isCompletionMood(status: MoodKey) {
+  return status !== "skipped" && status !== "rest";
+}
+
+function playCompletionSound(tone: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const AudioContextConstructor =
+      window.AudioContext ??
+      (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+
+    if (!AudioContextConstructor) {
+      return;
+    }
+
+    const audio = new AudioContextConstructor();
+    const startedAt = audio.currentTime;
+    const baseFrequency = colorToFrequency(tone);
+    const master = audio.createGain();
+    master.gain.setValueAtTime(0.0001, startedAt);
+    master.gain.exponentialRampToValueAtTime(0.045, startedAt + 0.018);
+    master.gain.exponentialRampToValueAtTime(0.0001, startedAt + 0.42);
+    master.connect(audio.destination);
+
+    [1, 1.25, 1.5].forEach((ratio, index) => {
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      const noteStart = startedAt + index * 0.065;
+      oscillator.type = index === 0 ? "sine" : "triangle";
+      oscillator.frequency.setValueAtTime(baseFrequency * ratio, noteStart);
+      gain.gain.setValueAtTime(0.0001, noteStart);
+      gain.gain.exponentialRampToValueAtTime(index === 0 ? 0.2 : 0.12, noteStart + 0.018);
+      gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.22);
+      oscillator.connect(gain);
+      gain.connect(master);
+      oscillator.start(noteStart);
+      oscillator.stop(noteStart + 0.24);
+    });
+
+    void audio.resume();
+    window.setTimeout(() => void audio.close(), 540);
+  } catch {
+    // Audio is a bonus flourish; ignore browser autoplay or hardware limits.
+  }
+}
+
+function colorToFrequency(color: string) {
+  const hex = color.replace("#", "").slice(0, 6);
+  const numeric = Number.parseInt(hex, 16);
+
+  if (!Number.isFinite(numeric)) {
+    return 620;
+  }
+
+  return 520 + (numeric % 180);
 }
 
 function localDateKey(date: Date) {

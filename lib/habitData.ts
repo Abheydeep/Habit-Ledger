@@ -123,62 +123,32 @@ const habitSeeds: Array<Omit<Habit, "createdAt">> = [
     quip: "Course, coding, English, finance, anything compounding."
   },
   {
-    id: "read-news",
-    name: "Read 10 pages/news",
-    order: 7,
-    color: "#9333ea",
-    thumbnail: "icon:read-news",
-    quip: "A little context without doomscrolling."
-  },
-  {
     id: "budget",
     name: "Track expenses",
-    order: 8,
+    order: 7,
     color: "#ca8a04",
     thumbnail: "icon:budget",
     quip: "UPI adds up quietly. Catch it early."
   },
   {
-    id: "family",
-    name: "Family check-in",
-    order: 9,
-    color: "#db2777",
-    thumbnail: "icon:family",
-    quip: "Two minutes can still count."
-  },
-  {
-    id: "home-reset",
-    name: "10 min home reset",
-    order: 10,
-    color: "#475569",
-    thumbnail: "icon:home-reset",
-    quip: "Desk, bed, bottles, chargers. Reset the scene."
-  },
-  {
     id: "screen-time",
     name: "Limit reels/shorts",
-    order: 11,
+    order: 8,
     color: "#dc2626",
     thumbnail: "icon:screen-time",
     quip: "Entertainment is fine. The black hole is not."
   },
   {
-    id: "less-sugar",
-    name: "Less sugar / junk",
-    order: 12,
-    color: "#ea580c",
-    thumbnail: "icon:less-sugar",
-    quip: "Chai is allowed. Chaos snacks are negotiable."
-  },
-  {
     id: "sleep",
     name: "Sleep by 11:30",
-    order: 13,
+    order: 9,
     color: "#4f46e5",
     thumbnail: "icon:sleep",
     quip: "Tomorrow gets easier when tonight behaves."
   }
 ];
+
+const retiredDefaultHabitIds = new Set(["read-news", "family", "home-reset", "less-sugar"]);
 
 export function createDefaultState(now = new Date().toISOString()): TrackerState {
   return {
@@ -225,6 +195,7 @@ export function normalizeImportedState(value: TrackerState): TrackerState {
   const fallback = createDefaultState(now);
   const habits = value.habits
     .filter((habit) => habit && typeof habit.id === "string" && typeof habit.name === "string")
+    .filter((habit) => !retiredDefaultHabitIds.has(habit.id))
     .map((habit, index) => ({
       id: habit.id,
       name: habit.name,
@@ -238,24 +209,31 @@ export function normalizeImportedState(value: TrackerState): TrackerState {
       createdAt: typeof habit.createdAt === "string" ? habit.createdAt : now,
       pausedAt: typeof habit.pausedAt === "string" ? habit.pausedAt : undefined
     }));
+  const normalizedHabits = (habits.length > 0 ? habits : fallback.habits)
+    .sort((a, b) => a.order - b.order)
+    .map((habit, index) => ({ ...habit, order: index }));
+  const habitIds = new Set(normalizedHabits.map((habit) => habit.id));
 
   const normalizedDays = Object.fromEntries(
     Object.entries(value.days && typeof value.days === "object" ? value.days : {}).map(([dateKey, record]) => {
       const legacyRecord = record as DayRecord & { mood?: MoodKey };
-      const completedHabitIds = Array.isArray(record.completedHabitIds) ? record.completedHabitIds : [];
+      const completedHabitIds = Array.isArray(record.completedHabitIds)
+        ? record.completedHabitIds.filter((habitId) => habitIds.has(habitId))
+        : [];
       const legacyMoods =
         legacyRecord.mood && completedHabitIds.length > 0
           ? Object.fromEntries(completedHabitIds.map((habitId) => [habitId, legacyRecord.mood]))
+          : {};
+      const habitMoods =
+        record.habitMoods && typeof record.habitMoods === "object"
+          ? Object.fromEntries(Object.entries(record.habitMoods).filter(([habitId]) => habitIds.has(habitId)))
           : {};
 
       return [
         dateKey,
         {
           completedHabitIds,
-          habitMoods:
-            record.habitMoods && typeof record.habitMoods === "object"
-              ? { ...legacyMoods, ...record.habitMoods }
-              : legacyMoods,
+          habitMoods: { ...legacyMoods, ...habitMoods },
           note: typeof record.note === "string" ? record.note : undefined
         }
       ];
@@ -264,7 +242,7 @@ export function normalizeImportedState(value: TrackerState): TrackerState {
 
   return {
     version: 1,
-    habits: habits.length > 0 ? habits : fallback.habits,
+    habits: normalizedHabits,
     days: normalizedDays,
     createdAt: typeof value.createdAt === "string" ? value.createdAt : now,
     updatedAt: now

@@ -6,7 +6,7 @@ const iconPath = `${basePath}/icon.svg`;
 
 export const metadata: Metadata = {
   title: "Habit Ledger",
-  description: "A professional daily habit tracker for health, focus, money, family, and screen-time routines",
+  description: "A professional daily habit tracker for health, focus, money, learning, and screen-time routines",
   icons: {
     icon: iconPath,
     apple: iconPath
