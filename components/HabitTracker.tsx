@@ -6,14 +6,18 @@ import {
   ArrowRight,
   ArrowUp,
   CalendarDays,
+  CheckCircle2,
   CircleDot,
   Download,
   FileUp,
   Plus,
   RotateCcw,
   Settings2,
+  ShieldCheck,
   Sparkles,
   Trash2,
+  UserRound,
+  Wand2,
   X
 } from "lucide-react";
 import {
@@ -39,11 +43,46 @@ import {
   type MoodKey,
   type TrackerState
 } from "../lib/habitData";
+import {
+  PERSONALIZATION_STORAGE_KEY,
+  createCharacterBrief,
+  createPersonalizationSummary,
+  createPersonalizedHabits,
+  defaultOnboardingInput,
+  type PersonalizationSnapshot
+} from "../lib/personalization";
+import { personalizationTestCases, type OnboardingInput } from "../lib/personalizationTestCases";
 
 const colorPalette = ["#0f766e", "#2563eb", "#f59e0b", "#16a34a", "#9333ea", "#db2777", "#475569"];
 const COOKIE_KEY = "pro_habit_tracker_india_v1";
 const HISTORY_STATE_KEY = "proHabitTrackerIndiaStateV1";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
+const goalOptions = [
+  "fitness",
+  "focus",
+  "better sleep",
+  "screen balance",
+  "money tracking",
+  "learning",
+  "exam prep",
+  "self-care",
+  "business discipline",
+  "energy",
+  "calmer routine"
+];
+const constraintOptions = [
+  "long sitting hours",
+  "late meetings",
+  "hostel food",
+  "food delivery temptation",
+  "family interruptions",
+  "travel",
+  "heat",
+  "irregular meals",
+  "late-night phone use",
+  "cash and UPI expenses",
+  "limited alone time"
+];
 
 type CompletionCelebration = {
   id: number;
@@ -67,6 +106,10 @@ export function HabitTracker() {
   const [monthOpen, setMonthOpen] = useState(true);
   const [celebration, setCelebration] = useState<CompletionCelebration | null>(null);
   const celebrationTimeoutRef = useRef<number | null>(null);
+  const [personalizerOpen, setPersonalizerOpen] = useState(false);
+  const [onboarding, setOnboarding] = useState<OnboardingInput>(defaultOnboardingInput);
+  const [personalizationSnapshot, setPersonalizationSnapshot] = useState<PersonalizationSnapshot | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = readSavedTrackerState();
@@ -83,6 +126,21 @@ export function HabitTracker() {
       } catch {
         window.localStorage.removeItem(STORAGE_KEY);
       }
+    }
+
+    const storedPersonalization = window.localStorage.getItem(PERSONALIZATION_STORAGE_KEY);
+    if (storedPersonalization) {
+      try {
+        const parsed = JSON.parse(storedPersonalization) as PersonalizationSnapshot;
+        if (parsed?.input?.routineType) {
+          setOnboarding(parsed.input);
+          setPersonalizationSnapshot(parsed);
+        }
+      } catch {
+        window.localStorage.removeItem(PERSONALIZATION_STORAGE_KEY);
+      }
+    } else {
+      setPersonalizerOpen(true);
     }
 
     const today = new Date();
@@ -524,6 +582,93 @@ export function HabitTracker() {
     setDayOpen(true);
   }, []);
 
+  const updateOnboarding = useCallback(
+    <Key extends keyof OnboardingInput>(key: Key, value: OnboardingInput[Key]) => {
+      setOnboarding((current) => ({ ...current, [key]: value }));
+    },
+    []
+  );
+
+  const toggleOnboardingListItem = useCallback(
+    (key: "primaryGoals" | "constraints", value: string) => {
+      setOnboarding((current) => {
+        const currentValues = current[key];
+        const nextValues = currentValues.includes(value)
+          ? currentValues.filter((item) => item !== value)
+          : [...currentValues, value];
+        return { ...current, [key]: nextValues.length > 0 ? nextValues : [value] };
+      });
+    },
+    []
+  );
+
+  const handlePhotoReference = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      window.alert("Please choose an image file for the character reference.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : null;
+      setPhotoPreview(result);
+      setOnboarding((current) => ({ ...current, photoUpload: "yes" }));
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const clearPhotoReference = useCallback(() => {
+    setPhotoPreview(null);
+    setOnboarding((current) => ({ ...current, photoUpload: "no" }));
+  }, []);
+
+  const loadSampleCase = useCallback((input: OnboardingInput) => {
+    setOnboarding(input);
+    setPhotoPreview(null);
+    setPersonalizerOpen(true);
+  }, []);
+
+  const applyPersonalizedPlan = useCallback(() => {
+    const confirmed = window.confirm(
+      "Create this personalized plan? This replaces the current local habit list and clears existing tracking data in this browser."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const habits = createPersonalizedHabits(onboarding, now);
+    const nextTracker: TrackerState = {
+      version: 1,
+      habits,
+      days: {},
+      createdAt: now,
+      updatedAt: now
+    };
+    const snapshot: PersonalizationSnapshot = {
+      input: onboarding,
+      characterBrief: createCharacterBrief(onboarding, Boolean(photoPreview)),
+      generatedAt: now
+    };
+
+    trackerRef.current = nextTracker;
+    setTracker(nextTracker);
+    saveTrackerState(nextTracker);
+    window.localStorage.setItem(PERSONALIZATION_STORAGE_KEY, JSON.stringify(snapshot));
+    setPersonalizationSnapshot(snapshot);
+    setExpandedHabitId(null);
+    setDayOpen(true);
+    setPersonalizerOpen(false);
+  }, [onboarding, photoPreview]);
+
   return (
     <main className="tracker-shell">
       <section className="tracker-hero" aria-labelledby="tracker-title">
@@ -565,6 +710,10 @@ export function HabitTracker() {
             <Download size={18} aria-hidden="true" />
             Export
           </button>
+          <button className="icon-text-button" type="button" onClick={() => setPersonalizerOpen((open) => !open)}>
+            <Wand2 size={18} aria-hidden="true" />
+            Personalize
+          </button>
           <label className="icon-text-button file-button">
             <FileUp size={18} aria-hidden="true" />
             Import
@@ -576,6 +725,20 @@ export function HabitTracker() {
           </button>
         </div>
       </section>
+
+      <PersonalizerPanel
+        isOpen={personalizerOpen}
+        onboarding={onboarding}
+        photoPreview={photoPreview}
+        snapshot={personalizationSnapshot}
+        onToggle={() => setPersonalizerOpen((open) => !open)}
+        onUpdate={updateOnboarding}
+        onToggleListItem={toggleOnboardingListItem}
+        onPhotoChange={handlePhotoReference}
+        onPhotoClear={clearPhotoReference}
+        onLoadSample={loadSampleCase}
+        onApply={applyPersonalizedPlan}
+      />
 
       <section className="dashboard-grid" aria-label="Habit tracker dashboard">
         <section className={`today-panel${dayOpen ? " open" : " collapsed"}`} aria-labelledby="today-title">
@@ -922,6 +1085,291 @@ export function HabitTracker() {
     </main>
   );
 }
+
+type PersonalizerPanelProps = {
+  isOpen: boolean;
+  onboarding: OnboardingInput;
+  photoPreview: string | null;
+  snapshot: PersonalizationSnapshot | null;
+  onToggle: () => void;
+  onUpdate: <Key extends keyof OnboardingInput>(key: Key, value: OnboardingInput[Key]) => void;
+  onToggleListItem: (key: "primaryGoals" | "constraints", value: string) => void;
+  onPhotoChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onPhotoClear: () => void;
+  onLoadSample: (input: OnboardingInput) => void;
+  onApply: () => void;
+};
+
+function PersonalizerPanel({
+  isOpen,
+  onboarding,
+  photoPreview,
+  snapshot,
+  onToggle,
+  onUpdate,
+  onToggleListItem,
+  onPhotoChange,
+  onPhotoClear,
+  onLoadSample,
+  onApply
+}: PersonalizerPanelProps) {
+  const characterBrief = snapshot?.characterBrief ?? createCharacterBrief(onboarding, Boolean(photoPreview));
+  const summary = createPersonalizationSummary(snapshot?.input ?? onboarding);
+  const hasName = onboarding.displayName.trim().length > 0;
+  const hasPhotoReference = Boolean(photoPreview);
+
+  return (
+    <section className={`personalizer-panel${isOpen ? " open" : " collapsed"}`} aria-labelledby="personalizer-title">
+      <div className="personalizer-header">
+        <div className="personalizer-title">
+          <div className="personalizer-icon">
+            <Wand2 size={22} aria-hidden="true" />
+          </div>
+          <div>
+            <span className="section-kicker">Personalized launch flow</span>
+            <h2 id="personalizer-title">Build a habit plan in under a minute</h2>
+          </div>
+        </div>
+        <button className="icon-text-button" type="button" onClick={onToggle}>
+          {isOpen ? "Hide" : "Customize"}
+        </button>
+      </div>
+
+      {!isOpen ? (
+        <div className="personalizer-compact">
+          <p>{summary}</p>
+          <span>{snapshot ? "Personalization saved on this browser." : "No saved personalization yet."}</span>
+        </div>
+      ) : (
+        <div className="personalizer-grid">
+          <div className="personalizer-form">
+            <div className="form-row two">
+              <label>
+                <span>Name or nickname</span>
+                <input
+                  value={onboarding.displayName}
+                  onChange={(event) => onUpdate("displayName", event.target.value)}
+                  placeholder="Aarav, Meera, Riya..."
+                />
+              </label>
+              <label>
+                <span>City</span>
+                <input
+                  value={onboarding.city}
+                  onChange={(event) => onUpdate("city", event.target.value)}
+                  placeholder="Delhi, Pune, Jaipur..."
+                />
+              </label>
+            </div>
+
+            <div className="form-row two">
+              <label>
+                <span>Life mode</span>
+                <select
+                  value={onboarding.routineType}
+                  onChange={(event) =>
+                    onUpdate("routineType", event.target.value as OnboardingInput["routineType"])
+                  }
+                >
+                  <option value="student">Student</option>
+                  <option value="working-professional">Working professional</option>
+                  <option value="homemaker">Homemaker</option>
+                  <option value="field-worker">Field worker</option>
+                  <option value="business-owner">Business owner</option>
+                </select>
+              </label>
+              <label>
+                <span>Daily time</span>
+                <div className="range-field">
+                  <input
+                    type="range"
+                    min="10"
+                    max="90"
+                    step="5"
+                    value={onboarding.dailyAvailableMinutes}
+                    onChange={(event) => onUpdate("dailyAvailableMinutes", Number(event.target.value))}
+                  />
+                  <strong>{onboarding.dailyAvailableMinutes} min</strong>
+                </div>
+              </label>
+            </div>
+
+            <label>
+              <span>Usual schedule</span>
+              <textarea
+                value={onboarding.schedule}
+                onChange={(event) => onUpdate("schedule", event.target.value)}
+                placeholder="Office 10-7, college till 4, shop closes at 8:30..."
+              />
+            </label>
+
+            <div className="chip-group" aria-label="Primary goals">
+              <span>Goals</span>
+              <div>
+                {goalOptions.map((goal) => (
+                  <button
+                    className={onboarding.primaryGoals.includes(goal) ? "selected" : ""}
+                    key={goal}
+                    type="button"
+                    onClick={() => onToggleListItem("primaryGoals", goal)}
+                  >
+                    {goal}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="chip-group" aria-label="Constraints">
+              <span>Constraints</span>
+              <div>
+                {constraintOptions.map((constraint) => (
+                  <button
+                    className={onboarding.constraints.includes(constraint) ? "selected" : ""}
+                    key={constraint}
+                    type="button"
+                    onClick={() => onToggleListItem("constraints", constraint)}
+                  >
+                    {constraint}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="tone-row" aria-label="Tone preference">
+              <span>Tone</span>
+              {(["friendly", "calm", "direct", "premium"] as const).map((tone) => (
+                <button
+                  className={onboarding.preferredTone === tone ? "selected" : ""}
+                  key={tone}
+                  type="button"
+                  onClick={() => onUpdate("preferredTone", tone)}
+                >
+                  {tone}
+                </button>
+              ))}
+            </div>
+
+            <div className="sample-strip" aria-label="Sample personalization cases">
+              <span>Try sample data</span>
+              <div>
+                {personalizationTestCases.map((testCase) => (
+                  <button key={testCase.id} type="button" onClick={() => onLoadSample(testCase.onboarding)}>
+                    {testCase.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <aside className="character-card" aria-label="Character and plan preview">
+            <div className="character-visual">
+              <AnswerCharacter input={onboarding} photoReferenceLoaded={hasPhotoReference} />
+            </div>
+
+            <div className="character-copy">
+              <h3>{hasName ? `${onboarding.displayName.trim()}'s ledger` : "Your ledger"}</h3>
+              <p>{summary}</p>
+              <p className="character-source">
+                {hasPhotoReference
+                  ? "Photo reference loaded. The production avatar should use face guidance without showing the raw photo."
+                  : "No photo needed. This character is shaped from the answers above."}
+              </p>
+              <p className="character-brief">{characterBrief}</p>
+            </div>
+
+            <label className="photo-upload">
+              <UserRound size={17} aria-hidden="true" />
+              Optional photo reference
+              <input type="file" accept="image/*" onChange={onPhotoChange} />
+            </label>
+            {photoPreview ? (
+              <button className="tiny-text-button" type="button" onClick={onPhotoClear}>
+                Clear photo
+              </button>
+            ) : null}
+
+            <div className="privacy-note">
+              <ShieldCheck size={18} aria-hidden="true" />
+              <span>No-photo users still get an answer-based character. If a photo is uploaded, it stays in this browser for the demo; production should delete raw photos after avatar generation.</span>
+            </div>
+
+            <div className="architecture-notes">
+              <span>Launch stack for first 500 users</span>
+              <div>
+                <CheckCircle2 size={16} aria-hidden="true" />
+                Static frontend on GitHub Pages
+              </div>
+              <div>
+                <CheckCircle2 size={16} aria-hidden="true" />
+                Supabase Auth/Postgres when sync starts
+              </div>
+              <div>
+                <CheckCircle2 size={16} aria-hidden="true" />
+                R2/Supabase Storage for generated avatars
+              </div>
+            </div>
+
+            <button className="icon-text-button hot full" type="button" onClick={onApply}>
+              <Wand2 size={18} aria-hidden="true" />
+              Create my habit plan
+            </button>
+          </aside>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AnswerCharacter({
+  input,
+  photoReferenceLoaded
+}: {
+  input: OnboardingInput;
+  photoReferenceLoaded: boolean;
+}) {
+  const palette = characterPalettes[input.preferredTone];
+  const style = {
+    "--char-primary": palette.primary,
+    "--char-secondary": palette.secondary,
+    "--char-accent": palette.accent,
+    "--char-bg": palette.bg
+  } as CSSProperties;
+
+  return (
+    <div
+      className={`answer-character routine-${input.routineType}${photoReferenceLoaded ? " photo-guided" : ""}`}
+      style={style}
+      aria-hidden="true"
+    >
+      <span className="character-spark one" />
+      <span className="character-spark two" />
+      <span className="character-spark three" />
+      <div className="character-head">
+        <span className="character-hair" />
+        <span className="character-face" />
+        <span className="character-eye left" />
+        <span className="character-eye right" />
+        <span className="character-smile" />
+      </div>
+      <div className="character-body">
+        <span className="character-collar" />
+        <span className="character-sash" />
+      </div>
+      <span className="character-prop" />
+      {photoReferenceLoaded ? <span className="reference-glow" /> : null}
+    </div>
+  );
+}
+
+const characterPalettes: Record<
+  OnboardingInput["preferredTone"],
+  { primary: string; secondary: string; accent: string; bg: string }
+> = {
+  calm: { primary: "#0f766e", secondary: "#bfdbfe", accent: "#fef3c7", bg: "#effaf6" },
+  direct: { primary: "#1d4ed8", secondary: "#99f6e4", accent: "#fbbf24", bg: "#f0f7ff" },
+  friendly: { primary: "#16a34a", secondary: "#bae6fd", accent: "#fde68a", bg: "#f4fbf2" },
+  premium: { primary: "#0f2f2e", secondary: "#f5e8bd", accent: "#d97706", bg: "#fbfaf3" }
+};
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
