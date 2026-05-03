@@ -87,7 +87,6 @@ const copy = {
   todayWins: "Today's wins",
   startingWins: "Your starting wins",
   wonToday: "Won today",
-  markAsWon: "Mark as won",
   newWin: "New win",
   addWin: "Add win",
   invalidBackup: "That file does not look like a The Win List backup.",
@@ -95,6 +94,7 @@ const copy = {
   backupPrefix: "the-win-list-backup",
   logoLabel: "The Win List logo"
 };
+const defaultWinMood = moodOptions.find((item) => item.key === "done");
 const appThemes = {
   "fresh-ledger": {
     label: "Fresh Start",
@@ -306,8 +306,6 @@ export function HabitTracker() {
   const noteRef = useRef<HTMLTextAreaElement | null>(null);
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [themeOpen, setThemeOpen] = useState(false);
-  const [cloudOpen, setCloudOpen] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [newHabitThumbnail, setNewHabitThumbnail] = useState(thumbnailOptions[0].src);
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
@@ -505,6 +503,7 @@ export function HabitTracker() {
     () => countMonthProgress(monthDays, activeHabits, tracker),
     [monthDays, activeHabits, tracker]
   );
+  const streakNudge = getStreakNudge(streak, completedCount, activeHabits.length);
   const shouldShowPersonalizer = personalizerOpen;
   const activePersonalization = personalizationSnapshot?.input ?? onboarding;
   const activeModeTheme = lifeModeThemes[activePersonalization.routineType];
@@ -576,6 +575,70 @@ export function HabitTracker() {
       });
     },
     [commit, selectedDate]
+  );
+
+  const setHabitMood = useCallback(
+    (habitId: string, mood: MoodKey) => {
+      commit((current) => {
+        const record = current.days[selectedDate] ?? emptyDay;
+        const completedHabitIds = record.completedHabitIds.includes(habitId)
+          ? record.completedHabitIds
+          : [...record.completedHabitIds, habitId];
+
+        return {
+          ...current,
+          days: {
+            ...current.days,
+            [selectedDate]: {
+              ...record,
+              completedHabitIds,
+              habitMoods: { ...(record.habitMoods ?? {}), [habitId]: mood }
+            }
+          }
+        };
+      });
+    },
+    [commit, selectedDate]
+  );
+
+  const clearHabitMood = useCallback(
+    (habitId: string) => {
+      commit((current) => {
+        const record = current.days[selectedDate] ?? emptyDay;
+        return {
+          ...current,
+          days: {
+            ...current.days,
+            [selectedDate]: {
+              ...record,
+              completedHabitIds: record.completedHabitIds.filter((id) => id !== habitId),
+              habitMoods: removeHabitMood(record.habitMoods, habitId)
+            }
+          }
+        };
+      });
+      setExpandedHabitId(null);
+      setCelebration(null);
+    },
+    [commit, selectedDate]
+  );
+
+  const toggleHabitWin = useCallback(
+    (habit: Habit) => {
+      const record = trackerRef.current.days[selectedDate] ?? emptyDay;
+      const currentMood = record.habitMoods?.[habit.id];
+
+      if (currentMood && isCompletionMood(currentMood)) {
+        clearHabitMood(habit.id);
+        return;
+      }
+
+      const mood = defaultWinMood ?? moodOptions[0];
+      setHabitMood(habit.id, mood.key);
+      setExpandedHabitId(null);
+      triggerCompletionCelebration(habit, mood);
+    },
+    [clearHabitMood, selectedDate, setHabitMood, triggerCompletionCelebration]
   );
 
   const updateSelectedNote = useCallback(
@@ -861,6 +924,27 @@ export function HabitTracker() {
     setDayOpen(true);
   }, []);
 
+  const openTodayView = useCallback(() => {
+    selectToday();
+    if (isCompactViewport()) {
+      setMonthOpen(false);
+    }
+    window.requestAnimationFrame(() => {
+      document.getElementById("today-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [selectToday]);
+
+  const openMonthView = useCallback(() => {
+    setMonthOpen(true);
+    setExpandedHabitId(null);
+    if (isCompactViewport()) {
+      setDayOpen(false);
+    }
+    window.requestAnimationFrame(() => {
+      document.getElementById("month-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
   const selectDay = useCallback((dateKey: string, habitId: string | null = null) => {
     setSelectedDate(dateKey);
     setExpandedHabitId(habitId);
@@ -1077,7 +1161,11 @@ export function HabitTracker() {
             </div>
           </div>
           <div className="hero-copy">
-            <div className="eyebrow">
+            <div
+              className="eyebrow mode-chip"
+              title={activeModeTheme.microcopy}
+              aria-label={`${activeModeTheme.label}. ${activeModeTheme.microcopy}`}
+            >
               <CircleDot size={16} aria-hidden="true" />
               {activeModeTheme.label}
             </div>
@@ -1088,29 +1176,17 @@ export function HabitTracker() {
 
         <div className="hero-actions" aria-label="Win List actions">
           <div className="hero-actions-row primary">
-            <button className="icon-text-button" type="button" onClick={selectToday}>
+            <button className="icon-text-button" type="button" onClick={openTodayView}>
               <CalendarDays size={18} aria-hidden="true" />
               Today
             </button>
-            <button className="icon-text-button" type="button" onClick={exportShareCard}>
-              <Download size={18} aria-hidden="true" />
-              Export
-            </button>
-            <label className="icon-text-button file-button">
-              <FileUp size={18} aria-hidden="true" />
-              Import
-              <input type="file" accept="application/json" onChange={importBackup} />
-            </label>
-          </div>
-          <div className="hero-actions-row setup">
             <button
-              className={`icon-text-button personalize-action${personalizerOpen ? " hot" : ""}`}
+              className="icon-text-button"
               type="button"
-              aria-pressed={personalizerOpen}
-              onClick={() => setPersonalizerOpen((open) => !open)}
+              onClick={openMonthView}
             >
-              <Wand2 size={18} aria-hidden="true" />
-              {copy.buildCta}
+              <Sparkles size={18} aria-hidden="true" />
+              Analytics
             </button>
             <button
               className={`icon-text-button${settingsOpen ? " hot" : ""}`}
@@ -1119,25 +1195,7 @@ export function HabitTracker() {
               onClick={() => setSettingsOpen(true)}
             >
               <Settings2 size={18} aria-hidden="true" />
-              {copy.wins}
-            </button>
-            <button
-              className={`icon-text-button${themeOpen ? " hot" : ""}`}
-              type="button"
-              aria-pressed={themeOpen}
-              onClick={() => setThemeOpen(true)}
-            >
-              <Sparkles size={18} aria-hidden="true" />
-              Theme
-            </button>
-            <button
-              className={`icon-text-button${cloudOpen ? " hot" : ""}`}
-              type="button"
-              aria-pressed={cloudOpen}
-              onClick={() => setCloudOpen(true)}
-            >
-              <Cloud size={18} aria-hidden="true" />
-              Sync
+              Settings
             </button>
           </div>
         </div>
@@ -1184,8 +1242,14 @@ export function HabitTracker() {
           <div className="stat-strip" aria-label="Daily progress">
             <StatCard label={copy.wonToday} value={`${completedCount}/${activeHabits.length}`} />
             <StatCard label="Streak" value={`${streak} day${streak === 1 ? "" : "s"}`} />
-            <StatCard label="Month" value={`${monthProgress.completed}/${monthProgress.total}`} />
+            <StatCard
+              label="Month rate"
+              value={monthProgress.total > 0 ? `${Math.round((monthProgress.completed / monthProgress.total) * 100)}%` : "0%"}
+              title={`${monthProgress.completed}/${monthProgress.total} wins logged so far this month`}
+            />
           </div>
+
+          <p className="streak-nudge">{streakNudge}</p>
 
           <button className="day-toggle" type="button" onClick={() => setDayOpen((open) => !open)}>
             <CircleDot size={17} aria-hidden="true" />
@@ -1207,30 +1271,36 @@ export function HabitTracker() {
                     key={habit.id}
                     style={{ "--habit": habit.color } as CSSProperties}
                   >
-                    <button
-                      className="habit-card-main habit-expand-button"
-                      type="button"
-                      onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
-                      aria-expanded={moodMenuOpen}
-                      aria-label={`${moodMenuOpen ? "Close" : "Mark"} ${habit.name} as won`}
-                    >
-                      <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
-                      <div className="habit-card-copy">
-                        <h3>{habit.name}</h3>
-                        <p>{habit.quip}</p>
-                      </div>
-                      <span
+                    <div className="habit-card-main">
+                      <button
+                        className="habit-win-button"
+                        type="button"
+                        onClick={() => toggleHabitWin(habit)}
+                        aria-label={done ? `Undo ${habit.name} for ${formatPrettyDate(selectedDate)}` : `Mark ${habit.name} as won`}
+                      >
+                        <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
+                        <span className="habit-card-copy">
+                          <h3>{habit.name}</h3>
+                          <p>{habit.quip}</p>
+                        </span>
+                        <span className="tap-hint">{done ? "Won today" : "Tap to win"}</span>
+                      </button>
+                      <button
                         className={`mood-preview${moodOption ? " selected" : ""}`}
                         style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
+                        type="button"
+                        onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
+                        aria-expanded={moodMenuOpen}
+                        aria-label={`Choose status for ${habit.name}`}
                       >
                         {moodOption ? (
                           <img src={assetUrl(moodOption.src)} alt="" />
                         ) : (
                           <CircleDot size={16} aria-hidden="true" />
                         )}
-                        <span>{moodOption ? moodOption.label : copy.markAsWon}</span>
-                      </span>
-                    </button>
+                        <span>{moodOption ? moodOption.label : "Status"}</span>
+                      </button>
+                    </div>
                     {moodMenuOpen ? (
                       <div className="activity-mood-panel" aria-label={`Win status choices for ${habit.name}`}>
                         {moodOptions.map((mood) => (
@@ -1256,7 +1326,12 @@ export function HabitTracker() {
                       </div>
                     ) : null}
                     {celebration?.habitId === habit.id ? (
-                      <CompletionBurst key={celebration.id} message={celebration.message} tone={celebration.tone} />
+                      <CompletionBurst
+                        key={celebration.id}
+                        message={celebration.message}
+                        tone={celebration.tone}
+                        onUndo={() => clearHabitMood(habit.id)}
+                      />
                     ) : null}
                   </article>
                 );
@@ -1270,7 +1345,7 @@ export function HabitTracker() {
                 value={selectedRecord.note ?? ""}
                 onChange={(event) => updateSelectedNote(event.target.value)}
                 onInput={(event) => updateSelectedNote(event.currentTarget.value)}
-                placeholder="What helped or got in the way?"
+                placeholder="What made today easier or harder? One line is enough."
               />
             </label>
           </div>
@@ -1310,6 +1385,20 @@ export function HabitTracker() {
           </button>
 
           <div className="month-panel-content">
+            <div className="heatmap-summary">
+              <div>
+                <span className="section-kicker">Analytics</span>
+                <strong>Habit heat map</strong>
+              </div>
+              <p>{monthProgress.completed}/{monthProgress.total} wins so far. Darker cells mean stronger completed days.</p>
+            </div>
+            <div className="heatmap-legend" aria-label="Heat map legend">
+              <span><i className="heat-empty" /> Empty</span>
+              <span><i className="heat-partial" /> Partial</span>
+              <span><i className="heat-done" /> Won</span>
+              <span><i className="heat-strong" /> Strong</span>
+              <span><i className="heat-rest" /> Rest/skip</span>
+            </div>
             <div className="month-grid-wrap" role="region" aria-label="Monthly win grid" tabIndex={0}>
               <div
                 className="month-grid"
@@ -1345,9 +1434,10 @@ export function HabitTracker() {
                       const done = record ? isHabitComplete(record, habit.id) : false;
                       const habitMood = record?.habitMoods?.[habit.id];
                       const moodOption = moodOptions.find((item) => item.key === habitMood);
+                      const heatClass = getHeatClass(habitMood, done);
                       return (
                         <button
-                          className={`grid-cell${done ? " done" : ""}${moodOption ? " mooded" : ""}${
+                          className={`grid-cell ${heatClass}${done ? " done" : ""}${moodOption ? " mooded" : ""}${
                             selectedDate === dayKey ? " selected" : ""
                           }`}
                           key={`${habit.id}-${dayKey}`}
@@ -1387,7 +1477,7 @@ export function HabitTracker() {
             className="settings-backdrop"
             type="button"
             onClick={() => setSettingsOpen(false)}
-            aria-label="Close win settings"
+            aria-label="Close settings"
           />
           <aside className="settings-drawer">
             <LogoMark className="panel-watermark drawer" decorative />
@@ -1395,8 +1485,8 @@ export function HabitTracker() {
               <div className="drawer-title-lockup">
                 <LogoMark className="drawer-logo" />
                 <div>
-                  <span className="section-kicker">Win List setup</span>
-                  <h2 id="settings-title">{copy.winsAndIcons}</h2>
+                  <span className="section-kicker">Settings</span>
+                  <h2 id="settings-title">Tune The Win List</h2>
                 </div>
               </div>
               <button className="round-button" type="button" onClick={() => setSettingsOpen(false)} aria-label="Close">
@@ -1404,204 +1494,214 @@ export function HabitTracker() {
               </button>
             </div>
 
-            <div className="add-habit-box">
-              <label>
-                <span>{copy.newWin}</span>
-                <input
-                  value={newHabitName}
-                  onChange={(event) => setNewHabitName(event.target.value)}
-                  placeholder="Add an important win"
-                />
-              </label>
-              <div className="thumbnail-picker compact" aria-label="Choose thumbnail for new win">
-                {thumbnailOptions.map((thumbnail) => (
-                  <button
-                    className={newHabitThumbnail === thumbnail.src ? "selected" : ""}
-                    key={thumbnail.slug}
-                    type="button"
-                    onClick={() => setNewHabitThumbnail(thumbnail.src)}
-                    title={thumbnail.label}
-                  >
-                    <img src={assetUrl(thumbnail.src)} alt="" />
-                  </button>
+            <section className="settings-section">
+              <div className="settings-section-title">
+                <Wand2 size={18} aria-hidden="true" />
+                <div>
+                  <h3>Personalize</h3>
+                  <p>Change the life mode, character, theme, and generated daily wins.</p>
+                </div>
+              </div>
+              <button
+                className="icon-text-button hot full"
+                type="button"
+                onClick={() => {
+                  setSettingsOpen(false);
+                  setPersonalizerOpen(true);
+                }}
+              >
+                <Wand2 size={18} aria-hidden="true" />
+                {copy.buildCta}
+              </button>
+            </section>
+
+            <section className="settings-section">
+              <div className="settings-section-title">
+                <Download size={18} aria-hidden="true" />
+                <div>
+                  <h3>Backup and sharing</h3>
+                  <p>Export a cute progress card, download a JSON backup, or import one from another browser.</p>
+                </div>
+              </div>
+              <div className="settings-action-grid">
+                <button className="backup-button" type="button" onClick={exportShareCard}>
+                  <Download size={17} aria-hidden="true" />
+                  Share today
+                </button>
+                <button className="backup-button" type="button" onClick={exportBackup}>
+                  <Download size={17} aria-hidden="true" />
+                  Backup JSON
+                </button>
+                <label className="backup-button file-button">
+                  <FileUp size={17} aria-hidden="true" />
+                  Import backup
+                  <input type="file" accept="application/json" onChange={importBackup} />
+                </label>
+              </div>
+            </section>
+
+            <section className="settings-section">
+              <div className="settings-section-title">
+                <Sparkles size={18} aria-hidden="true" />
+                <div>
+                  <h3>Theme</h3>
+                  <p>Pick the visual mood for the whole app.</p>
+                </div>
+              </div>
+              <div className="theme-picker compact" aria-label="Choose app theme">
+                {(Object.entries(appThemes) as Array<[AppThemeKey, (typeof appThemes)[AppThemeKey]]>).map(
+                  ([themeKey, theme]) => (
+                    <button
+                      className={`theme-card${appThemeKey === themeKey ? " selected" : ""}`}
+                      key={themeKey}
+                      type="button"
+                      onClick={() => selectAppTheme(themeKey)}
+                      style={
+                        {
+                          "--theme-primary": theme.primary,
+                          "--theme-secondary": theme.secondary,
+                          "--theme-accent": theme.accent,
+                          "--theme-bg": theme.background,
+                          "--theme-ink": theme.ink
+                        } as CSSProperties
+                      }
+                    >
+                      <span className="theme-swatch" aria-hidden="true">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                      <strong>{theme.label}</strong>
+                      <small>{theme.note}</small>
+                    </button>
+                  )
+                )}
+              </div>
+            </section>
+
+            <section className="settings-section">
+              <div className="settings-section-title">
+                <Settings2 size={18} aria-hidden="true" />
+                <div>
+                  <h3>{copy.winsAndIcons}</h3>
+                  <p>Add, pause, reorder, and rename the daily must-do wins.</p>
+                </div>
+              </div>
+              <div className="add-habit-box">
+                <label>
+                  <span>{copy.newWin}</span>
+                  <input
+                    value={newHabitName}
+                    onChange={(event) => setNewHabitName(event.target.value)}
+                    placeholder="Add an important win"
+                  />
+                </label>
+                <div className="thumbnail-picker compact" aria-label="Choose thumbnail for new win">
+                  {thumbnailOptions.map((thumbnail) => (
+                    <button
+                      className={newHabitThumbnail === thumbnail.src ? "selected" : ""}
+                      key={thumbnail.slug}
+                      type="button"
+                      onClick={() => setNewHabitThumbnail(thumbnail.src)}
+                      title={thumbnail.label}
+                    >
+                      <img src={assetUrl(thumbnail.src)} alt="" />
+                    </button>
+                  ))}
+                </div>
+                <button className="icon-text-button hot full" type="button" onClick={addHabit}>
+                  <Plus size={18} aria-hidden="true" />
+                  {copy.addWin}
+                </button>
+              </div>
+
+              <div className="habit-editor-list">
+                {sortedHabits.map((habit, index) => (
+                  <article className={`editor-card${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
+                    <img className="editor-thumb" src={assetUrl(habit.thumbnail)} alt="" />
+                    <div className="editor-fields">
+                      <input
+                        value={habit.name}
+                        onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
+                        aria-label={`Win name for ${habit.name}`}
+                      />
+                      <input
+                        value={habit.quip}
+                        onChange={(event) => updateHabit(habit.id, { quip: event.target.value })}
+                        aria-label={`Win note for ${habit.name}`}
+                      />
+                      <div className="thumbnail-picker" aria-label={`Choose thumbnail for ${habit.name}`}>
+                        {thumbnailOptions.map((thumbnail) => (
+                          <button
+                            className={habit.thumbnail === thumbnail.src ? "selected" : ""}
+                            key={thumbnail.slug}
+                            type="button"
+                            onClick={() => updateHabit(habit.id, { thumbnail: thumbnail.src })}
+                            title={thumbnail.label}
+                          >
+                            <img src={assetUrl(thumbnail.src)} alt="" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="editor-actions">
+                      <button
+                        className="round-button small"
+                        type="button"
+                        onClick={() => moveHabit(habit.id, -1)}
+                        disabled={index === 0}
+                        aria-label={`Move ${habit.name} up`}
+                      >
+                        <ArrowUp size={15} aria-hidden="true" />
+                      </button>
+                      <button
+                        className="round-button small"
+                        type="button"
+                        onClick={() => moveHabit(habit.id, 1)}
+                        disabled={index === sortedHabits.length - 1}
+                        aria-label={`Move ${habit.name} down`}
+                      >
+                        <ArrowDown size={15} aria-hidden="true" />
+                      </button>
+                      <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
+                        {habit.pausedAt ? "Resume" : "Pause"}
+                      </button>
+                      <button
+                        className="round-button danger small"
+                        type="button"
+                        onClick={() => deleteHabit(habit.id)}
+                        aria-label={`Delete ${habit.name}`}
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
+                      </button>
+                    </div>
+                  </article>
                 ))}
               </div>
-              <button className="icon-text-button hot full" type="button" onClick={addHabit}>
-                <Plus size={18} aria-hidden="true" />
-                {copy.addWin}
+
+              <button className="reset-button" type="button" onClick={resetTracker}>
+                <RotateCcw size={17} aria-hidden="true" />
+                Reset Win List
               </button>
-            </div>
+            </section>
 
-            <div className="habit-editor-list">
-              {sortedHabits.map((habit, index) => (
-                <article className={`editor-card${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
-                  <img className="editor-thumb" src={assetUrl(habit.thumbnail)} alt="" />
-                  <div className="editor-fields">
-                    <input
-                      value={habit.name}
-                      onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
-                      aria-label={`Win name for ${habit.name}`}
-                    />
-                    <input
-                      value={habit.quip}
-                      onChange={(event) => updateHabit(habit.id, { quip: event.target.value })}
-                      aria-label={`Win note for ${habit.name}`}
-                    />
-                    <div className="thumbnail-picker" aria-label={`Choose thumbnail for ${habit.name}`}>
-                      {thumbnailOptions.map((thumbnail) => (
-                        <button
-                          className={habit.thumbnail === thumbnail.src ? "selected" : ""}
-                          key={thumbnail.slug}
-                          type="button"
-                          onClick={() => updateHabit(habit.id, { thumbnail: thumbnail.src })}
-                          title={thumbnail.label}
-                        >
-                          <img src={assetUrl(thumbnail.src)} alt="" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="editor-actions">
-                    <button
-                      className="round-button small"
-                      type="button"
-                      onClick={() => moveHabit(habit.id, -1)}
-                      disabled={index === 0}
-                      aria-label={`Move ${habit.name} up`}
-                    >
-                      <ArrowUp size={15} aria-hidden="true" />
-                    </button>
-                    <button
-                      className="round-button small"
-                      type="button"
-                      onClick={() => moveHabit(habit.id, 1)}
-                      disabled={index === sortedHabits.length - 1}
-                      aria-label={`Move ${habit.name} down`}
-                    >
-                      <ArrowDown size={15} aria-hidden="true" />
-                    </button>
-                    <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
-                      {habit.pausedAt ? "Resume" : "Pause"}
-                    </button>
-                    <button
-                      className="round-button danger small"
-                      type="button"
-                      onClick={() => deleteHabit(habit.id)}
-                      aria-label={`Delete ${habit.name}`}
-                    >
-                      <Trash2 size={15} aria-hidden="true" />
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <button className="reset-button" type="button" onClick={resetTracker}>
-              <RotateCcw size={17} aria-hidden="true" />
-              Reset Win List
-            </button>
-            <button className="backup-button" type="button" onClick={exportBackup}>
-              <Download size={17} aria-hidden="true" />
-              Download Win List backup
-            </button>
-          </aside>
-        </div>
-      ) : null}
-
-      {themeOpen ? (
-        <div className="settings-layer" role="dialog" aria-modal="true" aria-labelledby="theme-title">
-          <button
-            className="settings-backdrop"
-            type="button"
-            onClick={() => setThemeOpen(false)}
-            aria-label="Close theme settings"
-          />
-          <aside className="settings-drawer theme-drawer">
-            <LogoMark className="panel-watermark drawer" decorative />
-            <div className="drawer-header">
-              <div className="drawer-title-lockup">
-                <LogoMark className="drawer-logo" />
-                <div>
-                  <span className="section-kicker">Win List look</span>
-                  <h2 id="theme-title">Theme</h2>
-                </div>
-              </div>
-              <button className="round-button" type="button" onClick={() => setThemeOpen(false)} aria-label="Close">
-                <X size={18} aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="theme-picker" aria-label="Choose app theme">
-              {(Object.entries(appThemes) as Array<[AppThemeKey, (typeof appThemes)[AppThemeKey]]>).map(
-                ([themeKey, theme]) => (
-                  <button
-                    className={`theme-card${appThemeKey === themeKey ? " selected" : ""}`}
-                    key={themeKey}
-                    type="button"
-                    onClick={() => selectAppTheme(themeKey)}
-                    style={
-                      {
-                        "--theme-primary": theme.primary,
-                        "--theme-secondary": theme.secondary,
-                        "--theme-accent": theme.accent,
-                        "--theme-bg": theme.background,
-                        "--theme-ink": theme.ink
-                      } as CSSProperties
-                    }
-                  >
-                    <span className="theme-swatch" aria-hidden="true">
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                    <strong>{theme.label}</strong>
-                    <small>{theme.note}</small>
-                  </button>
-                )
-              )}
-            </div>
-          </aside>
-        </div>
-      ) : null}
-
-      {cloudOpen ? (
-        <div className="settings-layer" role="dialog" aria-modal="true" aria-labelledby="cloud-title">
-          <button
-            className="settings-backdrop"
-            type="button"
-            onClick={() => setCloudOpen(false)}
-            aria-label="Close cloud sync"
-          />
-          <aside className="settings-drawer cloud-drawer">
-            <LogoMark className="panel-watermark drawer" decorative />
-            <div className="drawer-header">
-              <div className="drawer-title-lockup">
-                <LogoMark className="drawer-logo" />
-                <div>
-                  <span className="section-kicker">Cloud backup</span>
-                  <h2 id="cloud-title">Back up your Win List</h2>
-                </div>
-              </div>
-              <button className="round-button" type="button" onClick={() => setCloudOpen(false)} aria-label="Close">
-                <X size={18} aria-hidden="true" />
-              </button>
-            </div>
-
-            <CloudSyncPanel
-              configured={isSupabaseConfigured()}
-              session={cloudSession}
-              email={cloudEmail}
-              busy={cloudBusy}
-              message={cloudMessage}
-              consents={consents}
-              overview={cloudOverview}
-              onEmailChange={setCloudEmail}
-              onMagicLink={handleMagicLink}
-              onTermsAcceptedChange={updateTermsAcceptance}
-              onUpload={handleCloudUpload}
-              onRestore={handleCloudRestore}
-              onSignOut={handleCloudSignOut}
-            />
+            <section className="settings-section">
+              <CloudSyncPanel
+                configured={isSupabaseConfigured()}
+                session={cloudSession}
+                email={cloudEmail}
+                busy={cloudBusy}
+                message={cloudMessage}
+                consents={consents}
+                overview={cloudOverview}
+                onEmailChange={setCloudEmail}
+                onMagicLink={handleMagicLink}
+                onTermsAcceptedChange={updateTermsAcceptance}
+                onUpload={handleCloudUpload}
+                onRestore={handleCloudRestore}
+                onSignOut={handleCloudSignOut}
+              />
+            </section>
           </aside>
         </div>
       ) : null}
@@ -2399,16 +2499,16 @@ function resolveAvatarStyle(input: OnboardingInput): Exclude<OnboardingInput["av
   return "neutral";
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
-    <div className="stat-card">
+    <div className="stat-card" title={title}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
   );
 }
 
-function CompletionBurst({ message, tone }: { message: string; tone: string }) {
+function CompletionBurst({ message, tone, onUndo }: { message: string; tone: string; onUndo: () => void }) {
   return (
     <div className="completion-burst" style={{ "--celebration": tone } as CSSProperties} aria-live="polite">
       <span className="burst-orbit one" />
@@ -2422,6 +2522,7 @@ function CompletionBurst({ message, tone }: { message: string; tone: string }) {
       <span className="completion-toast">
         <Sparkles size={14} aria-hidden="true" />
         {message}
+        <button type="button" onClick={onUndo}>Undo</button>
       </span>
     </div>
   );
@@ -2780,6 +2881,46 @@ function isCompletionMood(status: MoodKey) {
   return status !== "skipped" && status !== "rest";
 }
 
+function getStreakNudge(streak: number, completedCount: number, totalCount: number) {
+  if (totalCount > 0 && completedCount === totalCount) {
+    return "Perfect day. Every must-do win is banked.";
+  }
+
+  if (streak === 0 && completedCount === 0) {
+    return "Start your streak today. Tap any card to mark the first win.";
+  }
+
+  if (streak === 0) {
+    return "Streak starts again from here. One day is enough to restart momentum.";
+  }
+
+  if (streak === 1) {
+    return "Day one is alive. Protect it with one more small win.";
+  }
+
+  return `${streak} days in motion. Keep the chain warm.`;
+}
+
+function getHeatClass(status: MoodKey | undefined, done: boolean) {
+  if (status === "strong") {
+    return "heat-strong";
+  }
+
+  if (status === "partial") {
+    return "heat-partial";
+  }
+
+  if (status === "skipped" || status === "rest") {
+    return "heat-rest";
+  }
+
+  if (status === "done" || done) {
+    return "heat-done";
+  }
+
+  return "heat-empty";
+}
+
 function playCompletionSound(tone: string) {
   if (typeof window === "undefined") {
     return;
@@ -2912,6 +3053,10 @@ function weekdayLetter(date: Date) {
   return new Intl.DateTimeFormat("en", { weekday: "short" }).format(date).slice(0, 1);
 }
 
+function isCompactViewport() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
+}
+
 function countStreakEndingAt(dateKey: string, tracker: TrackerState, activeHabits: Habit[]) {
   if (activeHabits.length === 0) {
     return 0;
@@ -2937,8 +3082,10 @@ function countStreakEndingAt(dateKey: string, tracker: TrackerState, activeHabit
 }
 
 function countMonthProgress(days: Date[], activeHabits: Habit[], tracker: TrackerState) {
-  const total = days.length * activeHabits.length;
-  const completed = days.reduce((sum, day) => {
+  const todayKey = localDateKey(new Date());
+  const eligibleDays = days.filter((day) => localDateKey(day) <= todayKey);
+  const total = eligibleDays.length * activeHabits.length;
+  const completed = eligibleDays.reduce((sum, day) => {
     const record = tracker.days[localDateKey(day)];
     if (!record) {
       return sum;
