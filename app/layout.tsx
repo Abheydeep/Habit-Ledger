@@ -5,8 +5,8 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const iconPath = `${basePath}/icon.svg`;
 
 export const metadata: Metadata = {
-  title: "Habit Ledger",
-  description: "A professional daily habit tracker for health, focus, money, learning, and screen-time routines",
+  title: "The Win List",
+  description: "A daily must-do wins app for planning and completing what matters today",
   icons: {
     icon: iconPath,
     apple: iconPath

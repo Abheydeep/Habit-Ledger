@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: the-win-list
+    runtime: static
+    repo: https://github.com/Abheydeep/Habit-Ledger
+    branch: codex/personalized-onboarding
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./out
+    domains:
+      - www.mywinlist.com

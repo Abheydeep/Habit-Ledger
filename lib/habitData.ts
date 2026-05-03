@@ -41,7 +41,7 @@ export const moodOptions: Array<{
   tone: string;
   src: string;
 }> = [
-  { key: "done", label: "Done", shortLabel: "Done", tone: "#0f766e", src: "status:done" },
+  { key: "done", label: "Won", shortLabel: "Won", tone: "#0f766e", src: "status:done" },
   { key: "strong", label: "Strong", shortLabel: "Strong", tone: "#2563eb", src: "status:strong" },
   { key: "partial", label: "Partial", shortLabel: "Half", tone: "#f59e0b", src: "status:partial" },
   { key: "skipped", label: "Skipped", shortLabel: "Skip", tone: "#dc2626", src: "status:skipped" },
@@ -205,7 +205,7 @@ export function normalizeImportedState(value: TrackerState): TrackerState {
         typeof habit.thumbnail === "string"
           ? habit.thumbnail
           : fallback.habits[index % fallback.habits.length].thumbnail,
-      quip: typeof habit.quip === "string" ? habit.quip : "Custom routine ready to track.",
+      quip: typeof habit.quip === "string" ? habit.quip : "Custom win ready to track.",
       createdAt: typeof habit.createdAt === "string" ? habit.createdAt : now,
       pausedAt: typeof habit.pausedAt === "string" ? habit.pausedAt : undefined
     }));

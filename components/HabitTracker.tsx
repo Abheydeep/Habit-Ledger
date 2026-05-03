@@ -5,17 +5,23 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  BookOpen,
+  Briefcase,
   CalendarDays,
+  Cloud,
+  ClipboardCheck,
   CircleDot,
   Download,
   FileUp,
+  Footprints,
+  Home,
+  Leaf,
   Plus,
   RotateCcw,
   Settings2,
   ShieldCheck,
   Sparkles,
   Trash2,
-  UserRound,
   Wand2,
   X
 } from "lucide-react";
@@ -48,14 +54,134 @@ import {
   createPersonalizationSummary,
   createPersonalizedHabits,
   defaultOnboardingInput,
+  normalizeOnboardingInput,
   type PersonalizationSnapshot
 } from "../lib/personalization";
-import { personalizationTestCases, type OnboardingInput } from "../lib/personalizationTestCases";
+import type { OnboardingInput } from "../lib/personalizationTestCases";
+import {
+  defaultConsentState,
+  downloadCloudSnapshot,
+  getCloudOverview,
+  readStoredConsents,
+  saveStoredConsents,
+  sendMagicLink,
+  uploadLocalSnapshot,
+  type CloudOverview,
+  type ConsentState
+} from "../lib/cloudSync";
+import { getSupabaseClient, isSupabaseConfigured, type SupabaseSession } from "../lib/supabaseClient";
 
 const colorPalette = ["#0f766e", "#2563eb", "#f59e0b", "#16a34a", "#9333ea", "#db2777", "#475569"];
 const COOKIE_KEY = "pro_habit_tracker_india_v1";
 const HISTORY_STATE_KEY = "proHabitTrackerIndiaStateV1";
+const THEME_STORAGE_KEY = "habit-ledger:theme:v1";
+const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
+const copy = {
+  brand: "The Win List",
+  tagline: "Your must-do wins for today.",
+  personalizedTitle: (name: string) => `${name}'s Win List`,
+  buildCta: "Build my Win List",
+  wins: "Wins",
+  winsAndIcons: "Wins and icons",
+  todayWins: "Today's wins",
+  startingWins: "Your starting wins",
+  wonToday: "Won today",
+  markAsWon: "Mark as won",
+  newWin: "New win",
+  addWin: "Add win",
+  invalidBackup: "That file does not look like a The Win List backup.",
+  shareImagePrefix: "the-win-list",
+  backupPrefix: "the-win-list-backup",
+  logoLabel: "The Win List logo"
+};
+const appThemes = {
+  "fresh-ledger": {
+    label: "Fresh Start",
+    note: "Clean, trustworthy, and general-purpose.",
+    primary: "#0f766e",
+    secondary: "#2563eb",
+    accent: "#f59e0b",
+    background: "#eef7f3",
+    surface: "#ffffff",
+    soft: "#e4f3ee",
+    ink: "#0f2f2e"
+  },
+  "study-lavender": {
+    label: "Study Lavender",
+    note: "Notebook energy for students and focused learning.",
+    primary: "#7c3aed",
+    secondary: "#3b82f6",
+    accent: "#fbbf24",
+    background: "#f5f0ff",
+    surface: "#ffffff",
+    soft: "#ede9fe",
+    ink: "#27144f"
+  },
+  "home-rose": {
+    label: "Home Rose",
+    note: "Warm, soft, and gentle for home routines.",
+    primary: "#db2777",
+    secondary: "#fb7185",
+    accent: "#fb923c",
+    background: "#fff1f5",
+    surface: "#ffffff",
+    soft: "#ffe4ec",
+    ink: "#4a162b"
+  },
+  "travel-sun": {
+    label: "Travel Sun",
+    note: "Bright and practical for moving days.",
+    primary: "#ea580c",
+    secondary: "#16a34a",
+    accent: "#0284c7",
+    background: "#fff7ed",
+    surface: "#ffffff",
+    soft: "#dcfce7",
+    ink: "#3b2412"
+  },
+  "founder-gold": {
+    label: "Founder Gold",
+    note: "Premium, disciplined, and business-minded.",
+    primary: "#0f2f2e",
+    secondary: "#0f766e",
+    accent: "#d6b45f",
+    background: "#f7f4e8",
+    surface: "#ffffff",
+    soft: "#f4edcf",
+    ink: "#10201f"
+  }
+} as const;
+type AppThemeKey = keyof typeof appThemes;
+const themeByRoutine: Record<OnboardingInput["routineType"], AppThemeKey> = {
+  student: "study-lavender",
+  "working-professional": "fresh-ledger",
+  homemaker: "home-rose",
+  "field-worker": "travel-sun",
+  "business-owner": "founder-gold"
+};
+const characterOutfits: Record<OnboardingInput["routineType"], { title: string; detail: string }> = {
+  student: {
+    title: "Lavender learner fit",
+    detail: "Campus jacket, notebook, backpack, and soft study-mode sparkles."
+  },
+  "working-professional": {
+    title: "Teal work-casual fit",
+    detail: "Blazer, clean shirt, day bag, and fresh office-friendly polish."
+  },
+  homemaker: {
+    title: "Rose home-rhythm fit",
+    detail: "Elegant kurta, dupatta, warm peach details, and calm home energy."
+  },
+  "field-worker": {
+    title: "Sunny on-the-go fit",
+    detail: "Travel jacket, cap, sling bag, scarf, and practical movement-ready accents."
+  },
+  "business-owner": {
+    title: "Founder focus fit",
+    detail: "Deep teal blazer, ivory shirt, muted gold, and a premium planner prop."
+  }
+};
 const goalOptions = [
   "fitness",
   "focus",
@@ -140,7 +266,7 @@ const lifeModeThemes: Record<
   "field-worker": {
     label: "On-the-go mode",
     kicker: "Travel day setup",
-    headline: "Create habits that work even when the day keeps moving",
+    headline: "Create daily wins that work even when the day keeps moving",
     microcopy: "A practical plan for hydration, meals, money logs, movement, and flexible rest windows.",
     primary: "#ea580c",
     secondary: "#22c55e",
@@ -180,6 +306,8 @@ export function HabitTracker() {
   const noteRef = useRef<HTMLTextAreaElement | null>(null);
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [cloudOpen, setCloudOpen] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [newHabitThumbnail, setNewHabitThumbnail] = useState(thumbnailOptions[0].src);
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
@@ -190,9 +318,16 @@ export function HabitTracker() {
   const [personalizerOpen, setPersonalizerOpen] = useState(false);
   const [onboarding, setOnboarding] = useState<OnboardingInput>(defaultOnboardingInput);
   const [personalizationSnapshot, setPersonalizationSnapshot] = useState<PersonalizationSnapshot | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [appThemeKey, setAppThemeKey] = useState<AppThemeKey>("fresh-ledger");
+  const [cloudSession, setCloudSession] = useState<SupabaseSession | null>(null);
+  const [cloudEmail, setCloudEmail] = useState("");
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudMessage, setCloudMessage] = useState("Local-first mode is on. Sign in only when you want backup or sync.");
+  const [cloudOverview, setCloudOverview] = useState<CloudOverview | null>(null);
+  const [consents, setConsents] = useState<ConsentState>(defaultConsentState);
 
   useEffect(() => {
+    let loadedTracker: TrackerState | null = null;
     const stored = readSavedTrackerState();
 
     if (stored) {
@@ -200,6 +335,7 @@ export function HabitTracker() {
         const parsed = JSON.parse(stored) as unknown;
         if (isTrackerState(parsed)) {
           const storedTracker = normalizeImportedState(parsed);
+          loadedTracker = storedTracker;
           trackerRef.current = storedTracker;
           saveTrackerState(storedTracker);
           setTracker(storedTracker);
@@ -214,8 +350,16 @@ export function HabitTracker() {
       try {
         const parsed = JSON.parse(storedPersonalization) as PersonalizationSnapshot;
         if (parsed?.input?.routineType) {
-          setOnboarding(parsed.input);
-          setPersonalizationSnapshot(parsed);
+          const normalizedInput = normalizeOnboardingInput(parsed.input);
+          const healedTracker = maybeRefreshPersonalizedHabits(loadedTracker ?? trackerRef.current, normalizedInput);
+          setOnboarding(normalizedInput);
+          setPersonalizationSnapshot({ ...parsed, input: normalizedInput });
+          setAppThemeKey(themeByRoutine[normalizedInput.routineType]);
+          if (healedTracker) {
+            trackerRef.current = healedTracker;
+            saveTrackerState(healedTracker);
+            setTracker(healedTracker);
+          }
         }
       } catch {
         window.localStorage.removeItem(PERSONALIZATION_STORAGE_KEY);
@@ -224,12 +368,57 @@ export function HabitTracker() {
       setPersonalizerOpen(true);
     }
 
+    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme && storedTheme in appThemes) {
+      setAppThemeKey(storedTheme as AppThemeKey);
+    }
+
     const today = new Date();
     const todayKey = localDateKey(today);
     selectedDateRef.current = todayKey;
     setSelectedDate(todayKey);
     setVisibleMonth(startOfMonth(today));
   }, []);
+
+  useEffect(() => {
+    setConsents(readStoredConsents());
+
+    const client = getSupabaseClient();
+    if (!client) {
+      return;
+    }
+
+    client.auth.getSession().then(({ data }) => {
+      setCloudSession(data.session ?? null);
+    });
+
+    const {
+      data: { subscription }
+    } = client.auth.onAuthStateChange((_event, session) => {
+      setCloudSession(session);
+      if (session?.user?.email) {
+        setCloudEmail(session.user.email);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const client = getSupabaseClient();
+    const userId = cloudSession?.user.id;
+
+    if (!client || !userId) {
+      setCloudOverview(null);
+      return;
+    }
+
+    getCloudOverview(client, userId)
+      .then(setCloudOverview)
+      .catch(() => {
+        setCloudOverview(null);
+      });
+  }, [cloudSession]);
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 720px)");
@@ -317,10 +506,24 @@ export function HabitTracker() {
     [monthDays, activeHabits, tracker]
   );
   const shouldShowPersonalizer = personalizerOpen;
+  const activePersonalization = personalizationSnapshot?.input ?? onboarding;
+  const activeModeTheme = lifeModeThemes[activePersonalization.routineType];
+  const appTheme = appThemes[appThemeKey];
+  const heroName = cleanDisplayName(activePersonalization.displayName);
+  const heroTitle = heroName ? copy.personalizedTitle(heroName) : copy.brand;
+  const appStyle = {
+    "--app-primary": appTheme.primary,
+    "--app-secondary": appTheme.secondary,
+    "--app-accent": appTheme.accent,
+    "--app-bg": appTheme.background,
+    "--app-surface": appTheme.surface,
+    "--app-soft": appTheme.soft,
+    "--app-ink": appTheme.ink
+  } as CSSProperties;
 
   const triggerCompletionCelebration = useCallback(
     (habit: Habit, moodOption: (typeof moodOptions)[number] | undefined) => {
-      const messages = ["Momentum banked", "Ledger updated", "Clean finish", "Progress logged"];
+      const messages = ["Win marked", "Today's win saved", "Nice win", "Progress won"];
 
       if (celebrationTimeoutRef.current) {
         window.clearTimeout(celebrationTimeoutRef.current);
@@ -407,7 +610,7 @@ export function HabitTracker() {
         order,
         color,
         thumbnail: newHabitThumbnail,
-        quip: "Custom routine ready to track.",
+        quip: "Custom win ready to track.",
         createdAt: new Date().toISOString()
       };
 
@@ -465,7 +668,7 @@ export function HabitTracker() {
   const deleteHabit = useCallback(
     (habitId: string) => {
       const habit = tracker.habits.find((item) => item.id === habitId);
-      const confirmed = window.confirm(`Delete "${habit?.name ?? "this habit"}" from the tracker?`);
+      const confirmed = window.confirm(`Delete "${habit?.name ?? "this win"}" from The Win List?`);
       if (!confirmed) {
         return;
       }
@@ -534,16 +737,16 @@ export function HabitTracker() {
 
     context.fillStyle = "#0f766e";
     context.font = "900 30px Avenir Next, Trebuchet MS, Arial";
-    context.fillText("built for steady days", 246, 118);
+    context.fillText("your must-do wins for today", 246, 118);
 
     context.fillStyle = "#0f2f2e";
     context.font = "950 68px Arial Rounded MT Bold, Trebuchet MS, Arial";
-    context.fillText("Habit", 244, 188);
-    context.fillText("Ledger", 244, 266);
+    context.fillText("The", 244, 188);
+    context.fillText("Win List", 244, 266);
 
     context.fillStyle = "#52635f";
     context.font = "700 30px Avenir Next, Trebuchet MS, Arial";
-    context.fillText(`${dateLabel}  |  ${completed}/${habitRows.length} habits done`, 94, 360);
+    context.fillText(`${dateLabel}  |  ${completed}/${habitRows.length} wins today`, 94, 360);
 
     const progressWidth = Math.round((completed / Math.max(habitRows.length, 1)) * 780);
     roundRect(context, 94, 392, 780, 22, 999);
@@ -579,7 +782,7 @@ export function HabitTracker() {
       context.fillText(habit.name, 184, y + 32);
       context.fillStyle = "#52635f";
       context.font = "700 20px Avenir Next, Trebuchet MS, Arial";
-      context.fillText(done ? "logged for the day" : "status not set", 184, y + 57);
+      context.fillText(done ? "won today" : "mark as won", 184, y + 57);
 
       if (moodOption) {
         const moodImage = await loadCanvasImage(assetUrl(moodOption.src));
@@ -592,7 +795,7 @@ export function HabitTracker() {
       } else {
         context.fillStyle = "#7b8985";
         context.font = "900 24px Avenir Next, Trebuchet MS, Arial";
-        context.fillText("set status", 812, y + 42);
+        context.fillText("mark as won", 792, y + 42);
       }
 
       y += 82;
@@ -600,7 +803,7 @@ export function HabitTracker() {
 
     context.fillStyle = "#0f766e";
     context.font = "900 26px Avenir Next, Trebuchet MS, Arial";
-    context.fillText("consistent routines, clearer days", 94, 1512);
+    context.fillText("small wins, cleaner days", 94, 1512);
 
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png", 0.95));
     if (!blob) {
@@ -608,12 +811,12 @@ export function HabitTracker() {
       return;
     }
 
-    downloadBlob(blob, `habit-ledger-${selectedDate}.png`);
+    downloadBlob(blob, `${copy.shareImagePrefix}-${selectedDate}.png`);
   }, [activeHabits, selectedDate, selectedRecord]);
 
   const exportBackup = useCallback(() => {
     const blob = new Blob([JSON.stringify(tracker, null, 2)], { type: "application/json" });
-    downloadBlob(blob, `habit-ledger-backup-${selectedDate}.json`);
+    downloadBlob(blob, `${copy.backupPrefix}-${selectedDate}.json`);
   }, [selectedDate, tracker]);
 
   const importBackup = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
@@ -627,7 +830,7 @@ export function HabitTracker() {
     try {
       const parsed = JSON.parse(await file.text()) as unknown;
       if (!isTrackerState(parsed)) {
-        window.alert("That file does not look like a Habit Ledger backup.");
+        window.alert(copy.invalidBackup);
         return;
       }
 
@@ -641,7 +844,7 @@ export function HabitTracker() {
   }, []);
 
   const resetTracker = useCallback(() => {
-    const confirmed = window.confirm("Reset all habits, statuses, and notes?");
+    const confirmed = window.confirm("Reset all wins, statuses, and notes?");
     if (confirmed) {
       const next = createDefaultState();
       trackerRef.current = next;
@@ -667,6 +870,11 @@ export function HabitTracker() {
   const updateOnboarding = useCallback(
     <Key extends keyof OnboardingInput>(key: Key, value: OnboardingInput[Key]) => {
       setOnboarding((current) => ({ ...current, [key]: value }));
+      if (key === "routineType") {
+        const nextTheme = themeByRoutine[value as OnboardingInput["routineType"]];
+        setAppThemeKey(nextTheme);
+        window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+      }
     },
     []
   );
@@ -684,50 +892,10 @@ export function HabitTracker() {
     []
   );
 
-  const handlePhotoReference = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-
-    if (!file) {
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      window.alert("Please choose an image file for the character reference.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : null;
-      setPhotoPreview(result);
-      setOnboarding((current) => ({ ...current, photoUpload: "yes" }));
-    };
-    reader.readAsDataURL(file);
-  }, []);
-
-  const clearPhotoReference = useCallback(() => {
-    setPhotoPreview(null);
-    setOnboarding((current) => ({ ...current, photoUpload: "no" }));
-  }, []);
-
-  const loadSampleCase = useCallback((input: OnboardingInput) => {
-    setOnboarding(input);
-    setPhotoPreview(null);
-    setPersonalizerOpen(true);
-  }, []);
-
   const applyPersonalizedPlan = useCallback(() => {
-    const confirmed = window.confirm(
-      "Create this personalized plan? This replaces the current local habit list and clears existing tracking data in this browser."
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     const now = new Date().toISOString();
-    const habits = createPersonalizedHabits(onboarding, now);
+    const normalizedInput = normalizeOnboardingInput(onboarding);
+    const habits = createPersonalizedHabits(normalizedInput, now);
     const nextTracker: TrackerState = {
       version: 1,
       habits,
@@ -736,23 +904,155 @@ export function HabitTracker() {
       updatedAt: now
     };
     const snapshot: PersonalizationSnapshot = {
-      input: onboarding,
-      characterBrief: createCharacterBrief(onboarding, Boolean(photoPreview)),
+      input: normalizedInput,
+      characterBrief: createCharacterBrief(normalizedInput),
       generatedAt: now
     };
+    const nextTheme = themeByRoutine[normalizedInput.routineType];
 
     trackerRef.current = nextTracker;
     setTracker(nextTracker);
     saveTrackerState(nextTracker);
     window.localStorage.setItem(PERSONALIZATION_STORAGE_KEY, JSON.stringify(snapshot));
+    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
     setPersonalizationSnapshot(snapshot);
+    setOnboarding(normalizedInput);
+    setAppThemeKey(nextTheme);
     setExpandedHabitId(null);
     setDayOpen(true);
     setPersonalizerOpen(false);
-  }, [onboarding, photoPreview]);
+  }, [onboarding]);
+
+  const selectAppTheme = useCallback((themeKey: AppThemeKey) => {
+    setAppThemeKey(themeKey);
+    window.localStorage.setItem(THEME_STORAGE_KEY, themeKey);
+  }, []);
+
+  const updateTermsAcceptance = useCallback((accepted: boolean) => {
+    setConsents(() => {
+      const next: ConsentState = {
+        sync: accepted,
+        analytics: accepted,
+        recommendations: accepted,
+        ads_personalization: accepted
+      };
+      saveStoredConsents(next);
+      return next;
+    });
+  }, []);
+
+  const handleMagicLink = useCallback(async () => {
+    const client = getSupabaseClient();
+    const email = cloudEmail.trim();
+
+    if (!client) {
+      setCloudMessage("Cloud backup is not connected in this demo yet. Your Win List is still saved on this browser.");
+      return;
+    }
+
+    if (!email) {
+      setCloudMessage("Enter an email first, then I will send a secure magic link.");
+      return;
+    }
+
+    setCloudBusy(true);
+    setCloudMessage("Sending magic link...");
+    try {
+      await sendMagicLink(client, email);
+      setCloudMessage("Magic link sent. Open it from this device to connect sync.");
+    } catch (error) {
+      setCloudMessage(error instanceof Error ? error.message : "Could not send the magic link.");
+    } finally {
+      setCloudBusy(false);
+    }
+  }, [cloudEmail]);
+
+  const handleCloudUpload = useCallback(async () => {
+    const client = getSupabaseClient();
+    const userId = cloudSession?.user.id;
+
+    if (!client || !userId) {
+      setCloudMessage("Sign in before uploading this browser's Win List.");
+      return;
+    }
+
+    if (!consents.sync) {
+      setCloudMessage("Agree to the terms before syncing this Win List.");
+      return;
+    }
+
+    setCloudBusy(true);
+    setCloudMessage("Uploading this local Win List to Supabase...");
+    try {
+      const overview = await uploadLocalSnapshot({
+        client,
+        userId,
+        tracker: trackerRef.current,
+        personalization: personalizationSnapshot,
+        consents,
+        themeKey: appThemeKey,
+        anonymousId: getAnonymousId()
+      });
+      setCloudOverview(overview);
+      setCloudMessage("Synced. LocalStorage is still the offline source, and Supabase now has a backup.");
+    } catch (error) {
+      setCloudMessage(error instanceof Error ? error.message : "Could not sync this Win List.");
+    } finally {
+      setCloudBusy(false);
+    }
+  }, [appThemeKey, cloudSession?.user.id, consents, personalizationSnapshot]);
+
+  const handleCloudRestore = useCallback(async () => {
+    const client = getSupabaseClient();
+    const userId = cloudSession?.user.id;
+
+    if (!client || !userId) {
+      setCloudMessage("Sign in before restoring a cloud Win List.");
+      return;
+    }
+
+    const confirmed = window.confirm("Replace this browser's Win List with the cloud copy?");
+    if (!confirmed) {
+      return;
+    }
+
+    setCloudBusy(true);
+    setCloudMessage("Restoring from Supabase...");
+    try {
+      const restored = await downloadCloudSnapshot(client, userId);
+      if (!restored) {
+        setCloudMessage("No cloud Win List found yet. Upload this browser first.");
+        return;
+      }
+
+      trackerRef.current = restored;
+      setTracker(restored);
+      saveTrackerState(restored);
+      setExpandedHabitId(null);
+      setDayOpen(true);
+      setCloudMessage("Cloud copy restored into this browser.");
+      setCloudOverview(await getCloudOverview(client, userId));
+    } catch (error) {
+      setCloudMessage(error instanceof Error ? error.message : "Could not restore the cloud copy.");
+    } finally {
+      setCloudBusy(false);
+    }
+  }, [cloudSession?.user.id]);
+
+  const handleCloudSignOut = useCallback(async () => {
+    const client = getSupabaseClient();
+    if (!client) {
+      return;
+    }
+
+    await client.auth.signOut();
+    setCloudSession(null);
+    setCloudOverview(null);
+    setCloudMessage("Signed out. This browser still keeps the local Win List.");
+  }, []);
 
   return (
-    <main className="tracker-shell">
+    <main className={`tracker-shell theme-${appThemeKey}`} style={appStyle}>
       <section className="tracker-hero" aria-labelledby="tracker-title">
         <div className="sparkle-field" aria-hidden="true">
           <span />
@@ -770,61 +1070,102 @@ export function HabitTracker() {
         </div>
 
         <div className="brand-lockup">
-          <LogoMark />
+          <div className="brand-media">
+            <LogoMark />
+            <div className="brand-avatar" aria-hidden="true">
+              <AnswerCharacter input={activePersonalization} />
+            </div>
+          </div>
           <div className="hero-copy">
             <div className="eyebrow">
               <CircleDot size={16} aria-hidden="true" />
-              Built for steady days
+              {activeModeTheme.label}
             </div>
-            <h1 id="tracker-title">Habit Ledger</h1>
-            <p>
-              A clean tracker for health, focus, money, learning, and screen-time routines in everyday India.
-            </p>
+            <h1 id="tracker-title">{heroTitle}</h1>
+            <p>{copy.tagline}</p>
           </div>
         </div>
 
-        <div className="hero-actions" aria-label="Tracker actions">
-          <button className="icon-text-button" type="button" onClick={selectToday}>
-            <CalendarDays size={18} aria-hidden="true" />
-            Today
-          </button>
-          <button className="icon-text-button" type="button" onClick={exportShareCard}>
-            <Download size={18} aria-hidden="true" />
-            Export
-          </button>
-          <label className="icon-text-button file-button">
-            <FileUp size={18} aria-hidden="true" />
-            Import
-            <input type="file" accept="application/json" onChange={importBackup} />
-          </label>
-          <button className="icon-text-button" type="button" onClick={() => setPersonalizerOpen((open) => !open)}>
-            <Wand2 size={18} aria-hidden="true" />
-            Personalize
-          </button>
-          <button className="icon-text-button hot" type="button" onClick={() => setSettingsOpen(true)}>
-            <Settings2 size={18} aria-hidden="true" />
-            Habits
-          </button>
+        <div className="hero-actions" aria-label="Win List actions">
+          <div className="hero-actions-row primary">
+            <button className="icon-text-button" type="button" onClick={selectToday}>
+              <CalendarDays size={18} aria-hidden="true" />
+              Today
+            </button>
+            <button className="icon-text-button" type="button" onClick={exportShareCard}>
+              <Download size={18} aria-hidden="true" />
+              Export
+            </button>
+            <label className="icon-text-button file-button">
+              <FileUp size={18} aria-hidden="true" />
+              Import
+              <input type="file" accept="application/json" onChange={importBackup} />
+            </label>
+          </div>
+          <div className="hero-actions-row setup">
+            <button
+              className={`icon-text-button personalize-action${personalizerOpen ? " hot" : ""}`}
+              type="button"
+              aria-pressed={personalizerOpen}
+              onClick={() => setPersonalizerOpen((open) => !open)}
+            >
+              <Wand2 size={18} aria-hidden="true" />
+              {copy.buildCta}
+            </button>
+            <button
+              className={`icon-text-button${settingsOpen ? " hot" : ""}`}
+              type="button"
+              aria-pressed={settingsOpen}
+              onClick={() => setSettingsOpen(true)}
+            >
+              <Settings2 size={18} aria-hidden="true" />
+              {copy.wins}
+            </button>
+            <button
+              className={`icon-text-button${themeOpen ? " hot" : ""}`}
+              type="button"
+              aria-pressed={themeOpen}
+              onClick={() => setThemeOpen(true)}
+            >
+              <Sparkles size={18} aria-hidden="true" />
+              Theme
+            </button>
+            <button
+              className={`icon-text-button${cloudOpen ? " hot" : ""}`}
+              type="button"
+              aria-pressed={cloudOpen}
+              onClick={() => setCloudOpen(true)}
+            >
+              <Cloud size={18} aria-hidden="true" />
+              Sync
+            </button>
+          </div>
         </div>
       </section>
 
       {shouldShowPersonalizer ? (
-        <PersonalizerPanel
-          isOpen={personalizerOpen}
-          onboarding={onboarding}
-          photoPreview={photoPreview}
-          snapshot={personalizationSnapshot}
-          onToggle={() => setPersonalizerOpen(false)}
-          onUpdate={updateOnboarding}
-          onToggleListItem={toggleOnboardingListItem}
-          onPhotoChange={handlePhotoReference}
-          onPhotoClear={clearPhotoReference}
-          onLoadSample={loadSampleCase}
-          onApply={applyPersonalizedPlan}
-        />
+        <div className="settings-layer personalization-layer" role="dialog" aria-modal="true" aria-labelledby="personalizer-title">
+          <button
+            className="settings-backdrop"
+            type="button"
+            onClick={() => setPersonalizerOpen(false)}
+            aria-label="Close personalization"
+          />
+          <aside className="settings-drawer personalization-drawer">
+            <PersonalizerPanel
+              isOpen={personalizerOpen}
+              onboarding={onboarding}
+              snapshot={personalizationSnapshot}
+              onToggle={() => setPersonalizerOpen(false)}
+              onUpdate={updateOnboarding}
+              onToggleListItem={toggleOnboardingListItem}
+              onApply={applyPersonalizedPlan}
+            />
+          </aside>
+        </div>
       ) : null}
 
-      <section className="dashboard-grid" aria-label="Habit tracker dashboard">
+      <section className="dashboard-grid" aria-label="The Win List dashboard">
         <section className={`today-panel${dayOpen ? " open" : " collapsed"}`} aria-labelledby="today-title">
           <LogoMark className="panel-watermark" decorative />
           <div className="section-header">
@@ -841,7 +1182,7 @@ export function HabitTracker() {
           </div>
 
           <div className="stat-strip" aria-label="Daily progress">
-            <StatCard label="Done" value={`${completedCount}/${activeHabits.length}`} />
+            <StatCard label={copy.wonToday} value={`${completedCount}/${activeHabits.length}`} />
             <StatCard label="Streak" value={`${streak} day${streak === 1 ? "" : "s"}`} />
             <StatCard label="Month" value={`${monthProgress.completed}/${monthProgress.total}`} />
           </div>
@@ -852,7 +1193,7 @@ export function HabitTracker() {
           </button>
 
           <div className="day-panel-content">
-            <div className="checklist" aria-label="Today's habits">
+            <div className="checklist" aria-label={copy.todayWins}>
               {activeHabits.map((habit) => {
                 const done = completedSet.has(habit.id);
                 const habitMood = selectedRecord.habitMoods?.[habit.id];
@@ -871,7 +1212,7 @@ export function HabitTracker() {
                       type="button"
                       onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
                       aria-expanded={moodMenuOpen}
-                      aria-label={`${moodMenuOpen ? "Close" : "Set"} status for ${habit.name}`}
+                      aria-label={`${moodMenuOpen ? "Close" : "Mark"} ${habit.name} as won`}
                     >
                       <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
                       <div className="habit-card-copy">
@@ -887,11 +1228,11 @@ export function HabitTracker() {
                         ) : (
                           <CircleDot size={16} aria-hidden="true" />
                         )}
-                        <span>{moodOption ? moodOption.label : "Set status"}</span>
+                        <span>{moodOption ? moodOption.label : copy.markAsWon}</span>
                       </span>
                     </button>
                     {moodMenuOpen ? (
-                      <div className="activity-mood-panel" aria-label={`Status choices for ${habit.name}`}>
+                      <div className="activity-mood-panel" aria-label={`Win status choices for ${habit.name}`}>
                         {moodOptions.map((mood) => (
                           <button
                             className={`mood-sticker${habitMood === mood.key ? " selected" : ""}`}
@@ -969,13 +1310,13 @@ export function HabitTracker() {
           </button>
 
           <div className="month-panel-content">
-            <div className="month-grid-wrap" role="region" aria-label="Monthly habit grid" tabIndex={0}>
+            <div className="month-grid-wrap" role="region" aria-label="Monthly win grid" tabIndex={0}>
               <div
                 className="month-grid"
                 style={{ "--day-count": monthDays.length } as CSSProperties}
               >
                 <div className="grid-row header-row">
-                  <div className="habit-sticky header-habit">Habit</div>
+                  <div className="habit-sticky header-habit">Win</div>
                   {monthDays.map((day) => {
                     const dayKey = localDateKey(day);
                     return (
@@ -1022,8 +1363,8 @@ export function HabitTracker() {
                           }}
                           aria-label={
                             moodOption
-                              ? `Edit ${habit.name} status on ${dayKey}, currently ${moodOption.label}`
-                              : `Set status for ${habit.name} on ${dayKey}`
+                              ? `Edit ${habit.name} win on ${dayKey}, currently ${moodOption.label}`
+                              : `Mark ${habit.name} as won on ${dayKey}`
                           }
                         >
                           {moodOption ? (
@@ -1046,7 +1387,7 @@ export function HabitTracker() {
             className="settings-backdrop"
             type="button"
             onClick={() => setSettingsOpen(false)}
-            aria-label="Close habit settings"
+            aria-label="Close win settings"
           />
           <aside className="settings-drawer">
             <LogoMark className="panel-watermark drawer" decorative />
@@ -1054,8 +1395,8 @@ export function HabitTracker() {
               <div className="drawer-title-lockup">
                 <LogoMark className="drawer-logo" />
                 <div>
-                  <span className="section-kicker">Tracker setup</span>
-                  <h2 id="settings-title">Habits and icons</h2>
+                  <span className="section-kicker">Win List setup</span>
+                  <h2 id="settings-title">{copy.winsAndIcons}</h2>
                 </div>
               </div>
               <button className="round-button" type="button" onClick={() => setSettingsOpen(false)} aria-label="Close">
@@ -1065,14 +1406,14 @@ export function HabitTracker() {
 
             <div className="add-habit-box">
               <label>
-                <span>New habit</span>
+                <span>{copy.newWin}</span>
                 <input
                   value={newHabitName}
                   onChange={(event) => setNewHabitName(event.target.value)}
-                  placeholder="Add a routine to track"
+                  placeholder="Add an important win"
                 />
               </label>
-              <div className="thumbnail-picker compact" aria-label="Choose thumbnail for new habit">
+              <div className="thumbnail-picker compact" aria-label="Choose thumbnail for new win">
                 {thumbnailOptions.map((thumbnail) => (
                   <button
                     className={newHabitThumbnail === thumbnail.src ? "selected" : ""}
@@ -1087,7 +1428,7 @@ export function HabitTracker() {
               </div>
               <button className="icon-text-button hot full" type="button" onClick={addHabit}>
                 <Plus size={18} aria-hidden="true" />
-                Add habit
+                {copy.addWin}
               </button>
             </div>
 
@@ -1099,12 +1440,12 @@ export function HabitTracker() {
                     <input
                       value={habit.name}
                       onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
-                      aria-label={`Habit name for ${habit.name}`}
+                      aria-label={`Win name for ${habit.name}`}
                     />
                     <input
                       value={habit.quip}
                       onChange={(event) => updateHabit(habit.id, { quip: event.target.value })}
-                      aria-label={`Habit quip for ${habit.name}`}
+                      aria-label={`Win note for ${habit.name}`}
                     />
                     <div className="thumbnail-picker" aria-label={`Choose thumbnail for ${habit.name}`}>
                       {thumbnailOptions.map((thumbnail) => (
@@ -1157,12 +1498,110 @@ export function HabitTracker() {
 
             <button className="reset-button" type="button" onClick={resetTracker}>
               <RotateCcw size={17} aria-hidden="true" />
-              Reset tracker
+              Reset Win List
             </button>
             <button className="backup-button" type="button" onClick={exportBackup}>
               <Download size={17} aria-hidden="true" />
-              Download data backup
+              Download Win List backup
             </button>
+          </aside>
+        </div>
+      ) : null}
+
+      {themeOpen ? (
+        <div className="settings-layer" role="dialog" aria-modal="true" aria-labelledby="theme-title">
+          <button
+            className="settings-backdrop"
+            type="button"
+            onClick={() => setThemeOpen(false)}
+            aria-label="Close theme settings"
+          />
+          <aside className="settings-drawer theme-drawer">
+            <LogoMark className="panel-watermark drawer" decorative />
+            <div className="drawer-header">
+              <div className="drawer-title-lockup">
+                <LogoMark className="drawer-logo" />
+                <div>
+                  <span className="section-kicker">Win List look</span>
+                  <h2 id="theme-title">Theme</h2>
+                </div>
+              </div>
+              <button className="round-button" type="button" onClick={() => setThemeOpen(false)} aria-label="Close">
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="theme-picker" aria-label="Choose app theme">
+              {(Object.entries(appThemes) as Array<[AppThemeKey, (typeof appThemes)[AppThemeKey]]>).map(
+                ([themeKey, theme]) => (
+                  <button
+                    className={`theme-card${appThemeKey === themeKey ? " selected" : ""}`}
+                    key={themeKey}
+                    type="button"
+                    onClick={() => selectAppTheme(themeKey)}
+                    style={
+                      {
+                        "--theme-primary": theme.primary,
+                        "--theme-secondary": theme.secondary,
+                        "--theme-accent": theme.accent,
+                        "--theme-bg": theme.background,
+                        "--theme-ink": theme.ink
+                      } as CSSProperties
+                    }
+                  >
+                    <span className="theme-swatch" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <strong>{theme.label}</strong>
+                    <small>{theme.note}</small>
+                  </button>
+                )
+              )}
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      {cloudOpen ? (
+        <div className="settings-layer" role="dialog" aria-modal="true" aria-labelledby="cloud-title">
+          <button
+            className="settings-backdrop"
+            type="button"
+            onClick={() => setCloudOpen(false)}
+            aria-label="Close cloud sync"
+          />
+          <aside className="settings-drawer cloud-drawer">
+            <LogoMark className="panel-watermark drawer" decorative />
+            <div className="drawer-header">
+              <div className="drawer-title-lockup">
+                <LogoMark className="drawer-logo" />
+                <div>
+                  <span className="section-kicker">Cloud backup</span>
+                  <h2 id="cloud-title">Back up your Win List</h2>
+                </div>
+              </div>
+              <button className="round-button" type="button" onClick={() => setCloudOpen(false)} aria-label="Close">
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
+
+            <CloudSyncPanel
+              configured={isSupabaseConfigured()}
+              session={cloudSession}
+              email={cloudEmail}
+              busy={cloudBusy}
+              message={cloudMessage}
+              consents={consents}
+              overview={cloudOverview}
+              onEmailChange={setCloudEmail}
+              onMagicLink={handleMagicLink}
+              onTermsAcceptedChange={updateTermsAcceptance}
+              onUpload={handleCloudUpload}
+              onRestore={handleCloudRestore}
+              onSignOut={handleCloudSignOut}
+            />
           </aside>
         </div>
       ) : null}
@@ -1173,35 +1612,172 @@ export function HabitTracker() {
 type PersonalizerPanelProps = {
   isOpen: boolean;
   onboarding: OnboardingInput;
-  photoPreview: string | null;
   snapshot: PersonalizationSnapshot | null;
   onToggle: () => void;
   onUpdate: <Key extends keyof OnboardingInput>(key: Key, value: OnboardingInput[Key]) => void;
   onToggleListItem: (key: "primaryGoals" | "constraints", value: string) => void;
-  onPhotoChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onPhotoClear: () => void;
-  onLoadSample: (input: OnboardingInput) => void;
   onApply: () => void;
 };
+
+type CloudSyncPanelProps = {
+  configured: boolean;
+  session: SupabaseSession | null;
+  email: string;
+  busy: boolean;
+  message: string;
+  consents: ConsentState;
+  overview: CloudOverview | null;
+  onEmailChange: (email: string) => void;
+  onMagicLink: () => void;
+  onTermsAcceptedChange: (accepted: boolean) => void;
+  onUpload: () => void;
+  onRestore: () => void;
+  onSignOut: () => void;
+};
+
+function CloudSyncPanel({
+  configured,
+  session,
+  email,
+  busy,
+  message,
+  consents,
+  overview,
+  onEmailChange,
+  onMagicLink,
+  onTermsAcceptedChange,
+  onUpload,
+  onRestore,
+  onSignOut
+}: CloudSyncPanelProps) {
+  const isSignedIn = Boolean(session);
+  const termsAccepted = consents.sync;
+
+  return (
+    <div className="cloud-panel">
+      <section className="cloud-hero-card">
+        <div className="cloud-hero-icon" aria-hidden="true">
+          <Cloud size={24} />
+        </div>
+        <div>
+          <span className="section-kicker">Safe backup</span>
+          <h3>Save this Win List to your account</h3>
+          <p>
+            Your list still works on this browser. Sign in only when you want cloud backup or to restore it on another
+            device.
+          </p>
+        </div>
+      </section>
+
+      <section className="cloud-box">
+        <div className="cloud-box-title">
+          <ShieldCheck size={18} aria-hidden="true" />
+          <h3>Terms</h3>
+        </div>
+        <label className="consent-toggle simple">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(event) => onTermsAcceptedChange(event.target.checked)}
+          />
+          <span>
+            <strong>I agree to save my Win List to my account.</strong>
+            <small>
+              This includes wins, progress, notes, and personalization details. Private data is not used for ads unless
+              the terms are updated and accepted again.
+            </small>
+          </span>
+        </label>
+      </section>
+
+      <section className="cloud-box">
+        <div className="cloud-box-title">
+          <Cloud size={18} aria-hidden="true" />
+          <h3>Account and sync</h3>
+        </div>
+
+        {!configured ? (
+          <div className="cloud-env-note">
+            Cloud backup is not connected in this demo yet. Your Win List is still saved on this browser.
+          </div>
+        ) : null}
+
+        <label className="cloud-email-field">
+          <span>Email for magic link</span>
+          <input
+            type="email"
+            value={email}
+            disabled={busy || isSignedIn}
+            onChange={(event) => onEmailChange(event.target.value)}
+            placeholder="you@example.com"
+          />
+        </label>
+
+        <div className="sync-actions">
+          {!isSignedIn ? (
+            <button
+              className="icon-text-button hot full"
+              type="button"
+              onClick={onMagicLink}
+              disabled={busy || !configured || !termsAccepted}
+            >
+              <Cloud size={18} aria-hidden="true" />
+              Sign in to sync
+            </button>
+          ) : (
+            <>
+              <button className="icon-text-button hot full" type="button" onClick={onUpload} disabled={busy}>
+                <Cloud size={18} aria-hidden="true" />
+                Upload local Win List
+              </button>
+              <button className="backup-button" type="button" onClick={onRestore} disabled={busy}>
+                <Download size={17} aria-hidden="true" />
+                Restore cloud copy
+              </button>
+              <button className="tiny-text-button" type="button" onClick={onSignOut} disabled={busy}>
+                Sign out
+              </button>
+            </>
+          )}
+        </div>
+
+        <p className="sync-message" aria-live="polite">{message}</p>
+      </section>
+
+      {overview ? (
+        <section className="cloud-box">
+          <div className="cloud-box-title">
+            <Cloud size={18} aria-hidden="true" />
+            <h3>Your cloud backup</h3>
+          </div>
+          <div className="cloud-overview">
+            <span>Wins: <strong>{overview.wins}</strong></span>
+            <span>Daily logs: <strong>{overview.dailyLogs}</strong></span>
+            <span>Notes: <strong>{overview.notes}</strong></span>
+            <span>Last sync: <strong>{overview.lastSyncedAt ? formatSyncDate(overview.lastSyncedAt) : "Not yet"}</strong></span>
+          </div>
+        </section>
+      ) : null}
+    </div>
+  );
+}
 
 function PersonalizerPanel({
   isOpen,
   onboarding,
-  photoPreview,
   snapshot,
   onToggle,
   onUpdate,
   onToggleListItem,
-  onPhotoChange,
-  onPhotoClear,
-  onLoadSample,
   onApply
 }: PersonalizerPanelProps) {
-  const characterBrief = snapshot?.characterBrief ?? createCharacterBrief(onboarding, Boolean(photoPreview));
   const summary = createPersonalizationSummary(snapshot?.input ?? onboarding);
-  const hasName = onboarding.displayName.trim().length > 0;
-  const hasPhotoReference = Boolean(photoPreview);
+  const planPreview = createPersonalizedHabits(onboarding, "preview").slice(0, 6);
   const modeTheme = lifeModeThemes[onboarding.routineType];
+  const avatarStyle = resolveAvatarStyle(onboarding);
+  const outfit = characterOutfits[onboarding.routineType];
+  const characterName = cleanDisplayName(onboarding.displayName);
+  const previewTitle = characterName ? `${characterName}'s Win List companion` : "Your Win List companion";
   const panelStyle = {
     "--mode-primary": modeTheme.primary,
     "--mode-secondary": modeTheme.secondary,
@@ -1220,17 +1796,19 @@ function PersonalizerPanel({
     >
       <div className="personalizer-header">
         <div className="personalizer-title">
-          <div className="personalizer-icon">
-            <Wand2 size={22} aria-hidden="true" />
+          <div className="personalizer-character-lockup" aria-hidden="true">
+            <LogoMark className="personalizer-logo" decorative />
+            <AnswerCharacter input={onboarding} />
           </div>
           <div>
             <span className="section-kicker">{modeTheme.kicker}</span>
-            <h2 id="personalizer-title">{modeTheme.headline}</h2>
-            <p className="personalizer-lede">{modeTheme.microcopy}</p>
+            <h2 id="personalizer-title">Personalize {copy.brand}</h2>
+            <p className="personalizer-lede">Choose a few details. Your wins, theme, and character update around this routine.</p>
           </div>
         </div>
-        <button className="icon-text-button" type="button" onClick={onToggle}>
-          {isOpen ? "Close" : "Personalize"}
+        <button className="drawer-close-button" type="button" onClick={onToggle} aria-label="Close personalization">
+          <X size={18} aria-hidden="true" />
+          <span>{isOpen ? "Close" : "Personalize"}</span>
         </button>
       </div>
 
@@ -1293,9 +1871,33 @@ function PersonalizerPanel({
               </label>
             </div>
 
-            <div className="life-mode-strip" aria-live="polite">
-              <strong>{modeTheme.label}</strong>
-              <span>{modeTheme.microcopy}</span>
+            <div className="form-row two">
+              <label>
+                <span>Age range</span>
+                <select
+                  value={onboarding.ageBand}
+                  onChange={(event) => onUpdate("ageBand", event.target.value as OnboardingInput["ageBand"])}
+                >
+                  <option value="18-24">18-24</option>
+                  <option value="25-34">25-34</option>
+                  <option value="35-44">35-44</option>
+                  <option value="45+">45+</option>
+                </select>
+              </label>
+              <label>
+                <span>Gender</span>
+                <select
+                  value={onboarding.avatarStyle}
+                  onChange={(event) =>
+                    onUpdate("avatarStyle", event.target.value as OnboardingInput["avatarStyle"])
+                  }
+                >
+                  <option value="auto">Auto from name</option>
+                  <option value="feminine">Female</option>
+                  <option value="masculine">Male</option>
+                  <option value="neutral">Neutral</option>
+                </select>
+              </label>
             </div>
 
             <label>
@@ -1338,68 +1940,33 @@ function PersonalizerPanel({
                 ))}
               </div>
             </div>
-
-            <div className="tone-row" aria-label="Tone preference">
-              <span>Tone</span>
-              {(["friendly", "calm", "direct", "premium"] as const).map((tone) => (
-                <button
-                  className={onboarding.preferredTone === tone ? "selected" : ""}
-                  key={tone}
-                  type="button"
-                  onClick={() => onUpdate("preferredTone", tone)}
-                >
-                  {tone}
-                </button>
-              ))}
-            </div>
-
-            <div className="sample-strip" aria-label="Sample personalization cases">
-              <span>Try sample data</span>
-              <div>
-                {personalizationTestCases.map((testCase) => (
-                  <button key={testCase.id} type="button" onClick={() => onLoadSample(testCase.onboarding)}>
-                    {testCase.title}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
-          <aside className="character-card" aria-label="Character and plan preview">
-            <div className="character-visual">
-              <AnswerCharacter input={onboarding} photoReferenceLoaded={hasPhotoReference} />
+          <aside className="personalizer-preview" aria-label="Live personalized preview">
+            <div className="character-persona-strip" aria-live="polite">
+              <AnswerCharacter input={onboarding} />
+              <div>
+                <span>Meet your companion</span>
+                <strong>{previewTitle}</strong>
+                <p>{outfit.detail}</p>
+              </div>
             </div>
 
-            <div className="character-copy">
-              <h3>{hasName ? `${onboarding.displayName.trim()}'s ledger` : "Your ledger"}</h3>
-              <p>{summary}</p>
-              <p className="character-source">
-                {hasPhotoReference
-                  ? "Photo reference loaded. The production avatar should use face guidance without showing the raw photo."
-                  : "No photo needed. This character is shaped from the answers above."}
-              </p>
-              <p className="character-brief">{characterBrief}</p>
-            </div>
-
-            <label className="photo-upload">
-              <UserRound size={17} aria-hidden="true" />
-              Optional photo reference
-              <input type="file" accept="image/*" onChange={onPhotoChange} />
-            </label>
-            {photoPreview ? (
-              <button className="tiny-text-button" type="button" onClick={onPhotoClear}>
-                Clear photo
-              </button>
-            ) : null}
-
-            <div className="privacy-note">
-              <ShieldCheck size={18} aria-hidden="true" />
-              <span>No-photo users still get an answer-based character. If a photo is uploaded, it stays in this browser for the demo; production should delete raw photos after avatar generation.</span>
+            <div className="plan-preview" aria-label="Win List preview">
+              <span>{copy.startingWins}</span>
+              <div>
+                {planPreview.map((habit) => (
+                  <article key={habit.id} style={{ "--habit": habit.color } as CSSProperties}>
+                    <img src={assetUrl(habit.thumbnail)} alt="" />
+                    <strong>{habit.name}</strong>
+                  </article>
+                ))}
+              </div>
             </div>
 
             <button className="icon-text-button hot full" type="button" onClick={onApply}>
               <Wand2 size={18} aria-hidden="true" />
-              Create my habit plan
+              {copy.buildCta}
             </button>
           </aside>
         </div>
@@ -1409,13 +1976,21 @@ function PersonalizerPanel({
 }
 
 function AnswerCharacter({
-  input,
-  photoReferenceLoaded
+  input
 }: {
   input: OnboardingInput;
-  photoReferenceLoaded: boolean;
 }) {
   const theme = lifeModeThemes[input.routineType];
+  const rawId = useId();
+  const avatarId = rawId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const ids = {
+    bg: `avatar-bg-${avatarId}`,
+    skin: `avatar-skin-${avatarId}`,
+    hair: `avatar-hair-${avatarId}`,
+    outfit: `avatar-outfit-${avatarId}`,
+    shadow: `avatar-shadow-${avatarId}`,
+    glow: `avatar-glow-${avatarId}`
+  };
   const style = {
     "--char-primary": theme.primary,
     "--char-secondary": theme.secondary,
@@ -1425,46 +2000,403 @@ function AnswerCharacter({
     "--char-hair": theme.hair,
     "--char-skin": theme.skin
   } as CSSProperties;
+  const avatarStyle = resolveAvatarStyle(input);
+  const avatarAction = resolveAvatarAction(input);
+  const avatarSrc = assetUrl(getAvatarAssetPath(input, avatarStyle));
+  const avatarAge = input.ageBand === "45+" ? "45 plus" : input.ageBand;
+  const avatarLabel = `${avatarAge} ${avatarStyle} ${theme.label.toLowerCase()} avatar`;
 
   return (
-    <div
-      className={`answer-character routine-${input.routineType} tone-${input.preferredTone}${photoReferenceLoaded ? " photo-guided" : ""}`}
+    <span
+      className={`answer-character avatar-photo routine-${input.routineType} avatar-${avatarStyle} action-${avatarAction}`}
       style={style}
+      aria-label={avatarLabel}
+      role="img"
+    >
+      <img src={avatarSrc} alt="" draggable={false} />
+      <span className="avatar-action-badge" aria-hidden="true">
+        {renderAvatarActionIcon(avatarAction)}
+      </span>
+    </span>
+  );
+
+  const routine = input.routineType;
+  const mouth = input.ageBand === "45+" ? "M110 104 Q120 112 130 104" : "M108 103 Q120 116 132 103";
+  const cheekOpacity = avatarStyle === "masculine" ? 0.14 : 0.28;
+
+  function renderHair() {
+    if (routine === "field-worker") {
+      return (
+        <>
+          <path d="M83 86C83 58 99 42 121 42C143 42 158 58 158 86V102H83Z" fill={`url(#${ids.hair})`} />
+          <path d="M80 67C91 48 106 39 124 41C142 43 155 52 163 67L158 77H84Z" fill="var(--char-accent)" />
+          <path d="M121 45C138 45 155 53 176 68C162 73 147 73 134 68C119 62 104 62 86 68C93 53 105 45 121 45Z" fill="var(--char-accent)" opacity="0.88" />
+        </>
+      );
+    }
+
+    if (avatarStyle === "masculine") {
+      return (
+        <>
+          <path d="M82 86C82 59 98 42 121 42C145 42 160 59 160 86V98H82Z" fill={`url(#${ids.hair})`} />
+          <path d="M85 75C99 50 123 43 157 59C142 70 118 74 90 70Z" fill="rgba(255,255,255,0.18)" />
+          <path d="M90 85C94 63 109 53 126 53C143 53 153 65 154 85C140 80 118 78 90 85Z" fill={`url(#${ids.hair})`} />
+        </>
+      );
+    }
+
+    if (avatarStyle === "neutral") {
+      return (
+        <>
+          <path d="M80 88C80 58 98 41 121 41C146 41 162 59 162 88C162 108 154 124 139 134C140 115 132 105 120 105C108 105 100 116 102 134C88 125 80 108 80 88Z" fill={`url(#${ids.hair})`} />
+          <path d="M86 76C101 52 122 44 155 58C138 68 117 71 91 70Z" fill="rgba(255,255,255,0.18)" />
+        </>
+      );
+    }
+
+    if (routine === "homemaker") {
+      return (
+        <>
+          <path d="M76 89C76 55 96 36 123 38C150 40 166 62 163 98C162 120 153 139 137 146C139 127 132 115 120 115C108 115 99 128 101 148C82 139 75 116 76 89Z" fill={`url(#${ids.hair})`} />
+          <path d="M73 86C87 54 112 42 148 49C136 62 119 70 92 72C85 77 80 82 73 86Z" fill="rgba(255,255,255,0.16)" />
+          <path d="M73 92C98 73 128 70 164 82C158 96 142 105 122 105C101 105 84 100 73 92Z" fill="var(--char-secondary)" opacity="0.78" />
+        </>
+      );
+    }
+
+    if (routine === "business-owner") {
+      return (
+        <>
+          <path d="M81 88C80 60 96 41 120 39C145 37 161 57 160 86C159 109 149 127 134 137C137 116 130 105 119 105C108 105 101 118 103 138C88 129 82 110 81 88Z" fill={`url(#${ids.hair})`} />
+          <path d="M86 74C99 50 119 42 149 49C138 63 119 70 92 72Z" fill="rgba(255,255,255,0.18)" />
+          <path d="M147 58C153 69 154 85 150 99" stroke="rgba(255,255,255,0.24)" strokeWidth="4" strokeLinecap="round" />
+        </>
+      );
+    }
+
+    if (routine === "working-professional") {
+      return (
+        <>
+          <path d="M80 87C80 57 97 39 121 39C147 39 163 57 163 89C163 113 153 131 136 139C139 120 132 107 120 107C108 107 100 119 103 139C87 131 80 112 80 87Z" fill={`url(#${ids.hair})`} />
+          <path d="M85 75C99 50 122 40 157 58C140 68 119 70 91 69Z" fill="rgba(255,255,255,0.18)" />
+          <path d="M91 73C99 86 113 91 132 88" stroke="rgba(255,255,255,0.16)" strokeWidth="4" strokeLinecap="round" />
+        </>
+      );
+    }
+
+    return (
+      <>
+        <path d="M78 89C77 58 96 38 121 38C147 38 164 57 163 89C162 113 151 133 135 141C137 121 130 108 119 108C108 108 101 121 103 142C87 134 79 113 78 89Z" fill={`url(#${ids.hair})`} />
+        <path d="M84 73C98 49 122 40 158 59C140 68 116 72 90 70Z" fill="rgba(255,255,255,0.18)" />
+        <path d="M149 52L165 46L168 61L152 63Z" fill="var(--char-accent)" />
+        <path d="M164 48L178 42L174 60L166 61Z" fill="var(--char-accent)" opacity="0.82" />
+      </>
+    );
+  }
+
+  function renderFaceAccessory() {
+    if (routine === "working-professional") {
+      return (
+        <g stroke="#1f2937" strokeWidth="2.4" fill="none" opacity="0.72">
+          <circle cx="107" cy="94" r="9" />
+          <circle cx="133" cy="94" r="9" />
+          <path d="M116 94H124" />
+        </g>
+      );
+    }
+
+    if (routine === "business-owner") {
+      return <path d="M146 69L151 78L161 80L153 87L154 98L146 92L137 98L139 87L131 80L141 78Z" fill="var(--char-secondary)" opacity="0.9" />;
+    }
+
+    if (routine === "homemaker") {
+      return <circle cx="120" cy="83" r="2.8" fill="var(--char-accent)" />;
+    }
+
+    return null;
+  }
+
+  function renderOutfitDetails() {
+    if (routine === "student") {
+      return (
+        <>
+          <path d="M91 143L120 165L149 143" fill="rgba(255,255,255,0.72)" />
+          <path d="M89 156L102 197" stroke="var(--char-secondary)" strokeWidth="6" strokeLinecap="round" opacity="0.92" />
+          <path d="M151 156L137 197" stroke="var(--char-secondary)" strokeWidth="6" strokeLinecap="round" opacity="0.92" />
+          <circle cx="120" cy="173" r="6" fill="var(--char-accent)" />
+          <path d="M107 187H133" stroke="rgba(255,255,255,0.55)" strokeWidth="4" strokeLinecap="round" />
+        </>
+      );
+    }
+
+    if (routine === "working-professional") {
+      return (
+        <>
+          <path d="M84 145L111 194L120 152L129 194L156 145V201H84Z" fill="rgba(255,255,255,0.22)" />
+          <path d="M105 142L120 158L135 142" fill="#ffffff" opacity="0.88" />
+          <path d="M118 158L112 195H128L122 158Z" fill="var(--char-accent)" opacity="0.92" />
+          <path d="M88 171H102M138 171H152" stroke="rgba(255,255,255,0.48)" strokeWidth="4" strokeLinecap="round" />
+        </>
+      );
+    }
+
+    if (routine === "homemaker") {
+      return (
+        <>
+          <path d="M74 151C95 165 123 170 166 151L171 172C140 193 99 190 68 171Z" fill="var(--char-secondary)" opacity="0.88" />
+          <path d="M94 149C102 165 111 181 119 201" stroke="rgba(255,255,255,0.5)" strokeWidth="4" strokeLinecap="round" />
+          <circle cx="134" cy="170" r="5" fill="var(--char-accent)" opacity="0.86" />
+          <circle cx="108" cy="185" r="4" fill="rgba(255,255,255,0.68)" />
+          <path d="M130 170C133 165 137 165 140 170C137 175 133 175 130 170Z" fill="#ffffff" opacity="0.6" />
+        </>
+      );
+    }
+
+    if (routine === "field-worker") {
+      return (
+        <>
+          <path d="M83 146H157V201H83Z" fill="rgba(255,255,255,0.16)" />
+          <path d="M96 145V200M144 145V200" stroke="rgba(255,255,255,0.5)" strokeWidth="5" strokeLinecap="round" />
+          <path d="M83 169H157" stroke="var(--char-secondary)" strokeWidth="7" opacity="0.94" />
+          <path d="M90 145L150 199" stroke="var(--char-accent)" strokeWidth="6" strokeLinecap="round" />
+        </>
+      );
+    }
+
+    return (
+      <>
+        <path d="M84 145L111 201L120 154L129 201L156 145V201H84Z" fill="#111827" opacity="0.32" />
+        <path d="M104 143L120 160L136 143" fill="#ffffff" opacity="0.9" />
+        <path d="M118 160L112 198H128L122 160Z" fill="var(--char-secondary)" />
+        <circle cx="145" cy="169" r="6" fill="var(--char-secondary)" opacity="0.95" />
+        <path d="M141 169H149M145 165V173" stroke="#ffffff" strokeWidth="1.6" strokeLinecap="round" />
+      </>
+    );
+  }
+
+  function renderProp() {
+    if (avatarAction === "studying") {
+      return (
+        <g filter={`url(#${ids.shadow})`}>
+          <path d="M157 168H197C200 168 202 171 201 174L195 203H153Z" fill="#ffffff" />
+          <path d="M157 168H177C181 174 181 194 176 203H153Z" fill="var(--char-soft)" />
+          <path d="M177 168C183 177 183 194 176 203" stroke="var(--char-accent)" strokeWidth="3" />
+          <path d="M162 180H174M162 190H173M184 180H195M184 190H192" stroke="var(--char-primary)" strokeWidth="2" strokeLinecap="round" opacity="0.58" />
+          <path d="M183 160L206 183" stroke="var(--char-accent)" strokeWidth="6" strokeLinecap="round" />
+          <path d="M202 180L210 188" stroke="#334155" strokeWidth="3" strokeLinecap="round" />
+        </g>
+      );
+    }
+
+    if (avatarAction === "working") {
+      return (
+        <g filter={`url(#${ids.shadow})`}>
+          <rect x="151" y="169" width="55" height="35" rx="8" fill="#ffffff" />
+          <rect x="157" y="175" width="43" height="22" rx="5" fill="var(--char-soft)" />
+          <path d="M148 204H209" stroke="var(--char-primary)" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="179" cy="187" r="4" fill="var(--char-secondary)" />
+        </g>
+      );
+    }
+
+    if (avatarAction === "resetting" || avatarAction === "resting") {
+      return (
+        <g filter={`url(#${ids.shadow})`}>
+          <path d="M164 181C164 169 173 160 185 160C197 160 206 169 206 181C206 194 198 204 185 204C172 204 164 194 164 181Z" fill="#ffffff" />
+          <path d="M176 169C181 161 190 158 199 162C194 171 187 175 176 169Z" fill="var(--char-secondary)" />
+          <path d="M185 172V199" stroke="var(--char-primary)" strokeWidth="4" strokeLinecap="round" />
+          <path d="M177 187C184 182 192 182 199 187" stroke="var(--char-accent)" strokeWidth="4" strokeLinecap="round" />
+        </g>
+      );
+    }
+
+    if (avatarAction === "walking") {
+      return (
+        <g filter={`url(#${ids.shadow})`}>
+          <rect x="164" y="158" width="24" height="49" rx="12" fill="#ffffff" />
+          <path d="M164 176H188V196C188 202 183 207 176 207C169 207 164 202 164 196Z" fill="var(--char-secondary)" opacity="0.9" />
+          <path d="M169 152H183" stroke="var(--char-primary)" strokeWidth="5" strokeLinecap="round" />
+          <path d="M194 168L207 176L198 188L185 180Z" fill="var(--char-soft)" stroke="var(--char-accent)" strokeWidth="3" />
+          <circle cx="197" cy="178" r="2" fill="var(--char-primary)" />
+        </g>
+      );
+    }
+
+    return (
+      <g filter={`url(#${ids.shadow})`}>
+        <rect x="158" y="161" width="39" height="47" rx="8" fill="#ffffff" />
+        <path d="M165 173H190M165 184H190M165 195H183" stroke="var(--char-primary)" strokeWidth="3" strokeLinecap="round" opacity="0.55" />
+        <circle cx="196" cy="170" r="11" fill="var(--char-secondary)" />
+        <path d="M192 170H200M196 166V174" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
+      </g>
+    );
+  }
+
+  return (
+    <svg
+      className={`answer-character avatar-svg routine-${input.routineType} avatar-${avatarStyle} action-${avatarAction}`}
+      style={style}
+      viewBox="0 0 240 240"
       aria-hidden="true"
     >
-      <span className="character-orb left" />
-      <span className="character-orb right" />
-      <span className="character-spark one" />
-      <span className="character-spark two" />
-      <span className="character-spark three" />
-      <span className="character-back-detail" />
-      <div className="character-head">
-        <span className="character-hair" />
-        <span className="character-hair-shine" />
-        <span className="character-face" />
-        <span className="character-brow left" />
-        <span className="character-brow right" />
-        <span className="character-eye left" />
-        <span className="character-eye right" />
-        <span className="character-cheek left" />
-        <span className="character-cheek right" />
-        <span className="character-smile" />
-        <span className="character-accessory" />
-      </div>
-      <span className="character-arm left" />
-      <span className="character-arm right" />
-      <div className="character-body">
-        <span className="character-collar" />
-        <span className="character-sash" />
-        <span className="character-pattern one" />
-        <span className="character-pattern two" />
-      </div>
-      <span className="character-prop" />
-      <span className="character-secondary-prop" />
-      <span className="character-floor-shadow" />
-      {photoReferenceLoaded ? <span className="reference-glow" /> : null}
-    </div>
+      <defs>
+        <radialGradient id={ids.bg} cx="24%" cy="16%" r="86%">
+          <stop offset="0%" stopColor="var(--char-soft)" />
+          <stop offset="52%" stopColor="var(--char-bg)" />
+          <stop offset="100%" stopColor="#ffffff" />
+        </radialGradient>
+        <linearGradient id={ids.skin} x1="79" x2="158" y1="63" y2="129" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="color-mix(in srgb, var(--char-skin), #ffffff 22%)" />
+          <stop offset="100%" stopColor="var(--char-skin)" />
+        </linearGradient>
+        <linearGradient id={ids.hair} x1="78" x2="164" y1="38" y2="142" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="color-mix(in srgb, var(--char-hair), #ffffff 18%)" />
+          <stop offset="100%" stopColor="var(--char-hair)" />
+        </linearGradient>
+        <linearGradient id={ids.outfit} x1="80" x2="160" y1="140" y2="205" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="color-mix(in srgb, var(--char-primary), #ffffff 18%)" />
+          <stop offset="100%" stopColor="color-mix(in srgb, var(--char-primary), #000000 12%)" />
+        </linearGradient>
+        <filter id={ids.shadow} x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="7" stdDeviation="5" floodColor="#0f172a" floodOpacity="0.16" />
+        </filter>
+        <filter id={ids.glow} x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="var(--char-accent)" floodOpacity="0.45" />
+        </filter>
+      </defs>
+
+      <rect x="8" y="8" width="224" height="224" rx="48" fill={`url(#${ids.bg})`} />
+      <circle cx="48" cy="56" r="28" fill="var(--char-secondary)" opacity="0.17" />
+      <circle cx="196" cy="76" r="35" fill="var(--char-accent)" opacity="0.14" />
+      <circle cx="61" cy="194" r="45" fill="var(--char-primary)" opacity="0.11" />
+      <path d="M43 95C72 73 108 73 135 96C161 119 198 119 216 93" fill="none" stroke="var(--char-secondary)" strokeWidth="3" strokeLinecap="round" opacity="0.22" />
+      <path d="M40 37L44 47L54 51L44 55L40 65L36 55L26 51L36 47Z" fill="var(--char-accent)" filter={`url(#${ids.glow})`} />
+      <path d="M194 36L197 44L205 47L197 50L194 58L191 50L183 47L191 44Z" fill="var(--char-secondary)" opacity="0.88" />
+      <path d="M205 126L208 134L216 137L208 140L205 148L202 140L194 137L202 134Z" fill="var(--char-accent)" opacity="0.75" />
+
+      <ellipse cx="120" cy="207" rx="70" ry="16" fill="#0f172a" opacity="0.12" />
+      <path d="M92 192C91 203 88 211 82 217H106C109 209 110 201 110 192Z" fill="var(--char-primary)" opacity="0.42" />
+      <path d="M130 192C130 202 133 211 138 217H162C154 211 151 202 150 192Z" fill="var(--char-primary)" opacity="0.42" />
+
+      <g filter={`url(#${ids.shadow})`}>
+        <path d="M84 152C69 158 58 174 56 191C55 200 65 207 73 202C81 197 82 181 96 170Z" fill={`url(#${ids.skin})`} />
+        <path d="M156 152C171 158 182 174 184 191C185 200 175 207 167 202C159 197 158 181 144 170Z" fill={`url(#${ids.skin})`} />
+        <circle cx="71" cy="199" r="9" fill={`url(#${ids.skin})`} />
+        <circle cx="169" cy="199" r="9" fill={`url(#${ids.skin})`} />
+        <path d="M78 201C82 163 96 138 120 138C144 138 158 163 162 201Z" fill={`url(#${ids.outfit})`} />
+        <path d="M95 139C103 149 111 154 120 154C129 154 137 149 145 139C138 133 129 130 120 130C111 130 102 133 95 139Z" fill={`url(#${ids.skin})`} />
+        {renderOutfitDetails()}
+      </g>
+
+      {renderProp()}
+
+      <g filter={`url(#${ids.shadow})`}>
+        <circle cx="82" cy="95" r="9" fill={`url(#${ids.skin})`} />
+        <circle cx="158" cy="95" r="9" fill={`url(#${ids.skin})`} />
+        {renderHair()}
+        <path d="M85 87C85 66 98 52 120 52C142 52 155 66 155 87V94C155 116 141 130 120 130C99 130 85 116 85 94Z" fill={`url(#${ids.skin})`} />
+        <path d="M88 78C103 69 119 70 137 77C128 83 109 84 88 78Z" fill="rgba(255,255,255,0.24)" />
+        <path d="M102 90C106 87 111 87 115 90" stroke="#3f2a22" strokeWidth="2.6" strokeLinecap="round" opacity="0.45" />
+        <path d="M125 90C129 87 134 87 138 90" stroke="#3f2a22" strokeWidth="2.6" strokeLinecap="round" opacity="0.45" />
+        <circle cx="109" cy="97" r="4.4" fill="#2f1f1a" />
+        <circle cx="131" cy="97" r="4.4" fill="#2f1f1a" />
+        <circle cx="110.7" cy="95.4" r="1.4" fill="#ffffff" opacity="0.86" />
+        <circle cx="132.7" cy="95.4" r="1.4" fill="#ffffff" opacity="0.86" />
+        <ellipse cx="101" cy="108" rx="8" ry="5" fill="#f472b6" opacity={cheekOpacity} />
+        <ellipse cx="139" cy="108" rx="8" ry="5" fill="#f472b6" opacity={cheekOpacity} />
+        <path d={mouth} fill="none" stroke="#3f2a22" strokeWidth="3" strokeLinecap="round" />
+        <path d="M118 99C116 104 116 108 120 110" fill="none" stroke="#9f6a52" strokeWidth="1.7" strokeLinecap="round" opacity="0.45" />
+        {renderFaceAccessory()}
+      </g>
+    </svg>
   );
+}
+
+function getAvatarAssetPath(
+  input: OnboardingInput,
+  avatarStyle: Exclude<OnboardingInput["avatarStyle"], "auto">
+) {
+  return `/assets/avatars/${getAvatarAgeBucket(input.ageBand)}/${input.routineType}-${avatarStyle}.webp?v=sticker-20260503`;
+}
+
+function getAvatarAgeBucket(ageBand: OnboardingInput["ageBand"]) {
+  if (ageBand === "45+") {
+    return "45-plus";
+  }
+
+  return ageBand;
+}
+
+function renderAvatarActionIcon(action: Exclude<OnboardingInput["avatarAction"], "auto">) {
+  const iconProps = { size: 18, strokeWidth: 2.7, "aria-hidden": true };
+
+  if (action === "studying") {
+    return <BookOpen {...iconProps} />;
+  }
+
+  if (action === "working") {
+    return <Briefcase {...iconProps} />;
+  }
+
+  if (action === "walking") {
+    return <Footprints {...iconProps} />;
+  }
+
+  if (action === "resetting") {
+    return <Home {...iconProps} />;
+  }
+
+  if (action === "resting") {
+    return <Leaf {...iconProps} />;
+  }
+
+  return <ClipboardCheck {...iconProps} />;
+}
+
+function resolveAvatarAction(input: OnboardingInput): Exclude<OnboardingInput["avatarAction"], "auto"> {
+  const actionByRoutine: Record<OnboardingInput["routineType"], Exclude<OnboardingInput["avatarAction"], "auto">> = {
+    student: "studying",
+    "working-professional": "working",
+    homemaker: "resetting",
+    "field-worker": "walking",
+    "business-owner": "planning"
+  };
+
+  return actionByRoutine[input.routineType];
+}
+
+function resolveAvatarStyle(input: OnboardingInput): Exclude<OnboardingInput["avatarStyle"], "auto"> {
+  if (input.avatarStyle !== "auto") {
+    return input.avatarStyle;
+  }
+
+  const name = input.displayName.trim().toLowerCase();
+  const feminineNames = [
+    "ananya",
+    "riya",
+    "meera",
+    "neha",
+    "pooja",
+    "priya",
+    "nisha",
+    "shivani",
+    "navjot",
+    "neerisha",
+    "aarti",
+    "isha",
+    "simran"
+  ];
+  const masculineNames = ["aarav", "arjun", "kabir", "imran", "rohan", "rahul", "aman", "vikram", "aditya"];
+
+  if (feminineNames.some((item) => name.includes(item)) || /[aeiy]a$/.test(name)) {
+    return "feminine";
+  }
+
+  if (masculineNames.some((item) => name.includes(item)) || /[nrtd]$/.test(name)) {
+    return "masculine";
+  }
+
+  return "neutral";
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
@@ -1683,7 +2615,7 @@ function LogoMark({ className = "sparkle-logo", decorative = false }: { classNam
       className={className}
       viewBox="0 0 120 120"
       role={decorative ? undefined : "img"}
-      aria-label={decorative ? undefined : "Habit Ledger logo"}
+      aria-label={decorative ? undefined : copy.logoLabel}
       aria-hidden={decorative ? true : undefined}
     >
       <defs>
@@ -1734,6 +2666,48 @@ function readSavedTrackerState() {
   }
 
   return window.localStorage.getItem(STORAGE_KEY) ?? readCookieBackup() ?? readHistoryBackup();
+}
+
+function maybeRefreshPersonalizedHabits(current: TrackerState, input: OnboardingInput) {
+  const now = new Date().toISOString();
+  const expectedHabits = createPersonalizedHabits(input, now);
+  const currentIds = current.habits.map((habit) => habit.id).join("|");
+  const expectedIds = expectedHabits.map((habit) => habit.id).join("|");
+
+  if (currentIds === expectedIds) {
+    return null;
+  }
+
+  const hasTrackedDays = Object.values(current.days).some(
+    (record) => record.completedHabitIds.length > 0 || Object.keys(record.habitMoods ?? {}).length > 0 || record.note
+  );
+
+  if (hasTrackedDays || !isGeneratedHabitList(current.habits)) {
+    return null;
+  }
+
+  return {
+    ...current,
+    habits: expectedHabits,
+    updatedAt: now
+  };
+}
+
+function isGeneratedHabitList(habits: Habit[]) {
+  const defaultHabitIds = new Set([
+    "wake-early",
+    "water",
+    "steps",
+    "yoga-workout",
+    "healthy-meal",
+    "deep-work",
+    "skill-learning",
+    "budget",
+    "screen-time",
+    "sleep"
+  ]);
+
+  return habits.every((habit) => habit.id.startsWith("personal-") || defaultHabitIds.has(habit.id));
 }
 
 function saveHistoryBackup(serialized: string) {
@@ -1869,6 +2843,31 @@ function localDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function getAnonymousId() {
+  if (typeof window === "undefined") {
+    return "server";
+  }
+
+  const stored = window.localStorage.getItem(ANONYMOUS_ID_KEY);
+  if (stored) {
+    return stored;
+  }
+
+  const next =
+    typeof window.crypto?.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : `anon-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  window.localStorage.setItem(ANONYMOUS_ID_KEY, next);
+  return next;
+}
+
+function formatSyncDate(value: string) {
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
 function dateFromKey(key: string) {
   const [year, month, day] = key.split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -1903,6 +2902,10 @@ function formatPrettyDate(key: string) {
     month: "short",
     day: "numeric"
   }).format(dateFromKey(key));
+}
+
+function cleanDisplayName(value: string) {
+  return value.trim().slice(0, 28);
 }
 
 function weekdayLetter(date: Date) {

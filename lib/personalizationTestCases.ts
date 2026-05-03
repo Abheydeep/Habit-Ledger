@@ -1,14 +1,14 @@
 export type OnboardingInput = {
   displayName: string;
   ageBand: "18-24" | "25-34" | "35-44" | "45+";
+  avatarStyle: "auto" | "feminine" | "masculine" | "neutral";
+  avatarAction: "auto" | "studying" | "working" | "walking" | "planning" | "resetting" | "resting";
   city: string;
   routineType: "student" | "working-professional" | "homemaker" | "field-worker" | "business-owner";
   schedule: string;
   dailyAvailableMinutes: number;
   primaryGoals: string[];
   constraints: string[];
-  preferredTone: "calm" | "direct" | "friendly" | "premium";
-  photoUpload: "yes" | "no";
 };
 
 export type ExpectedPersonalizedHabit = {
@@ -40,14 +40,14 @@ export const personalizationTestCases: PersonalizationTestCase[] = [
     onboarding: {
       displayName: "Riya",
       ageBand: "18-24",
+      avatarStyle: "feminine",
+      avatarAction: "studying",
       city: "Jaipur",
       routineType: "student",
       schedule: "Classes from 10 AM to 4 PM, studies better at night",
       dailyAvailableMinutes: 45,
       primaryGoals: ["exam prep", "better sleep", "less scrolling"],
-      constraints: ["hostel food", "shared room", "late-night phone use"],
-      preferredTone: "friendly",
-      photoUpload: "yes"
+      constraints: ["hostel food", "shared room", "late-night phone use"]
     },
     expectedHabits: [
       {
@@ -101,14 +101,14 @@ export const personalizationTestCases: PersonalizationTestCase[] = [
     onboarding: {
       displayName: "Arjun",
       ageBand: "25-34",
+      avatarStyle: "masculine",
+      avatarAction: "working",
       city: "Bengaluru",
       routineType: "working-professional",
       schedule: "Hybrid job, laptop work from 9:30 AM to 7 PM",
       dailyAvailableMinutes: 30,
       primaryGoals: ["fitness", "focus", "screen balance"],
-      constraints: ["long sitting hours", "late meetings", "food delivery temptation"],
-      preferredTone: "direct",
-      photoUpload: "no"
+      constraints: ["long sitting hours", "late meetings", "food delivery temptation"]
     },
     expectedHabits: [
       {
@@ -162,14 +162,14 @@ export const personalizationTestCases: PersonalizationTestCase[] = [
     onboarding: {
       displayName: "Meera",
       ageBand: "35-44",
+      avatarStyle: "feminine",
+      avatarAction: "resetting",
       city: "Lucknow",
       routineType: "homemaker",
       schedule: "Busy mornings, calmer afternoons, family time in evening",
       dailyAvailableMinutes: 25,
       primaryGoals: ["self-care", "movement", "calmer routine"],
-      constraints: ["family interruptions", "limited alone time", "irregular rest"],
-      preferredTone: "calm",
-      photoUpload: "yes"
+      constraints: ["family interruptions", "limited alone time", "irregular rest"]
     },
     expectedHabits: [
       {
@@ -223,14 +223,14 @@ export const personalizationTestCases: PersonalizationTestCase[] = [
     onboarding: {
       displayName: "Kabir",
       ageBand: "25-34",
+      avatarStyle: "masculine",
+      avatarAction: "walking",
       city: "Mumbai",
       routineType: "field-worker",
       schedule: "On the road most days, timings change daily",
       dailyAvailableMinutes: 20,
       primaryGoals: ["energy", "money tracking", "better sleep"],
-      constraints: ["travel", "heat", "irregular meals", "cash and UPI expenses"],
-      preferredTone: "direct",
-      photoUpload: "no"
+      constraints: ["travel", "heat", "irregular meals", "cash and UPI expenses"]
     },
     expectedHabits: [
       {
@@ -284,14 +284,14 @@ export const personalizationTestCases: PersonalizationTestCase[] = [
     onboarding: {
       displayName: "Ananya",
       ageBand: "25-34",
+      avatarStyle: "feminine",
+      avatarAction: "planning",
       city: "Pune",
       routineType: "business-owner",
       schedule: "Shop from 11 AM to 8:30 PM, admin work after closing",
       dailyAvailableMinutes: 35,
       primaryGoals: ["business discipline", "fitness", "finance clarity"],
-      constraints: ["customer rush", "late closing", "mental fatigue"],
-      preferredTone: "premium",
-      photoUpload: "yes"
+      constraints: ["customer rush", "late closing", "mental fatigue"]
     },
     expectedHabits: [
       {
@@ -326,7 +326,7 @@ export const personalizationTestCases: PersonalizationTestCase[] = [
       }
     ],
     expectedCharacterBrief:
-      "Polished founder avatar with smart casual outfit, blush and emerald accents, minimal shop ledger background, no text in image.",
+      "Polished founder avatar with smart casual outfit, blush and emerald accents, minimal shop planner background, no text in image.",
     sampleDayLog: {
       date: "2026-05-03",
       statuses: {

@@ -17,15 +17,26 @@ type HabitTemplate = Omit<Habit, "order" | "createdAt"> & {
 export const defaultOnboardingInput: OnboardingInput = {
   displayName: "",
   ageBand: "25-34",
+  avatarStyle: "auto",
+  avatarAction: "auto",
   city: "",
   routineType: "working-professional",
   schedule: "",
   dailyAvailableMinutes: 30,
   primaryGoals: ["fitness", "focus", "better sleep"],
   constraints: ["long sitting hours"],
-  preferredTone: "friendly",
-  photoUpload: "no"
 };
+
+export function normalizeOnboardingInput(value: Partial<OnboardingInput> | OnboardingInput): OnboardingInput {
+  return {
+    ...defaultOnboardingInput,
+    ...value,
+    primaryGoals: Array.isArray(value.primaryGoals) ? value.primaryGoals : defaultOnboardingInput.primaryGoals,
+    constraints: Array.isArray(value.constraints) ? value.constraints : defaultOnboardingInput.constraints,
+    avatarStyle: value.avatarStyle ?? "auto",
+    avatarAction: value.avatarAction ?? "auto"
+  };
+}
 
 const templates: HabitTemplate[] = [
   {
@@ -138,13 +149,66 @@ const templates: HabitTemplate[] = [
   }
 ];
 
+const lifeModeHabitTemplates: Record<OnboardingInput["routineType"], HabitTemplate[]> = {
+  student: [
+    modeHabit("study-sprint", "Study sprint", "#7c3aed", "icon:deep-work", "Finish one focused study block", "A real study block beats five anxious tabs."),
+    modeHabit("revision-recall", "Revision recall", "#2563eb", "icon:skill-learning", "Revise yesterday's notes", "Tiny recall sessions make exam week less dramatic."),
+    modeHabit("screen-cutoff", "Phone cutoff", "#dc2626", "icon:screen-time", "No reels in the cutoff window", "The syllabus cannot fight infinite scroll alone."),
+    modeHabit("sleep-window", "Sleep window", "#4f46e5", "icon:sleep", "Protect bedtime", "Your brain also needs charging."),
+    modeHabit("campus-walk", "Campus walk", "#16a34a", "icon:steps", "15-20 min walk", "Movement keeps the study fog away."),
+    modeHabit("water-bottle", "Bottle refill", "#0284c7", "icon:water", "Refill twice", "Hostel survival, but make it hydrated."),
+    modeHabit("better-meal", "Better meal choice", "#f59e0b", "icon:healthy-meal", "One balanced meal", "One decent plate can rescue the day."),
+    modeHabit("quick-reset", "Desk reset", "#475569", "icon:home-reset", "Reset study space", "A clear desk is suspiciously powerful.")
+  ],
+  "working-professional": [
+    modeHabit("focus-block", "Focus block", "#2563eb", "icon:deep-work", "One protected work block", "Meetings can wait outside this little fence."),
+    modeHabit("posture-reset", "Posture reset", "#7c3aed", "icon:yoga-workout", "Three stretch breaks", "Your neck has filed enough complaints."),
+    modeHabit("walk-after-work", "After-work walk", "#16a34a", "icon:steps", "20 min walk", "A clean shutdown button for laptop brain."),
+    modeHabit("planned-meal", "Planned meal", "#f59e0b", "icon:healthy-meal", "One planned meal", "Delivery apps do not get to run the personality."),
+    modeHabit("screen-shutdown", "Screen shutdown", "#dc2626", "icon:screen-time", "No work screen after cutoff", "Even ambition needs office hours."),
+    modeHabit("water-desk", "Desk water", "#0284c7", "icon:water", "2L through the day", "The bottle is the quietest productivity tool."),
+    modeHabit("skill-stack", "Skill stack", "#0891b2", "icon:skill-learning", "20 min skill practice", "Small compounding, less career panic."),
+    modeHabit("sleep-protect", "Sleep protect", "#4f46e5", "icon:sleep", "Keep sleep window", "Tomorrow's focus starts tonight.")
+  ],
+  homemaker: [
+    modeHabit("morning-calm", "Morning calm", "#db2777", "icon:wake-early", "10 quiet minutes", "A tiny pocket of your own before the day fills up."),
+    modeHabit("water-check", "Water check", "#0284c7", "icon:water", "6-8 glasses", "Care also counts when it is for you."),
+    modeHabit("home-reset", "Home reset", "#fb7185", "icon:home-reset", "One 10 min zone", "One corner calmer than before."),
+    modeHabit("me-time-note", "Me-time note", "#9333ea", "icon:read-news", "Write one line", "Proof that your day included you."),
+    modeHabit("gentle-walk", "Gentle walk", "#16a34a", "icon:steps", "15 min walk", "A small walk, not a full production."),
+    modeHabit("stretch-break", "Stretch break", "#7c3aed", "icon:yoga-workout", "5-10 min stretch", "Tiny mobility for a busy body."),
+    modeHabit("balanced-plate", "Balanced plate", "#f59e0b", "icon:healthy-meal", "One balanced plate", "Leftovers can still be a strategy."),
+    modeHabit("family-check", "Family check-in", "#db2777", "icon:family", "One intentional check-in", "Connection, without making it another chore.")
+  ],
+  "field-worker": [
+    modeHabit("carry-water", "Carry water", "#0284c7", "icon:water", "Refill twice", "Travel days punish empty bottles."),
+    modeHabit("meal-timing", "Meal timing", "#f59e0b", "icon:healthy-meal", "One proper meal on time", "Street snacks are not a calendar."),
+    modeHabit("expense-log", "Cash and UPI log", "#ca8a04", "icon:budget", "Log spends before sleep", "Small leaks become visible here."),
+    modeHabit("movement-check", "Movement check", "#16a34a", "icon:steps", "15 min walk or active minutes", "The day moves, but this makes it count."),
+    modeHabit("sun-reset", "Heat reset", "#ea580c", "icon:less-sugar", "Cooling break", "A smarter pause for hot Indian days."),
+    modeHabit("route-plan", "Route plan", "#0284c7", "icon:deep-work", "Plan tomorrow's first stop", "Future you likes fewer surprises."),
+    modeHabit("quick-stretch", "Quick stretch", "#7c3aed", "icon:yoga-workout", "5 min stretch", "Undo a little travel stiffness."),
+    modeHabit("sleep-window", "Sleep window", "#4f46e5", "icon:sleep", "7 hours when possible", "Flexible, because the road is not.")
+  ],
+  "business-owner": [
+    modeHabit("opening-checklist", "Opening checklist", "#0f766e", "icon:deep-work", "Finish before first rush", "A clean start makes the shop feel sharper."),
+    modeHabit("cash-upi-tally", "Cash and UPI tally", "#ca8a04", "icon:budget", "Daily closing tally", "The closing tally should not depend on memory."),
+    modeHabit("inventory-glance", "Inventory glance", "#475569", "icon:home-reset", "Check 5 key items", "Just enough control without overthinking."),
+    modeHabit("customer-followup", "Customer follow-up", "#0891b2", "icon:family", "One useful follow-up", "Relationship capital, logged neatly."),
+    modeHabit("founder-focus", "Founder focus block", "#2563eb", "icon:deep-work", "35 min business block", "Work on the business, not only in it."),
+    modeHabit("walk-reset", "Walk reset", "#16a34a", "icon:steps", "20 min walk", "A moving brain solves better."),
+    modeHabit("planned-meal", "Planned meal", "#f59e0b", "icon:healthy-meal", "One planned meal", "Busy should not mean random."),
+    modeHabit("closing-shutdown", "Closing shutdown", "#4f46e5", "icon:sleep", "Wind down after closing", "The shop closes. So should the mind.")
+  ]
+};
+
 export function createPersonalizedHabits(input: OnboardingInput, now = new Date().toISOString()): Habit[] {
+  const normalized = normalizeOnboardingInput(input);
   const keywords = [
-    input.routineType,
-    ...input.primaryGoals,
-    ...input.constraints,
-    input.schedule,
-    input.preferredTone
+    normalized.routineType,
+    ...normalized.primaryGoals,
+    ...normalized.constraints,
+    normalized.schedule
   ]
     .join(" ")
     .toLowerCase();
@@ -152,36 +216,64 @@ export function createPersonalizedHabits(input: OnboardingInput, now = new Date(
     const fitWords = template.fit.split(/\s+/);
     const score =
       fitWords.reduce((total, word) => total + (keywords.includes(word) ? 2 : 0), 0) +
-      routineBoost(input.routineType, template.id) +
-      goalBoost(input.primaryGoals, template.id) +
-      constraintBoost(input.constraints, template.id) -
+      routineBoost(normalized.routineType, template.id) +
+      goalBoost(normalized.primaryGoals, template.id) +
+      constraintBoost(normalized.constraints, template.id) -
       index / 100;
     return { template, score };
   });
-  const selected = scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 6)
-    .map(({ template }, order) => personalizeHabit(template, input, order, now));
+  const modeTemplates = lifeModeHabitTemplates[normalized.routineType];
+  const rankedGeneral = scored.sort((a, b) => b.score - a.score).map(({ template }) => template);
+  const selected = uniqueTemplates([...modeTemplates, ...rankedGeneral]).slice(0, 10);
 
-  return selected.length > 0 ? selected : templates.slice(0, 6).map((template, order) => personalizeHabit(template, input, order, now));
+  return selected.map((template, order) => personalizeHabit(template, normalized, order, now));
 }
 
-export function createCharacterBrief(input: OnboardingInput, hasPhotoReference: boolean) {
-  const name = cleanName(input.displayName) || "You";
-  const city = input.city.trim() || "your city";
-  const outfit = getOutfit(input);
-  const palette = getPalette(input);
-  const photoLine = hasPhotoReference
-    ? "Use the uploaded photo only as a private visual reference, then delete the original after generation."
-    : "No photo was provided, so design the character from the user's answers, routine, city, goals, tone, and constraints.";
+export function createCharacterBrief(input: OnboardingInput) {
+  const normalized = normalizeOnboardingInput(input);
+  const name = cleanName(normalized.displayName) || "Your avatar";
+  const outfit = getOutfit(normalized);
+  const action = getAvatarAction(normalized);
 
-  return `${name} as a polished habit-tracker character from ${city}, wearing ${outfit}, ${palette}, clean app-sticker style, no text inside image. ${photoLine}`;
+  return `${name} is ${action}, wearing ${outfit}.`;
 }
 
 export function createPersonalizationSummary(input: OnboardingInput) {
-  const name = cleanName(input.displayName) || "Your";
-  const goals = input.primaryGoals.slice(0, 3).join(", ");
-  return `${name} plan: ${input.routineType.replace("-", " ")}, ${input.dailyAvailableMinutes} min/day, focused on ${goals}.`;
+  const normalized = normalizeOnboardingInput(input);
+  const name = cleanName(normalized.displayName) || "Your";
+  const goals = normalized.primaryGoals.slice(0, 3).join(", ");
+  return `${name} plan: ${normalized.routineType.replace("-", " ")}, ${normalized.dailyAvailableMinutes} min/day, focused on ${goals}.`;
+}
+
+function modeHabit(
+  id: string,
+  name: string,
+  color: string,
+  thumbnail: string,
+  target: string,
+  quip: string
+): HabitTemplate {
+  return {
+    id,
+    name,
+    color,
+    thumbnail,
+    target,
+    quip,
+    fit: ""
+  };
+}
+
+function uniqueTemplates(items: HabitTemplate[]) {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = item.id;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
 function personalizeHabit(template: HabitTemplate, input: OnboardingInput, order: number, now: string): Habit {
@@ -283,14 +375,57 @@ function constraintBoost(constraints: string[], templateId: string) {
 
 function getOutfit(input: OnboardingInput) {
   const map: Record<OnboardingInput["routineType"], string> = {
-    student: "a smart casual campus outfit with a neat backpack",
-    "working-professional": "a clean work-casual outfit with comfortable sneakers",
-    homemaker: "a graceful soft kurta-inspired outfit with practical details",
-    "field-worker": "a breathable travel-ready outfit with a sling bag",
-    "business-owner": "a polished founder-style outfit with a ledger accessory"
+    student: "a modern campus outfit with a lavender varsity layer, neat backpack, and notebook details",
+    "working-professional": "a crisp work-casual outfit with a tailored teal jacket, white shirt, and clean sneakers",
+    homemaker: "an elegant soft kurta set with a flowing dupatta, gentle floral details, and practical pockets",
+    "field-worker": "a breathable travel-ready outfit with a smart utility vest, cap, sling bag, and comfortable shoes",
+    "business-owner": "a polished founder-style blazer with ivory shirt, muted gold pin, and planner accessory"
   };
 
   return map[input.routineType];
+}
+
+function getAvatarPresentation(input: OnboardingInput) {
+  const ageMap: Record<OnboardingInput["ageBand"], string> = {
+    "18-24": "young adult features",
+    "25-34": "adult features",
+    "35-44": "mature adult features",
+    "45+": "warm mature features"
+  };
+  const styleMap: Record<OnboardingInput["avatarStyle"], string> = {
+    auto: "presentation chosen softly from the name if clear, otherwise neutral",
+    feminine: "feminine-presenting",
+    masculine: "masculine-presenting",
+    neutral: "gender-neutral presenting"
+  };
+
+  return `${ageMap[input.ageBand]}, ${styleMap[input.avatarStyle]}`;
+}
+
+function getAvatarAction(input: OnboardingInput) {
+  const action = input.avatarAction === "auto" ? actionForRoutine(input.routineType) : input.avatarAction;
+  const map: Record<Exclude<OnboardingInput["avatarAction"], "auto">, string> = {
+    studying: "studying with a notebook and highlighter",
+    working: "working with a laptop and focus notes",
+    walking: "walking with a bottle and compact day bag",
+    planning: "planning with a Win List and pen",
+    resetting: "doing a small home reset with a cup or plant",
+    resting: "resting calmly with a soft self-care prop"
+  };
+
+  return map[action];
+}
+
+function actionForRoutine(routineType: OnboardingInput["routineType"]): Exclude<OnboardingInput["avatarAction"], "auto"> {
+  const map: Record<OnboardingInput["routineType"], Exclude<OnboardingInput["avatarAction"], "auto">> = {
+    student: "studying",
+    "working-professional": "working",
+    homemaker: "resetting",
+    "field-worker": "walking",
+    "business-owner": "planning"
+  };
+
+  return map[routineType];
 }
 
 function getPalette(input: OnboardingInput) {
@@ -299,16 +434,10 @@ function getPalette(input: OnboardingInput) {
     "working-professional": "teal, clean sky blue, and amber workday accents",
     homemaker: "rose, peach, cream, and warm home-stationery accents",
     "field-worker": "sunny orange, fresh green, and practical blue accents",
-    "business-owner": "deep teal, ivory, muted gold, and ledger-green accents"
-  };
-  const toneMap: Record<OnboardingInput["preferredTone"], string> = {
-    calm: "with a soft calm finish",
-    direct: "with sharper high-contrast details",
-    friendly: "with bright friendly highlights",
-    premium: "with a polished premium finish"
+    "business-owner": "deep teal, ivory, muted gold, and focus-green accents"
   };
 
-  return `${modeMap[input.routineType]} ${toneMap[input.preferredTone]}`;
+  return modeMap[input.routineType];
 }
 
 function cleanName(value: string) {
