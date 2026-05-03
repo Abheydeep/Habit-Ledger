@@ -298,6 +298,12 @@ type CompletionCelebration = {
   message: string;
 };
 
+type PerfectDayCelebration = {
+  id: number;
+  tone: string;
+  total: number;
+};
+
 export function HabitTracker() {
   const [tracker, setTracker] = useState<TrackerState>(() => createDefaultState());
   const trackerRef = useRef(tracker);
@@ -308,11 +314,15 @@ export function HabitTracker() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [newHabitThumbnail, setNewHabitThumbnail] = useState(thumbnailOptions[0].src);
+  const [newHabitColor, setNewHabitColor] = useState(colorPalette[0]);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
   const [dayOpen, setDayOpen] = useState(true);
   const [monthOpen, setMonthOpen] = useState(true);
   const [celebration, setCelebration] = useState<CompletionCelebration | null>(null);
   const celebrationTimeoutRef = useRef<number | null>(null);
+  const [perfectDayCelebration, setPerfectDayCelebration] = useState<PerfectDayCelebration | null>(null);
+  const perfectDayTimeoutRef = useRef<number | null>(null);
   const [personalizerOpen, setPersonalizerOpen] = useState(false);
   const [onboarding, setOnboarding] = useState<OnboardingInput>(defaultOnboardingInput);
   const [personalizationSnapshot, setPersonalizationSnapshot] = useState<PersonalizationSnapshot | null>(null);
@@ -495,9 +505,10 @@ export function HabitTracker() {
   const completedCount = completedSet.size;
   const completionPercent =
     activeHabits.length > 0 ? Math.round((completedCount / activeHabits.length) * 100) : 0;
+  const todayKey = localDateKey(new Date());
   const streak = useMemo(
-    () => countStreakEndingAt(selectedDate, tracker, activeHabits),
-    [selectedDate, tracker, activeHabits]
+    () => countStreakEndingAt(todayKey, tracker, activeHabits),
+    [todayKey, tracker, activeHabits]
   );
   const monthProgress = useMemo(
     () => countMonthProgress(monthDays, activeHabits, tracker),
@@ -546,6 +557,52 @@ export function HabitTracker() {
       }, 1500);
     },
     []
+  );
+
+  const triggerPerfectDayCelebration = useCallback((tone: string, total: number) => {
+    if (perfectDayTimeoutRef.current) {
+      window.clearTimeout(perfectDayTimeoutRef.current);
+    }
+
+    setPerfectDayCelebration({
+      id: Date.now(),
+      tone,
+      total
+    });
+
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate([18, 34, 18, 42, 26]);
+    }
+
+    playCompletionSound(tone, "stack");
+
+    perfectDayTimeoutRef.current = window.setTimeout(() => {
+      setPerfectDayCelebration(null);
+    }, 2400);
+  }, []);
+
+  const maybeTriggerPerfectDay = useCallback(
+    (habitId: string, mood: MoodKey, tone: string) => {
+      if (selectedDate !== todayKey || !isCompletionMood(mood) || activeHabits.length === 0) {
+        return;
+      }
+
+      const record = trackerRef.current.days[selectedDate] ?? emptyDay;
+      const alreadyPerfect = activeHabits.every((habit) => isHabitComplete(record, habit.id));
+      const nextRecord: DayRecord = {
+        ...record,
+        completedHabitIds: record.completedHabitIds.includes(habitId)
+          ? record.completedHabitIds
+          : [...record.completedHabitIds, habitId],
+        habitMoods: { ...(record.habitMoods ?? {}), [habitId]: mood }
+      };
+      const nextPerfect = activeHabits.every((habit) => isHabitComplete(nextRecord, habit.id));
+
+      if (!alreadyPerfect && nextPerfect) {
+        triggerPerfectDayCelebration(tone, activeHabits.length);
+      }
+    },
+    [activeHabits, selectedDate, todayKey, triggerPerfectDayCelebration]
   );
 
   const updateHabitMood = useCallback(
@@ -634,11 +691,12 @@ export function HabitTracker() {
       }
 
       const mood = defaultWinMood ?? moodOptions[0];
+      maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
       setHabitMood(habit.id, mood.key);
       setExpandedHabitId(null);
       triggerCompletionCelebration(habit, mood);
     },
-    [clearHabitMood, selectedDate, setHabitMood, triggerCompletionCelebration]
+    [clearHabitMood, maybeTriggerPerfectDay, selectedDate, setHabitMood, triggerCompletionCelebration]
   );
 
   const updateSelectedNote = useCallback(
@@ -665,13 +723,12 @@ export function HabitTracker() {
 
     commit((current) => {
       const order = current.habits.reduce((max, habit) => Math.max(max, habit.order), -1) + 1;
-      const color = colorPalette[order % colorPalette.length];
       const id = `custom-${Date.now().toString(36)}`;
       const habit: Habit = {
         id,
         name,
         order,
-        color,
+        color: newHabitColor,
         thumbnail: newHabitThumbnail,
         quip: "Custom win ready to track.",
         createdAt: new Date().toISOString()
@@ -681,7 +738,8 @@ export function HabitTracker() {
     });
 
     setNewHabitName("");
-  }, [commit, newHabitName, newHabitThumbnail]);
+    setNewHabitColor((current) => colorPalette[(colorPalette.indexOf(current) + 1) % colorPalette.length]);
+  }, [commit, newHabitColor, newHabitName, newHabitThumbnail]);
 
   const updateHabit = useCallback(
     (habitId: string, patch: Partial<Pick<Habit, "name" | "thumbnail" | "color" | "quip">>) => {
@@ -730,12 +788,6 @@ export function HabitTracker() {
 
   const deleteHabit = useCallback(
     (habitId: string) => {
-      const habit = tracker.habits.find((item) => item.id === habitId);
-      const confirmed = window.confirm(`Delete "${habit?.name ?? "this win"}" from The Win List?`);
-      if (!confirmed) {
-        return;
-      }
-
       commit((current) => {
         const days = Object.fromEntries(
           Object.entries(current.days).map(([dateKey, record]) => [
@@ -754,8 +806,9 @@ export function HabitTracker() {
           days
         };
       });
+      setDeleteConfirmId(null);
     },
-    [commit, tracker.habits]
+    [commit]
   );
 
   const exportShareCard = useCallback(async () => {
@@ -1311,6 +1364,9 @@ export function HabitTracker() {
                             type="button"
                             onClick={() => {
                               const shouldCelebrate = habitMood !== mood.key && isCompletionMood(mood.key);
+                              if (shouldCelebrate) {
+                                maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
+                              }
                               updateHabitMood(habit.id, mood.key);
                               if (shouldCelebrate) {
                                 triggerCompletionCelebration(habit, mood);
@@ -1471,6 +1527,14 @@ export function HabitTracker() {
         </section>
       </section>
 
+      {perfectDayCelebration ? (
+        <PerfectDayOverlay
+          key={perfectDayCelebration.id}
+          tone={perfectDayCelebration.tone}
+          total={perfectDayCelebration.total}
+        />
+      ) : null}
+
       {settingsOpen ? (
         <div className="settings-layer" role="dialog" aria-modal="true" aria-labelledby="settings-title">
           <button
@@ -1520,7 +1584,7 @@ export function HabitTracker() {
                 <Download size={18} aria-hidden="true" />
                 <div>
                   <h3>Backup and sharing</h3>
-                  <p>Export a cute progress card, download a JSON backup, or import one from another browser.</p>
+                  <p>Share a progress card, export a JSON backup, or import one from another browser.</p>
                 </div>
               </div>
               <div className="settings-action-grid">
@@ -1530,7 +1594,7 @@ export function HabitTracker() {
                 </button>
                 <button className="backup-button" type="button" onClick={exportBackup}>
                   <Download size={17} aria-hidden="true" />
-                  Backup JSON
+                  Export backup (.json)
                 </button>
                 <label className="backup-button file-button">
                   <FileUp size={17} aria-hidden="true" />
@@ -1609,6 +1673,11 @@ export function HabitTracker() {
                     </button>
                   ))}
                 </div>
+                <ColorSwatches
+                  label="Choose color for new win"
+                  selectedColor={newHabitColor}
+                  onSelect={setNewHabitColor}
+                />
                 <button className="icon-text-button hot full" type="button" onClick={addHabit}>
                   <Plus size={18} aria-hidden="true" />
                   {copy.addWin}
@@ -1643,6 +1712,11 @@ export function HabitTracker() {
                           </button>
                         ))}
                       </div>
+                      <ColorSwatches
+                        label={`Choose color for ${habit.name}`}
+                        selectedColor={habit.color}
+                        onSelect={(color) => updateHabit(habit.id, { color })}
+                      />
                     </div>
                     <div className="editor-actions">
                       <button
@@ -1666,14 +1740,26 @@ export function HabitTracker() {
                       <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
                         {habit.pausedAt ? "Resume" : "Pause"}
                       </button>
-                      <button
-                        className="round-button danger small"
-                        type="button"
-                        onClick={() => deleteHabit(habit.id)}
-                        aria-label={`Delete ${habit.name}`}
-                      >
-                        <Trash2 size={15} aria-hidden="true" />
-                      </button>
+                      {deleteConfirmId === habit.id ? (
+                        <div className="delete-confirm-row" role="group" aria-label={`Confirm delete ${habit.name}`}>
+                          <span>Really delete?</span>
+                          <button type="button" onClick={() => setDeleteConfirmId(null)}>
+                            Cancel
+                          </button>
+                          <button className="danger" type="button" onClick={() => deleteHabit(habit.id)}>
+                            Delete
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="round-button danger small"
+                          type="button"
+                          onClick={() => setDeleteConfirmId(habit.id)}
+                          aria-label={`Delete ${habit.name}`}
+                        >
+                          <Trash2 size={15} aria-hidden="true" />
+                        </button>
+                      )}
                     </div>
                   </article>
                 ))}
@@ -2508,6 +2594,31 @@ function StatCard({ label, value, title }: { label: string; value: string; title
   );
 }
 
+function ColorSwatches({
+  label,
+  selectedColor,
+  onSelect
+}: {
+  label: string;
+  selectedColor: string;
+  onSelect: (color: string) => void;
+}) {
+  return (
+    <div className="color-picker" aria-label={label}>
+      {colorPalette.map((color) => (
+        <button
+          aria-label={`${label}: ${color}`}
+          className={selectedColor === color ? "selected" : ""}
+          key={color}
+          type="button"
+          onClick={() => onSelect(color)}
+          style={{ "--swatch": color } as CSSProperties}
+        />
+      ))}
+    </div>
+  );
+}
+
 function CompletionBurst({ message, tone, onUndo }: { message: string; tone: string; onUndo: () => void }) {
   return (
     <div className="completion-burst" style={{ "--celebration": tone } as CSSProperties} aria-live="polite">
@@ -2524,6 +2635,21 @@ function CompletionBurst({ message, tone, onUndo }: { message: string; tone: str
         {message}
         <button type="button" onClick={onUndo}>Undo</button>
       </span>
+    </div>
+  );
+}
+
+function PerfectDayOverlay({ tone, total }: { tone: string; total: number }) {
+  return (
+    <div className="perfect-day-overlay" style={{ "--celebration": tone } as CSSProperties} aria-live="polite">
+      <div className="perfect-day-card">
+        <span className="perfect-day-sparkle one" />
+        <span className="perfect-day-sparkle two" />
+        <span className="perfect-day-sparkle three" />
+        <Sparkles size={34} aria-hidden="true" />
+        <strong>Perfect day</strong>
+        <p>All {total} wins logged today.</p>
+      </div>
     </div>
   );
 }
@@ -2921,7 +3047,7 @@ function getHeatClass(status: MoodKey | undefined, done: boolean) {
   return "heat-empty";
 }
 
-function playCompletionSound(tone: string) {
+function playCompletionSound(tone: string, mode: "sequence" | "stack" = "sequence") {
   if (typeof window === "undefined") {
     return;
   }
@@ -2947,16 +3073,16 @@ function playCompletionSound(tone: string) {
     [1, 1.25, 1.5].forEach((ratio, index) => {
       const oscillator = audio.createOscillator();
       const gain = audio.createGain();
-      const noteStart = startedAt + index * 0.065;
+      const noteStart = mode === "stack" ? startedAt : startedAt + index * 0.065;
       oscillator.type = index === 0 ? "sine" : "triangle";
       oscillator.frequency.setValueAtTime(baseFrequency * ratio, noteStart);
       gain.gain.setValueAtTime(0.0001, noteStart);
-      gain.gain.exponentialRampToValueAtTime(index === 0 ? 0.2 : 0.12, noteStart + 0.018);
-      gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.22);
+      gain.gain.exponentialRampToValueAtTime(mode === "stack" ? 0.1 : index === 0 ? 0.2 : 0.12, noteStart + 0.018);
+      gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + (mode === "stack" ? 0.34 : 0.22));
       oscillator.connect(gain);
       gain.connect(master);
       oscillator.start(noteStart);
-      oscillator.stop(noteStart + 0.24);
+      oscillator.stop(noteStart + (mode === "stack" ? 0.36 : 0.24));
     });
 
     void audio.resume();
@@ -3068,7 +3194,7 @@ function countStreakEndingAt(dateKey: string, tracker: TrackerState, activeHabit
   while (count < 366) {
     const key = localDateKey(cursor);
     const record = tracker.days[key];
-    const completed = activeHabits.some((habit) => (record ? isHabitComplete(record, habit.id) : false));
+    const completed = activeHabits.every((habit) => (record ? isHabitComplete(record, habit.id) : false));
 
     if (!completed) {
       break;

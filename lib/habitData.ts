@@ -148,8 +148,6 @@ const habitSeeds: Array<Omit<Habit, "createdAt">> = [
   }
 ];
 
-const retiredDefaultHabitIds = new Set(["read-news", "family", "home-reset", "less-sugar"]);
-
 export function createDefaultState(now = new Date().toISOString()): TrackerState {
   return {
     version: 1,
@@ -195,7 +193,6 @@ export function normalizeImportedState(value: TrackerState): TrackerState {
   const fallback = createDefaultState(now);
   const habits = value.habits
     .filter((habit) => habit && typeof habit.id === "string" && typeof habit.name === "string")
-    .filter((habit) => !retiredDefaultHabitIds.has(habit.id))
     .map((habit, index) => ({
       id: habit.id,
       name: habit.name,
