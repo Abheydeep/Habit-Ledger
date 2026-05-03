@@ -8,6 +8,7 @@ import {
   BookOpen,
   Briefcase,
   CalendarDays,
+  ChevronDown,
   Cloud,
   ClipboardCheck,
   CircleDot,
@@ -16,11 +17,13 @@ import {
   Footprints,
   Home,
   Leaf,
+  Moon,
   Plus,
   RotateCcw,
   Settings2,
   ShieldCheck,
   Sparkles,
+  Sun,
   Trash2,
   Wand2,
   X
@@ -33,7 +36,8 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type CSSProperties
+  type CSSProperties,
+  type ReactNode
 } from "react";
 import {
   STORAGE_KEY,
@@ -75,6 +79,7 @@ const colorPalette = ["#0f766e", "#2563eb", "#f59e0b", "#16a34a", "#9333ea", "#d
 const COOKIE_KEY = "pro_habit_tracker_india_v1";
 const HISTORY_STATE_KEY = "proHabitTrackerIndiaStateV1";
 const THEME_STORAGE_KEY = "habit-ledger:theme:v1";
+const COLOR_SCHEME_STORAGE_KEY = "the-win-list:color-scheme:v1";
 const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
 const copy = {
@@ -153,6 +158,8 @@ const appThemes = {
   }
 } as const;
 type AppThemeKey = keyof typeof appThemes;
+type ColorScheme = "light" | "dark";
+type SettingsSectionKey = "personalize" | "backup" | "theme" | "wins" | "sync";
 const themeByRoutine: Record<OnboardingInput["routineType"], AppThemeKey> = {
   student: "study-lavender",
   "working-professional": "fresh-ledger",
@@ -304,6 +311,12 @@ type PerfectDayCelebration = {
   total: number;
 };
 
+type AppToast = {
+  id: number;
+  message: string;
+  tone: "success" | "error";
+};
+
 export function HabitTracker() {
   const [tracker, setTracker] = useState<TrackerState>(() => createDefaultState());
   const trackerRef = useRef(tracker);
@@ -316,6 +329,7 @@ export function HabitTracker() {
   const [newHabitThumbnail, setNewHabitThumbnail] = useState(thumbnailOptions[0].src);
   const [newHabitColor, setNewHabitColor] = useState(colorPalette[0]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
   const [dayOpen, setDayOpen] = useState(true);
   const [monthOpen, setMonthOpen] = useState(true);
@@ -323,10 +337,20 @@ export function HabitTracker() {
   const celebrationTimeoutRef = useRef<number | null>(null);
   const [perfectDayCelebration, setPerfectDayCelebration] = useState<PerfectDayCelebration | null>(null);
   const perfectDayTimeoutRef = useRef<number | null>(null);
+  const [appToast, setAppToast] = useState<AppToast | null>(null);
+  const appToastTimeoutRef = useRef<number | null>(null);
   const [personalizerOpen, setPersonalizerOpen] = useState(false);
   const [onboarding, setOnboarding] = useState<OnboardingInput>(defaultOnboardingInput);
   const [personalizationSnapshot, setPersonalizationSnapshot] = useState<PersonalizationSnapshot | null>(null);
   const [appThemeKey, setAppThemeKey] = useState<AppThemeKey>("fresh-ledger");
+  const [colorScheme, setColorScheme] = useState<ColorScheme>("light");
+  const [expandedSettingsSections, setExpandedSettingsSections] = useState<Record<SettingsSectionKey, boolean>>({
+    personalize: false,
+    backup: false,
+    theme: true,
+    wins: false,
+    sync: false
+  });
   const [cloudSession, setCloudSession] = useState<SupabaseSession | null>(null);
   const [cloudEmail, setCloudEmail] = useState("");
   const [cloudBusy, setCloudBusy] = useState(false);
@@ -379,6 +403,11 @@ export function HabitTracker() {
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (storedTheme && storedTheme in appThemes) {
       setAppThemeKey(storedTheme as AppThemeKey);
+    }
+
+    const storedColorScheme = window.localStorage.getItem(COLOR_SCHEME_STORAGE_KEY);
+    if (storedColorScheme === "light" || storedColorScheme === "dark") {
+      setColorScheme(storedColorScheme);
     }
 
     const today = new Date();
@@ -440,6 +469,12 @@ export function HabitTracker() {
     return () => {
       if (celebrationTimeoutRef.current) {
         window.clearTimeout(celebrationTimeoutRef.current);
+      }
+      if (perfectDayTimeoutRef.current) {
+        window.clearTimeout(perfectDayTimeoutRef.current);
+      }
+      if (appToastTimeoutRef.current) {
+        window.clearTimeout(appToastTimeoutRef.current);
       }
     };
   }, []);
@@ -521,15 +556,27 @@ export function HabitTracker() {
   const appTheme = appThemes[appThemeKey];
   const heroName = cleanDisplayName(activePersonalization.displayName);
   const heroTitle = heroName ? copy.personalizedTitle(heroName) : copy.brand;
+  const isDarkScheme = colorScheme === "dark";
   const appStyle = {
     "--app-primary": appTheme.primary,
     "--app-secondary": appTheme.secondary,
     "--app-accent": appTheme.accent,
-    "--app-bg": appTheme.background,
-    "--app-surface": appTheme.surface,
-    "--app-soft": appTheme.soft,
-    "--app-ink": appTheme.ink
+    "--app-bg": isDarkScheme ? "#0b1512" : appTheme.background,
+    "--app-surface": isDarkScheme ? "#13231f" : appTheme.surface,
+    "--app-soft": isDarkScheme ? "#1f3832" : appTheme.soft,
+    "--app-ink": isDarkScheme ? "#f6fbf8" : appTheme.ink
   } as CSSProperties;
+
+  const showAppToast = useCallback((message: string, tone: AppToast["tone"] = "success") => {
+    if (appToastTimeoutRef.current) {
+      window.clearTimeout(appToastTimeoutRef.current);
+    }
+
+    setAppToast({ id: Date.now(), message, tone });
+    appToastTimeoutRef.current = window.setTimeout(() => {
+      setAppToast(null);
+    }, 2600);
+  }, []);
 
   const triggerCompletionCelebration = useCallback(
     (habit: Habit, moodOption: (typeof moodOptions)[number] | undefined) => {
@@ -818,7 +865,7 @@ export function HabitTracker() {
 
     const context = canvas.getContext("2d");
     if (!context) {
-      window.alert("Could not create the image export.");
+      showAppToast("Could not create the share image.", "error");
       return;
     }
 
@@ -923,12 +970,13 @@ export function HabitTracker() {
 
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png", 0.95));
     if (!blob) {
-      window.alert("Could not finish the image export.");
+      showAppToast("Could not finish the share image.", "error");
       return;
     }
 
     downloadBlob(blob, `${copy.shareImagePrefix}-${selectedDate}.png`);
-  }, [activeHabits, selectedDate, selectedRecord]);
+    showAppToast("Share image saved.", "success");
+  }, [activeHabits, selectedDate, selectedRecord, showAppToast]);
 
   const exportBackup = useCallback(() => {
     const blob = new Blob([JSON.stringify(tracker, null, 2)], { type: "application/json" });
@@ -946,7 +994,7 @@ export function HabitTracker() {
     try {
       const parsed = JSON.parse(await file.text()) as unknown;
       if (!isTrackerState(parsed)) {
-        window.alert(copy.invalidBackup);
+        showAppToast(copy.invalidBackup, "error");
         return;
       }
 
@@ -954,20 +1002,20 @@ export function HabitTracker() {
       trackerRef.current = imported;
       setTracker(imported);
       saveTrackerState(imported);
+      showAppToast("Backup imported.", "success");
     } catch {
-      window.alert("I could not read that backup file.");
+      showAppToast("I could not read that backup file.", "error");
     }
-  }, []);
+  }, [showAppToast]);
 
   const resetTracker = useCallback(() => {
-    const confirmed = window.confirm("Reset all wins, statuses, and notes?");
-    if (confirmed) {
-      const next = createDefaultState();
-      trackerRef.current = next;
-      setTracker(next);
-      saveTrackerState(next);
-    }
-  }, []);
+    const next = createDefaultState();
+    trackerRef.current = next;
+    setTracker(next);
+    saveTrackerState(next);
+    setResetConfirmOpen(false);
+    showAppToast("Win List reset.", "success");
+  }, [showAppToast]);
 
   const selectToday = useCallback(() => {
     const today = new Date();
@@ -1065,6 +1113,15 @@ export function HabitTracker() {
     window.localStorage.setItem(THEME_STORAGE_KEY, themeKey);
   }, []);
 
+  const selectColorScheme = useCallback((scheme: ColorScheme) => {
+    setColorScheme(scheme);
+    window.localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, scheme);
+  }, []);
+
+  const toggleSettingsSection = useCallback((section: SettingsSectionKey) => {
+    setExpandedSettingsSections((current) => ({ ...current, [section]: !current[section] }));
+  }, []);
+
   const updateTermsAcceptance = useCallback((accepted: boolean) => {
     setConsents(() => {
       const next: ConsentState = {
@@ -1148,11 +1205,6 @@ export function HabitTracker() {
       return;
     }
 
-    const confirmed = window.confirm("Replace this browser's Win List with the cloud copy?");
-    if (!confirmed) {
-      return;
-    }
-
     setCloudBusy(true);
     setCloudMessage("Restoring from Supabase...");
     try {
@@ -1189,7 +1241,7 @@ export function HabitTracker() {
   }, []);
 
   return (
-    <main className={`tracker-shell theme-${appThemeKey}`} style={appStyle}>
+    <main className={`tracker-shell theme-${appThemeKey} scheme-${colorScheme}`} style={appStyle}>
       <section className="tracker-hero" aria-labelledby="tracker-title">
         <div className="sparkle-field" aria-hidden="true">
           <span />
@@ -1214,16 +1266,22 @@ export function HabitTracker() {
             </div>
           </div>
           <div className="hero-copy">
-            <div
+            <button
               className="eyebrow mode-chip"
+              type="button"
+              onClick={() => setPersonalizerOpen(true)}
               title={activeModeTheme.microcopy}
               aria-label={`${activeModeTheme.label}. ${activeModeTheme.microcopy}`}
             >
               <CircleDot size={16} aria-hidden="true" />
               {activeModeTheme.label}
-            </div>
+            </button>
             <h1 id="tracker-title">{heroTitle}</h1>
             <p>{copy.tagline}</p>
+          </div>
+          <div className="mobile-hero-status" aria-label={`${formatPrettyDate(selectedDate)} progress ${completionPercent}%`}>
+            <span>{formatPrettyDate(selectedDate)}</span>
+            <strong>{completionPercent}%</strong>
           </div>
         </div>
 
@@ -1344,14 +1402,14 @@ export function HabitTracker() {
                         type="button"
                         onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
                         aria-expanded={moodMenuOpen}
-                        aria-label={`Choose status for ${habit.name}`}
+                        aria-label={`${done || moodOption ? "Change" : "Choose"} status for ${habit.name}`}
                       >
                         {moodOption ? (
                           <img src={assetUrl(moodOption.src)} alt="" />
                         ) : (
                           <CircleDot size={16} aria-hidden="true" />
                         )}
-                        <span>{moodOption ? moodOption.label : "Status"}</span>
+                        <span>{done || moodOption ? "Change" : "Status"}</span>
                       </button>
                     </div>
                     {moodMenuOpen ? (
@@ -1535,6 +1593,8 @@ export function HabitTracker() {
         />
       ) : null}
 
+      {appToast ? <AppToastMessage key={appToast.id} message={appToast.message} tone={appToast.tone} /> : null}
+
       {settingsOpen ? (
         <div className="settings-layer" role="dialog" aria-modal="true" aria-labelledby="settings-title">
           <button
@@ -1558,14 +1618,14 @@ export function HabitTracker() {
               </button>
             </div>
 
-            <section className="settings-section">
-              <div className="settings-section-title">
-                <Wand2 size={18} aria-hidden="true" />
-                <div>
-                  <h3>Personalize</h3>
-                  <p>Change the life mode, character, theme, and generated daily wins.</p>
-                </div>
-              </div>
+            <SettingsAccordionSection
+              id="personalize"
+              title="Personalize"
+              description="Change the life mode, character, theme, and generated daily wins."
+              icon={<Wand2 size={18} aria-hidden="true" />}
+              expanded={expandedSettingsSections.personalize}
+              onToggle={toggleSettingsSection}
+            >
               <button
                 className="icon-text-button hot full"
                 type="button"
@@ -1577,16 +1637,16 @@ export function HabitTracker() {
                 <Wand2 size={18} aria-hidden="true" />
                 {copy.buildCta}
               </button>
-            </section>
+            </SettingsAccordionSection>
 
-            <section className="settings-section">
-              <div className="settings-section-title">
-                <Download size={18} aria-hidden="true" />
-                <div>
-                  <h3>Backup and sharing</h3>
-                  <p>Share a progress card, export a JSON backup, or import one from another browser.</p>
-                </div>
-              </div>
+            <SettingsAccordionSection
+              id="backup"
+              title="Backup and sharing"
+              description="Share a progress card, export a JSON backup, or import one from another browser."
+              icon={<Download size={18} aria-hidden="true" />}
+              expanded={expandedSettingsSections.backup}
+              onToggle={toggleSettingsSection}
+            >
               <div className="settings-action-grid">
                 <button className="backup-button" type="button" onClick={exportShareCard}>
                   <Download size={17} aria-hidden="true" />
@@ -1602,15 +1662,35 @@ export function HabitTracker() {
                   <input type="file" accept="application/json" onChange={importBackup} />
                 </label>
               </div>
-            </section>
+            </SettingsAccordionSection>
 
-            <section className="settings-section">
-              <div className="settings-section-title">
-                <Sparkles size={18} aria-hidden="true" />
-                <div>
-                  <h3>Theme</h3>
-                  <p>Pick the visual mood for the whole app.</p>
-                </div>
+            <SettingsAccordionSection
+              id="theme"
+              title="Theme"
+              description="Pick the visual mood and choose light or dark mode."
+              icon={<Sparkles size={18} aria-hidden="true" />}
+              expanded={expandedSettingsSections.theme}
+              onToggle={toggleSettingsSection}
+            >
+              <div className="appearance-toggle" aria-label="Choose light or dark mode">
+                <button
+                  className={colorScheme === "light" ? "selected" : ""}
+                  type="button"
+                  onClick={() => selectColorScheme("light")}
+                  aria-pressed={colorScheme === "light"}
+                >
+                  <Sun size={17} aria-hidden="true" />
+                  Light
+                </button>
+                <button
+                  className={colorScheme === "dark" ? "selected" : ""}
+                  type="button"
+                  onClick={() => selectColorScheme("dark")}
+                  aria-pressed={colorScheme === "dark"}
+                >
+                  <Moon size={17} aria-hidden="true" />
+                  Dark
+                </button>
               </div>
               <div className="theme-picker compact" aria-label="Choose app theme">
                 {(Object.entries(appThemes) as Array<[AppThemeKey, (typeof appThemes)[AppThemeKey]]>).map(
@@ -1641,16 +1721,16 @@ export function HabitTracker() {
                   )
                 )}
               </div>
-            </section>
+            </SettingsAccordionSection>
 
-            <section className="settings-section">
-              <div className="settings-section-title">
-                <Settings2 size={18} aria-hidden="true" />
-                <div>
-                  <h3>{copy.winsAndIcons}</h3>
-                  <p>Add, pause, reorder, and rename the daily must-do wins.</p>
-                </div>
-              </div>
+            <SettingsAccordionSection
+              id="wins"
+              title={copy.winsAndIcons}
+              description="Add, pause, reorder, and rename the daily must-do wins."
+              icon={<Settings2 size={18} aria-hidden="true" />}
+              expanded={expandedSettingsSections.wins}
+              onToggle={toggleSettingsSection}
+            >
               <div className="add-habit-box">
                 <label>
                   <span>{copy.newWin}</span>
@@ -1765,13 +1845,34 @@ export function HabitTracker() {
                 ))}
               </div>
 
-              <button className="reset-button" type="button" onClick={resetTracker}>
+              <button className="reset-button" type="button" onClick={() => setResetConfirmOpen(true)}>
                 <RotateCcw size={17} aria-hidden="true" />
                 Reset Win List
               </button>
-            </section>
+              {resetConfirmOpen ? (
+                <div className="inline-warning-card" role="alert">
+                  <strong>Reset this browser?</strong>
+                  <p>This clears wins, statuses, and notes from this local copy.</p>
+                  <div>
+                    <button type="button" onClick={() => setResetConfirmOpen(false)}>
+                      Cancel
+                    </button>
+                    <button className="danger" type="button" onClick={resetTracker}>
+                      Yes, reset
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </SettingsAccordionSection>
 
-            <section className="settings-section">
+            <SettingsAccordionSection
+              id="sync"
+              title="Sync"
+              description="Sign in only when you want cloud backup across devices."
+              icon={<Cloud size={18} aria-hidden="true" />}
+              expanded={expandedSettingsSections.sync}
+              onToggle={toggleSettingsSection}
+            >
               <CloudSyncPanel
                 configured={isSupabaseConfigured()}
                 session={cloudSession}
@@ -1787,7 +1888,7 @@ export function HabitTracker() {
                 onRestore={handleCloudRestore}
                 onSignOut={handleCloudSignOut}
               />
-            </section>
+            </SettingsAccordionSection>
           </aside>
         </div>
       ) : null}
@@ -1821,6 +1922,52 @@ type CloudSyncPanelProps = {
   onSignOut: () => void;
 };
 
+function SettingsAccordionSection({
+  id,
+  title,
+  description,
+  icon,
+  expanded,
+  onToggle,
+  children
+}: {
+  id: SettingsSectionKey;
+  title: string;
+  description: string;
+  icon: ReactNode;
+  expanded: boolean;
+  onToggle: (section: SettingsSectionKey) => void;
+  children: ReactNode;
+}) {
+  const bodyId = `settings-${id}-body`;
+
+  return (
+    <section className={`settings-section${expanded ? " expanded" : " collapsed"}`}>
+      <button
+        className="settings-section-toggle"
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={bodyId}
+        onClick={() => onToggle(id)}
+      >
+        <span className="settings-section-title">
+          {icon}
+          <span>
+            <strong>{title}</strong>
+            <small>{description}</small>
+          </span>
+        </span>
+        <ChevronDown className="settings-section-chevron" size={18} aria-hidden="true" />
+      </button>
+      {expanded ? (
+        <div className="settings-section-body" id={bodyId}>
+          {children}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function CloudSyncPanel({
   configured,
   session,
@@ -1838,6 +1985,7 @@ function CloudSyncPanel({
 }: CloudSyncPanelProps) {
   const isSignedIn = Boolean(session);
   const termsAccepted = consents.sync;
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
 
   return (
     <div className="cloud-panel">
@@ -1916,10 +2064,31 @@ function CloudSyncPanel({
                 <Cloud size={18} aria-hidden="true" />
                 Upload local Win List
               </button>
-              <button className="backup-button" type="button" onClick={onRestore} disabled={busy}>
+              <button className="backup-button" type="button" onClick={() => setRestoreConfirmOpen(true)} disabled={busy}>
                 <Download size={17} aria-hidden="true" />
                 Restore cloud copy
               </button>
+              {restoreConfirmOpen ? (
+                <div className="inline-warning-card" role="alert">
+                  <strong>Replace this browser?</strong>
+                  <p>The cloud copy will overwrite the Win List saved on this device.</p>
+                  <div>
+                    <button type="button" onClick={() => setRestoreConfirmOpen(false)}>
+                      Cancel
+                    </button>
+                    <button
+                      className="danger"
+                      type="button"
+                      onClick={() => {
+                        setRestoreConfirmOpen(false);
+                        onRestore();
+                      }}
+                    >
+                      Restore
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <button className="tiny-text-button" type="button" onClick={onSignOut} disabled={busy}>
                 Sign out
               </button>
@@ -2635,6 +2804,15 @@ function CompletionBurst({ message, tone, onUndo }: { message: string; tone: str
         {message}
         <button type="button" onClick={onUndo}>Undo</button>
       </span>
+    </div>
+  );
+}
+
+function AppToastMessage({ message, tone }: { message: string; tone: AppToast["tone"] }) {
+  return (
+    <div className={`app-toast ${tone}`} role="status" aria-live="polite">
+      <Sparkles size={16} aria-hidden="true" />
+      <span>{message}</span>
     </div>
   );
 }
