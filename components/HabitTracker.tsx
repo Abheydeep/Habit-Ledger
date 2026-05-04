@@ -82,6 +82,7 @@ const HISTORY_STATE_KEY = "proHabitTrackerIndiaStateV1";
 const THEME_STORAGE_KEY = "habit-ledger:theme:v1";
 const COLOR_SCHEME_STORAGE_KEY = "the-win-list:color-scheme:v1";
 const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
+const SETTINGS_SECTION_STORAGE_KEY = "the-win-list:settings-section:v1";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
 const copy = {
   brand: "The Win List",
@@ -161,6 +162,43 @@ const appThemes = {
 type AppThemeKey = keyof typeof appThemes;
 type ColorScheme = "light" | "dark";
 type SettingsSectionKey = "personalize" | "backup" | "theme" | "wins" | "sync";
+type PersonalizerStep = "intro" | "about" | "goals" | "preview";
+type DayPartKey = "morning" | "daytime" | "evening";
+type AnalyticsInsight = {
+  label: string;
+  value: string;
+  detail: string;
+};
+type AnalyticsSummary = {
+  sentence: string;
+  action: {
+    title: string;
+    detail: string;
+  };
+  insights: AnalyticsInsight[];
+};
+const collapsedSettingsSections: Record<SettingsSectionKey, boolean> = {
+  personalize: false,
+  backup: false,
+  theme: false,
+  wins: false,
+  sync: false
+};
+const personalizerFlowSteps: Array<{ key: Exclude<PersonalizerStep, "intro">; label: string }> = [
+  { key: "about", label: "About" },
+  { key: "goals", label: "Goals" },
+  { key: "preview", label: "Preview" }
+];
+const dayPartLabels: Record<DayPartKey, string> = {
+  morning: "Morning",
+  daytime: "Daytime",
+  evening: "Evening"
+};
+const dayPartMicrocopy: Record<DayPartKey, string> = {
+  morning: "Start clean",
+  daytime: "Protect focus",
+  evening: "Close gently"
+};
 const themeByRoutine: Record<OnboardingInput["routineType"], AppThemeKey> = {
   student: "study-lavender",
   "working-professional": "fresh-ledger",
@@ -344,17 +382,13 @@ export function HabitTracker() {
   const noteSavedTimerRef = useRef<number | null>(null);
   const noteSavedHideTimerRef = useRef<number | null>(null);
   const [personalizerOpen, setPersonalizerOpen] = useState(false);
+  const [personalizerStep, setPersonalizerStep] = useState<PersonalizerStep>("intro");
   const [onboarding, setOnboarding] = useState<OnboardingInput>(defaultOnboardingInput);
   const [personalizationSnapshot, setPersonalizationSnapshot] = useState<PersonalizationSnapshot | null>(null);
   const [appThemeKey, setAppThemeKey] = useState<AppThemeKey>("fresh-ledger");
   const [colorScheme, setColorScheme] = useState<ColorScheme>("light");
-  const [expandedSettingsSections, setExpandedSettingsSections] = useState<Record<SettingsSectionKey, boolean>>({
-    personalize: false,
-    backup: false,
-    theme: true,
-    wins: false,
-    sync: false
-  });
+  const [expandedSettingsSections, setExpandedSettingsSections] =
+    useState<Record<SettingsSectionKey, boolean>>(collapsedSettingsSections);
   const [cloudSession, setCloudSession] = useState<SupabaseSession | null>(null);
   const [cloudEmail, setCloudEmail] = useState("");
   const [cloudBusy, setCloudBusy] = useState(false);
@@ -401,6 +435,7 @@ export function HabitTracker() {
         window.localStorage.removeItem(PERSONALIZATION_STORAGE_KEY);
       }
     } else {
+      setPersonalizerStep("intro");
       setPersonalizerOpen(true);
     }
 
@@ -414,6 +449,11 @@ export function HabitTracker() {
       setColorScheme(storedColorScheme);
     } else if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
       setColorScheme("dark");
+    }
+
+    const storedSettingsSection = window.localStorage.getItem(SETTINGS_SECTION_STORAGE_KEY);
+    if (isSettingsSectionKey(storedSettingsSection)) {
+      setExpandedSettingsSections({ ...collapsedSettingsSections, [storedSettingsSection]: true });
     }
 
     const today = new Date();
@@ -538,6 +578,7 @@ export function HabitTracker() {
     [tracker.habits]
   );
   const activeHabits = useMemo(() => sortedHabits.filter((habit) => !habit.pausedAt), [sortedHabits]);
+  const dayPartGroups = useMemo(() => groupHabitsByDayPart(activeHabits), [activeHabits]);
   const monthDays = useMemo(() => getMonthDays(visibleMonth), [visibleMonth]);
   const selectedRecord = tracker.days[selectedDate] ?? emptyDay;
   const completedSet = useMemo(
@@ -561,6 +602,11 @@ export function HabitTracker() {
     () => countMonthProgress(monthDays, activeHabits, tracker),
     [monthDays, activeHabits, tracker]
   );
+  const analyticsSummary = useMemo(
+    () => getAnalyticsSummary(monthDays, activeHabits, tracker, todayKey, streak),
+    [monthDays, activeHabits, tracker, todayKey, streak]
+  );
+  const analyticsInsights = analyticsSummary.insights;
   const streakNudge = getStreakNudge(streak, completedCount, activeHabits.length);
   const shouldShowPersonalizer = personalizerOpen;
   const activePersonalization = personalizationSnapshot?.input ?? onboarding;
@@ -573,9 +619,9 @@ export function HabitTracker() {
     "--app-primary": appTheme.primary,
     "--app-secondary": appTheme.secondary,
     "--app-accent": appTheme.accent,
-    "--app-bg": isDarkScheme ? "#0b1512" : appTheme.background,
-    "--app-surface": isDarkScheme ? "#13231f" : appTheme.surface,
-    "--app-soft": isDarkScheme ? "#1f3832" : appTheme.soft,
+    "--app-bg": isDarkScheme ? "#111c19" : appTheme.background,
+    "--app-surface": isDarkScheme ? "#1a2925" : appTheme.surface,
+    "--app-soft": isDarkScheme ? "#263d36" : appTheme.soft,
     "--app-ink": isDarkScheme ? "#e4f5ef" : appTheme.ink
   } as CSSProperties;
 
@@ -1131,6 +1177,7 @@ export function HabitTracker() {
     setAppThemeKey(nextTheme);
     setExpandedHabitId(null);
     setDayOpen(true);
+    setPersonalizerStep("about");
     setPersonalizerOpen(false);
   }, [onboarding]);
 
@@ -1145,7 +1192,16 @@ export function HabitTracker() {
   }, []);
 
   const toggleSettingsSection = useCallback((section: SettingsSectionKey) => {
-    setExpandedSettingsSections((current) => ({ ...current, [section]: !current[section] }));
+    setExpandedSettingsSections((current) => {
+      const willOpen = !current[section];
+      if (willOpen) {
+        window.localStorage.setItem(SETTINGS_SECTION_STORAGE_KEY, section);
+        return { ...collapsedSettingsSections, [section]: true };
+      }
+
+      window.localStorage.removeItem(SETTINGS_SECTION_STORAGE_KEY);
+      return collapsedSettingsSections;
+    });
   }, []);
 
   const updateTermsAcceptance = useCallback((accepted: boolean) => {
@@ -1295,7 +1351,10 @@ export function HabitTracker() {
             <button
               className="eyebrow mode-chip"
               type="button"
-              onClick={() => setPersonalizerOpen(true)}
+              onClick={() => {
+                setPersonalizerStep("about");
+                setPersonalizerOpen(true);
+              }}
               title={activeModeTheme.microcopy}
               aria-label={`${activeModeTheme.label}. ${activeModeTheme.microcopy}`}
             >
@@ -1349,9 +1408,11 @@ export function HabitTracker() {
           <aside className="settings-drawer personalization-drawer">
             <PersonalizerPanel
               isOpen={personalizerOpen}
+              step={personalizerStep}
               onboarding={onboarding}
               snapshot={personalizationSnapshot}
               onToggle={() => setPersonalizerOpen(false)}
+              onStepChange={setPersonalizerStep}
               onUpdate={updateOnboarding}
               onToggleListItem={toggleOnboardingListItem}
               onApply={applyPersonalizedPlan}
@@ -1371,6 +1432,16 @@ export function HabitTracker() {
                 <h2 id="today-title">{formatPrettyDate(selectedDate)}</h2>
               </div>
             </div>
+            <button
+              className="section-collapse-button"
+              type="button"
+              onClick={() => setDayOpen((open) => !open)}
+              aria-expanded={dayOpen}
+              aria-label={dayOpen ? "Hide day plan" : "Open day plan"}
+            >
+              <ChevronDown size={18} aria-hidden="true" />
+              <span>{dayOpen ? "Hide" : "Open"}</span>
+            </button>
             <div className="progress-ring" style={{ "--progress": `${completionPercent}%` } as CSSProperties}>
               <span>{completionPercent}%</span>
             </div>
@@ -1388,92 +1459,118 @@ export function HabitTracker() {
 
           <p className="streak-nudge">{streakNudge}</p>
 
-          <button className="day-toggle" type="button" onClick={() => setDayOpen((open) => !open)}>
-            <CircleDot size={17} aria-hidden="true" />
-            {dayOpen ? "Hide day plan" : "Open day plan"}
-          </button>
+          <div className="mobile-collapse-row">
+            <button
+              className="section-collapse-button mobile"
+              type="button"
+              onClick={() => setDayOpen((open) => !open)}
+              aria-expanded={dayOpen}
+              aria-label={dayOpen ? "Hide day plan" : "Open day plan"}
+            >
+              <ChevronDown size={18} aria-hidden="true" />
+              <span>{dayOpen ? "Hide day plan" : "Open day plan"}</span>
+            </button>
+          </div>
 
           <div className="day-panel-content">
             <div className="checklist" aria-label={copy.todayWins}>
-              {activeHabits.map((habit) => {
-                const done = completedSet.has(habit.id);
-                const habitMood = selectedRecord.habitMoods?.[habit.id];
-                const moodOption = moodOptions.find((item) => item.key === habitMood);
-                const moodMenuOpen = expandedHabitId === habit.id;
+              {dayPartGroups.map((group) => {
+                const groupCompleted = group.habits.filter((habit) => completedSet.has(habit.id)).length;
                 return (
-                  <article
-                    className={`habit-card${done ? " done" : ""}${moodMenuOpen ? " expanded" : ""}${
-                      celebration?.habitId === habit.id ? " celebrating" : ""
-                    }`}
-                    key={habit.id}
-                    style={{ "--habit": habit.color } as CSSProperties}
-                  >
-                    <div className="habit-card-main">
-                      <button
-                        className="habit-win-button"
-                        type="button"
-                        onClick={() => toggleHabitWin(habit)}
-                        aria-label={done ? `Undo ${habit.name} for ${formatPrettyDate(selectedDate)}` : `Mark ${habit.name} as won`}
-                      >
-                        <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
-                        <span className="habit-card-copy">
-                          <h3>{habit.name}</h3>
-                          <p>{habit.quip}</p>
-                        </span>
-                        <span className="tap-hint">{done ? "Won today" : "Tap to win"}</span>
-                      </button>
-                      <button
-                        className={`mood-preview${moodOption ? " selected" : ""}`}
-                        style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
-                        type="button"
-                        onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
-                        aria-expanded={moodMenuOpen}
-                        aria-label={`${done || moodOption ? "Change" : "Choose"} status for ${habit.name}`}
-                      >
-                        {moodOption ? (
-                          <img src={assetUrl(moodOption.src)} alt="" />
-                        ) : (
-                          <CircleDot size={16} aria-hidden="true" />
-                        )}
-                        <span>{done || moodOption ? "Change" : "Status"}</span>
-                      </button>
-                    </div>
-                    {moodMenuOpen ? (
-                      <div className="activity-mood-panel" aria-label={`Win status choices for ${habit.name}`}>
-                        {moodOptions.map((mood) => (
-                          <button
-                            className={`mood-sticker${habitMood === mood.key ? " selected" : ""}`}
-                            key={mood.key}
-                            style={{ "--mood": mood.tone } as CSSProperties}
-                            type="button"
-                            onClick={() => {
-                              const shouldCelebrate = habitMood !== mood.key && isCompletionMood(mood.key);
-                              if (shouldCelebrate) {
-                                maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
-                              }
-                              updateHabitMood(habit.id, mood.key);
-                              if (shouldCelebrate) {
-                                triggerCompletionCelebration(habit, mood);
-                              }
-                              setExpandedHabitId(null);
-                            }}
-                            aria-label={`${mood.label} status for ${habit.name}`}
-                          >
-                            <img src={assetUrl(mood.src)} alt="" />
-                            <small>{mood.label}</small>
-                          </button>
-                        ))}
+                  <section className="day-group" key={group.key} aria-label={`${dayPartLabels[group.key]} wins`}>
+                    <div className="day-group-header">
+                      <div>
+                        <span>{dayPartLabels[group.key]}</span>
+                        <small>{dayPartMicrocopy[group.key]}</small>
                       </div>
-                    ) : null}
-                    {celebration?.habitId === habit.id ? (
-                      <CompletionBurst
-                        key={celebration.id}
-                        message={celebration.message}
-                        tone={celebration.tone}
-                        onUndo={() => clearHabitMood(habit.id)}
-                      />
-                    ) : null}
-                  </article>
+                      <strong>
+                        {groupCompleted}/{group.habits.length}
+                      </strong>
+                    </div>
+                    <div className="day-group-list">
+                      {group.habits.map((habit) => {
+                        const done = completedSet.has(habit.id);
+                        const habitMood = selectedRecord.habitMoods?.[habit.id];
+                        const moodOption = moodOptions.find((item) => item.key === habitMood);
+                        const moodMenuOpen = expandedHabitId === habit.id;
+                        return (
+                          <article
+                            className={`habit-card${done ? " done" : ""}${moodMenuOpen ? " expanded" : ""}${
+                              celebration?.habitId === habit.id ? " celebrating" : ""
+                            }`}
+                            key={habit.id}
+                            style={{ "--habit": habit.color } as CSSProperties}
+                          >
+                            <div className="habit-card-main">
+                              <button
+                                className="habit-win-button"
+                                type="button"
+                                onClick={() => toggleHabitWin(habit)}
+                                aria-label={done ? `Undo ${habit.name} for ${formatPrettyDate(selectedDate)}` : `Mark ${habit.name} as won`}
+                              >
+                                <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
+                                <span className="habit-card-copy">
+                                  <h3>{habit.name}</h3>
+                                  <p>{habit.quip}</p>
+                                </span>
+                                <span className="tap-hint">{done ? "Won today" : "Tap to win"}</span>
+                              </button>
+                              <button
+                                className={`mood-preview${moodOption ? " selected" : ""}`}
+                                style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
+                                type="button"
+                                onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
+                                aria-expanded={moodMenuOpen}
+                                aria-label={`${done || moodOption ? "Change" : "Choose"} status for ${habit.name}`}
+                              >
+                                {moodOption ? (
+                                  <img src={assetUrl(moodOption.src)} alt="" />
+                                ) : (
+                                  <CircleDot size={16} aria-hidden="true" />
+                                )}
+                                <span>{done || moodOption ? "Edit" : "Status"}</span>
+                              </button>
+                            </div>
+                            {moodMenuOpen ? (
+                              <div className="activity-mood-panel" aria-label={`Win status choices for ${habit.name}`}>
+                                {moodOptions.map((mood) => (
+                                  <button
+                                    className={`mood-sticker${habitMood === mood.key ? " selected" : ""}`}
+                                    key={mood.key}
+                                    style={{ "--mood": mood.tone } as CSSProperties}
+                                    type="button"
+                                    onClick={() => {
+                                      const shouldCelebrate = habitMood !== mood.key && isCompletionMood(mood.key);
+                                      if (shouldCelebrate) {
+                                        maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
+                                      }
+                                      updateHabitMood(habit.id, mood.key);
+                                      if (shouldCelebrate) {
+                                        triggerCompletionCelebration(habit, mood);
+                                      }
+                                      setExpandedHabitId(null);
+                                    }}
+                                    aria-label={`${mood.label} status for ${habit.name}`}
+                                  >
+                                    <img src={assetUrl(mood.src)} alt="" />
+                                    <small>{mood.label}</small>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
+                            {celebration?.habitId === habit.id ? (
+                              <CompletionBurst
+                                key={celebration.id}
+                                message={celebration.message}
+                                tone={celebration.tone}
+                                onUndo={() => clearHabitMood(habit.id)}
+                              />
+                            ) : null}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
                 );
               })}
             </div>
@@ -1521,14 +1618,34 @@ export function HabitTracker() {
             >
               <ArrowRight size={18} aria-hidden="true" />
             </button>
+            <button
+              className="section-collapse-button month"
+              type="button"
+              onClick={() => setMonthOpen((open) => !open)}
+              aria-expanded={monthOpen}
+              aria-label={monthOpen ? "Hide monthly grid" : "Show monthly grid"}
+            >
+              <ChevronDown size={18} aria-hidden="true" />
+              <span>{monthOpen ? "Hide" : "Show"}</span>
+            </button>
           </div>
 
-          <button className="month-toggle" type="button" onClick={() => setMonthOpen((open) => !open)}>
-            <CalendarDays size={17} aria-hidden="true" />
-            {monthOpen ? "Hide monthly grid" : "Show monthly grid"}
-          </button>
-
           <div className="month-panel-content">
+            <p className="analytics-narrative">{analyticsSummary.sentence}</p>
+            <div className="analytics-action-card" aria-label="Recommended next action">
+              <span>Next best move</span>
+              <strong>{analyticsSummary.action.title}</strong>
+              <p>{analyticsSummary.action.detail}</p>
+            </div>
+            <div className="analytics-insights" aria-label="Monthly insights">
+              {analyticsInsights.map((insight) => (
+                <article className="insight-card" key={insight.label}>
+                  <span>{insight.label}</span>
+                  <strong>{insight.value}</strong>
+                  <p>{insight.detail}</p>
+                </article>
+              ))}
+            </div>
             <div className="heatmap-summary">
               <div>
                 <span className="section-kicker">Analytics</span>
@@ -1643,8 +1760,8 @@ export function HabitTracker() {
                   <h2 id="settings-title">Tune The Win List</h2>
                 </div>
               </div>
-              <button className="round-button" type="button" onClick={() => setSettingsOpen(false)} aria-label="Close">
-                <X size={18} aria-hidden="true" />
+              <button className="drawer-done-button" type="button" onClick={() => setSettingsOpen(false)}>
+                Done
               </button>
             </div>
 
@@ -1661,6 +1778,7 @@ export function HabitTracker() {
                 type="button"
                 onClick={() => {
                   setSettingsOpen(false);
+                  setPersonalizerStep("about");
                   setPersonalizerOpen(true);
                 }}
               >
@@ -1928,9 +2046,11 @@ export function HabitTracker() {
 
 type PersonalizerPanelProps = {
   isOpen: boolean;
+  step: PersonalizerStep;
   onboarding: OnboardingInput;
   snapshot: PersonalizationSnapshot | null;
   onToggle: () => void;
+  onStepChange: (step: PersonalizerStep) => void;
   onUpdate: <Key extends keyof OnboardingInput>(key: Key, value: OnboardingInput[Key]) => void;
   onToggleListItem: (key: "primaryGoals" | "constraints", value: string) => void;
   onApply: () => void;
@@ -2149,9 +2269,11 @@ function CloudSyncPanel({
 
 function PersonalizerPanel({
   isOpen,
+  step,
   onboarding,
   snapshot,
   onToggle,
+  onStepChange,
   onUpdate,
   onToggleListItem,
   onApply
@@ -2163,6 +2285,25 @@ function PersonalizerPanel({
   const outfit = characterOutfits[onboarding.routineType];
   const characterName = cleanDisplayName(onboarding.displayName);
   const previewTitle = characterName ? `${characterName}'s Win List companion` : "Your Win List companion";
+  const currentStepIndex = Math.max(0, personalizerFlowSteps.findIndex((item) => item.key === step));
+  const isPreviewStep = step === "preview";
+  const previousStep = step === "intro" ? undefined : personalizerFlowSteps[currentStepIndex - 1]?.key;
+  const nextStep = step === "intro" ? "about" : personalizerFlowSteps[currentStepIndex + 1]?.key;
+  const stepCopy =
+    step === "about"
+      ? {
+          title: "About your day",
+          detail: "Give just enough context to shape the list, theme, and companion."
+        }
+      : step === "goals"
+        ? {
+            title: "What should improve",
+            detail: "Pick the outcomes and constraints that should influence your daily wins."
+          }
+        : {
+            title: "Preview the rhythm",
+            detail: "Check the companion, theme, and starting wins before applying the plan."
+          };
   const panelStyle = {
     "--mode-primary": modeTheme.primary,
     "--mode-secondary": modeTheme.secondary,
@@ -2202,159 +2343,227 @@ function PersonalizerPanel({
           <p>{summary}</p>
           <span>{snapshot ? "Personalization saved on this browser." : "No saved personalization yet."}</span>
         </div>
+      ) : step === "intro" ? (
+        <div className="personalizer-intro">
+          <div className="personalizer-intro-art" aria-hidden="true">
+            <LogoMark className="personalizer-intro-logo" decorative />
+            <AnswerCharacter input={onboarding} />
+          </div>
+          <div>
+            <span className="section-kicker">Start with what matters</span>
+            <h3>Let’s build your Win List</h3>
+            <p>A few answers, then your daily must-do wins, theme, and companion are ready.</p>
+          </div>
+          <button className="icon-text-button hot full" type="button" onClick={() => onStepChange("about")}>
+            <Wand2 size={18} aria-hidden="true" />
+            Start
+          </button>
+        </div>
       ) : (
-        <div className="personalizer-grid">
-          <div className="personalizer-form">
-            <div className="form-row two">
-              <label>
-                <span>Name or nickname</span>
-                <input
-                  value={onboarding.displayName}
-                  onChange={(event) => onUpdate("displayName", event.target.value)}
-                  placeholder="Aarav, Meera, Riya..."
-                />
-              </label>
-              <label>
-                <span>City</span>
-                <input
-                  value={onboarding.city}
-                  onChange={(event) => onUpdate("city", event.target.value)}
-                  placeholder="Delhi, Pune, Jaipur..."
-                />
-              </label>
-            </div>
-
-            <div className="form-row two">
-              <label>
-                <span>Life mode</span>
-                <select
-                  value={onboarding.routineType}
-                  onChange={(event) =>
-                    onUpdate("routineType", event.target.value as OnboardingInput["routineType"])
-                  }
-                >
-                  <option value="student">Student</option>
-                  <option value="working-professional">Working professional</option>
-                  <option value="homemaker">Homemaker</option>
-                  <option value="field-worker">Field worker</option>
-                  <option value="business-owner">Business owner</option>
-                </select>
-              </label>
-              <label>
-                <span>Daily time</span>
-                <div className="range-field">
-                  <input
-                    type="range"
-                    min="10"
-                    max="90"
-                    step="5"
-                    value={onboarding.dailyAvailableMinutes}
-                    onChange={(event) => onUpdate("dailyAvailableMinutes", Number(event.target.value))}
-                  />
-                  <strong>{onboarding.dailyAvailableMinutes} min</strong>
-                </div>
-              </label>
-            </div>
-
-            <div className="form-row two">
-              <label>
-                <span>Age range</span>
-                <select
-                  value={onboarding.ageBand}
-                  onChange={(event) => onUpdate("ageBand", event.target.value as OnboardingInput["ageBand"])}
-                >
-                  <option value="18-24">18-24</option>
-                  <option value="25-34">25-34</option>
-                  <option value="35-44">35-44</option>
-                  <option value="45+">45+</option>
-                </select>
-              </label>
-              <label>
-                <span>Gender</span>
-                <select
-                  value={onboarding.avatarStyle}
-                  onChange={(event) =>
-                    onUpdate("avatarStyle", event.target.value as OnboardingInput["avatarStyle"])
-                  }
-                >
-                  <option value="auto">Auto from name</option>
-                  <option value="feminine">Female</option>
-                  <option value="masculine">Male</option>
-                  <option value="neutral">Neutral</option>
-                </select>
-              </label>
-            </div>
-
-            <label>
-              <span>Usual schedule</span>
-              <textarea
-                value={onboarding.schedule}
-                onChange={(event) => onUpdate("schedule", event.target.value)}
-                placeholder="Office 10-7, college till 4, shop closes at 8:30..."
-              />
-            </label>
-
-            <div className="chip-group" aria-label="Primary goals">
-              <span>Goals</span>
-              <div>
-                {goalOptions.map((goal) => (
-                  <button
-                    className={onboarding.primaryGoals.includes(goal) ? "selected" : ""}
-                    key={goal}
-                    type="button"
-                    onClick={() => onToggleListItem("primaryGoals", goal)}
-                  >
-                    {goal}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="chip-group" aria-label="Constraints">
-              <span>Constraints</span>
-              <div>
-                {constraintOptions.map((constraint) => (
-                  <button
-                    className={onboarding.constraints.includes(constraint) ? "selected" : ""}
-                    key={constraint}
-                    type="button"
-                    onClick={() => onToggleListItem("constraints", constraint)}
-                  >
-                    {constraint}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <>
+          <div className="personalizer-stepper" aria-label="Personalization steps">
+            {personalizerFlowSteps.map((item, index) => (
+              <button
+                className={step === item.key ? "selected" : ""}
+                key={item.key}
+                type="button"
+                onClick={() => onStepChange(item.key)}
+                aria-current={step === item.key ? "step" : undefined}
+              >
+                <span>{index + 1}</span>
+                {item.label}
+              </button>
+            ))}
           </div>
 
-          <aside className="personalizer-preview" aria-label="Live personalized preview">
-            <div className="character-persona-strip" aria-live="polite">
-              <AnswerCharacter input={onboarding} />
-              <div>
-                <span>Meet your companion</span>
-                <strong>{previewTitle}</strong>
-                <p>{outfit.detail}</p>
-              </div>
-            </div>
+          <div className="personalizer-step-copy">
+            <span>Step {Math.max(currentStepIndex + 1, 1)} of {personalizerFlowSteps.length}</span>
+            <strong>{stepCopy.title}</strong>
+            <p>{stepCopy.detail}</p>
+          </div>
 
-            <div className="plan-preview" aria-label="Win List preview">
-              <span>{copy.startingWins}</span>
-              <div>
-                {planPreview.map((habit) => (
-                  <article key={habit.id} style={{ "--habit": habit.color } as CSSProperties}>
-                    <img src={assetUrl(habit.thumbnail)} alt="" />
-                    <strong>{habit.name}</strong>
-                  </article>
-                ))}
-              </div>
-            </div>
+          <div className={`personalizer-grid step-${step}`}>
+            {step === "about" ? (
+              <div className="personalizer-form personalizer-step-card">
+                <div className="form-row two">
+                  <label>
+                    <span>Name or nickname</span>
+                    <input
+                      value={onboarding.displayName}
+                      onChange={(event) => onUpdate("displayName", event.target.value)}
+                      placeholder="Aarav, Meera, Riya..."
+                    />
+                  </label>
+                  <label>
+                    <span>City</span>
+                    <input
+                      value={onboarding.city}
+                      onChange={(event) => onUpdate("city", event.target.value)}
+                      placeholder="Delhi, Pune, Jaipur..."
+                    />
+                  </label>
+                </div>
 
-            <button className="icon-text-button hot full" type="button" onClick={onApply}>
-              <Wand2 size={18} aria-hidden="true" />
-              {copy.buildCta}
+                <div className="form-row two">
+                  <label>
+                    <span>Life mode</span>
+                    <select
+                      value={onboarding.routineType}
+                      onChange={(event) =>
+                        onUpdate("routineType", event.target.value as OnboardingInput["routineType"])
+                      }
+                    >
+                      <option value="student">Student</option>
+                      <option value="working-professional">Working professional</option>
+                      <option value="homemaker">Homemaker</option>
+                      <option value="field-worker">Field worker</option>
+                      <option value="business-owner">Business owner</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Daily time</span>
+                    <div className="range-field">
+                      <input
+                        type="range"
+                        min="10"
+                        max="90"
+                        step="5"
+                        value={onboarding.dailyAvailableMinutes}
+                        onChange={(event) => onUpdate("dailyAvailableMinutes", Number(event.target.value))}
+                      />
+                      <strong>{onboarding.dailyAvailableMinutes} min</strong>
+                    </div>
+                  </label>
+                </div>
+
+                <div className="form-row two">
+                  <label>
+                    <span>Age range</span>
+                    <select
+                      value={onboarding.ageBand}
+                      onChange={(event) => onUpdate("ageBand", event.target.value as OnboardingInput["ageBand"])}
+                    >
+                      <option value="18-24">18-24</option>
+                      <option value="25-34">25-34</option>
+                      <option value="35-44">35-44</option>
+                      <option value="45+">45+</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Gender</span>
+                    <select
+                      value={onboarding.avatarStyle}
+                      onChange={(event) =>
+                        onUpdate("avatarStyle", event.target.value as OnboardingInput["avatarStyle"])
+                      }
+                    >
+                      <option value="auto">Auto from name</option>
+                      <option value="feminine">Female</option>
+                      <option value="masculine">Male</option>
+                      <option value="neutral">Neutral</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            ) : null}
+
+            {step === "goals" ? (
+              <div className="personalizer-form personalizer-step-card">
+                <label>
+                  <span>Usual schedule</span>
+                  <textarea
+                    value={onboarding.schedule}
+                    onChange={(event) => onUpdate("schedule", event.target.value)}
+                    placeholder="Office 10-7, college till 4, shop closes at 8:30..."
+                  />
+                </label>
+
+                <div className="chip-group" aria-label="Primary goals">
+                  <span>Goals</span>
+                  <div>
+                    {goalOptions.map((goal) => (
+                      <button
+                        className={onboarding.primaryGoals.includes(goal) ? "selected" : ""}
+                        key={goal}
+                        type="button"
+                        onClick={() => onToggleListItem("primaryGoals", goal)}
+                      >
+                        {goal}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="chip-group" aria-label="Constraints">
+                  <span>Constraints</span>
+                  <div>
+                    {constraintOptions.map((constraint) => (
+                      <button
+                        className={onboarding.constraints.includes(constraint) ? "selected" : ""}
+                        key={constraint}
+                        type="button"
+                        onClick={() => onToggleListItem("constraints", constraint)}
+                      >
+                        {constraint}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {isPreviewStep ? (
+              <aside className="personalizer-preview full" aria-label="Live personalized preview">
+                <div className="character-persona-strip" aria-live="polite">
+                  <AnswerCharacter input={onboarding} />
+                  <div>
+                    <span>Meet your companion</span>
+                    <strong>{previewTitle}</strong>
+                    <p>{outfit.detail}</p>
+                  </div>
+                </div>
+
+                <div className="life-mode-strip">
+                  <strong>{modeTheme.label}</strong>
+                  <span>{summary}</span>
+                </div>
+
+                <div className="plan-preview" aria-label="Win List preview">
+                  <span>{copy.startingWins}</span>
+                  <div>
+                    {planPreview.map((habit) => (
+                      <article key={habit.id} style={{ "--habit": habit.color } as CSSProperties}>
+                        <img src={assetUrl(habit.thumbnail)} alt="" />
+                        <strong>{habit.name}</strong>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </aside>
+            ) : null}
+          </div>
+
+          <div className="personalizer-footer">
+            <button
+              className="icon-text-button ghost"
+              type="button"
+              onClick={() => previousStep && onStepChange(previousStep)}
+              disabled={!previousStep}
+            >
+              Back
             </button>
-          </aside>
-        </div>
+            {nextStep ? (
+              <button className="icon-text-button hot" type="button" onClick={() => onStepChange(nextStep)}>
+                Next
+              </button>
+            ) : (
+              <button className="icon-text-button hot" type="button" onClick={onApply}>
+                <Wand2 size={18} aria-hidden="true" />
+                {copy.buildCta}
+              </button>
+            )}
+          </div>
+        </>
       )}
     </section>
   );
@@ -3391,6 +3600,10 @@ function isCompactViewport() {
   return typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
 }
 
+function isSettingsSectionKey(value: string | null): value is SettingsSectionKey {
+  return value === "personalize" || value === "backup" || value === "theme" || value === "wins" || value === "sync";
+}
+
 function countStreakEndingAt(dateKey: string, tracker: TrackerState, activeHabits: Habit[]) {
   if (activeHabits.length === 0) {
     return 0;
@@ -3432,4 +3645,147 @@ function countMonthProgress(days: Date[], activeHabits: Habit[], tracker: Tracke
   }, 0);
 
   return { total, completed };
+}
+
+function groupHabitsByDayPart(habits: Habit[]) {
+  const grouped: Record<DayPartKey, Habit[]> = {
+    morning: [],
+    daytime: [],
+    evening: []
+  };
+
+  habits.forEach((habit) => {
+    grouped[getHabitDayPart(habit)].push(habit);
+  });
+
+  return (Object.keys(grouped) as DayPartKey[])
+    .map((key) => ({ key, habits: grouped[key] }))
+    .filter((group) => group.habits.length > 0);
+}
+
+function getHabitDayPart(habit: Habit): DayPartKey {
+  const text = `${habit.id} ${habit.name} ${habit.quip}`.toLowerCase();
+
+  if (
+    /wake|morning|sunrise|breakfast|hydrate|water|yoga|workout|stretch|skincare|prayer|meditat/.test(text)
+  ) {
+    return "morning";
+  }
+
+  if (
+    /sleep|night|evening|reel|shorts|journal|expense|spend|budget|family|dinner|wind|read/.test(text)
+  ) {
+    return "evening";
+  }
+
+  return "daytime";
+}
+
+function getAnalyticsSummary(
+  days: Date[],
+  activeHabits: Habit[],
+  tracker: TrackerState,
+  todayKey: string,
+  streak: number
+): AnalyticsSummary {
+  const eligibleDays = days.filter((day) => localDateKey(day) <= todayKey);
+  const dayCount = eligibleDays.length;
+
+  if (activeHabits.length === 0 || dayCount === 0) {
+    return {
+      sentence: "Add a few wins and this screen will start showing your strongest patterns.",
+      action: {
+        title: "Create the first must-do",
+        detail: "Start with one repeatable win you can finish today."
+      },
+      insights: [
+        { label: "Best win", value: "Add wins", detail: "Start with one must-do." },
+        { label: "Most missed", value: "No data yet", detail: "Log a few days first." },
+        { label: "Strongest day", value: "Today", detail: "A clean slate." },
+        { label: "Current streak", value: `${streak} days`, detail: "Perfect-day streak." }
+      ]
+    };
+  }
+
+  const habitScores = activeHabits.map((habit) => {
+    const completed = eligibleDays.reduce((sum, day) => {
+      const record = tracker.days[localDateKey(day)];
+      return sum + (record && isHabitComplete(record, habit.id) ? 1 : 0);
+    }, 0);
+    return {
+      habit,
+      completed,
+      missed: dayCount - completed
+    };
+  });
+
+  const best = [...habitScores].sort((a, b) => b.completed - a.completed || a.habit.order - b.habit.order)[0];
+  const mostMissed = [...habitScores].sort((a, b) => b.missed - a.missed || a.habit.order - b.habit.order)[0];
+  const strongestDay = eligibleDays
+    .map((day) => {
+      const key = localDateKey(day);
+      const record = tracker.days[key];
+      const completed = record
+        ? activeHabits.filter((habit) => isHabitComplete(record, habit.id)).length
+        : 0;
+      return { day, key, completed };
+    })
+    .sort((a, b) => b.completed - a.completed || b.key.localeCompare(a.key))[0];
+
+  const bestValue = best.completed > 0 ? best.habit.name : "No wins yet";
+  const missedValue = mostMissed.missed > 0 ? mostMissed.habit.name : "Nothing missed";
+  const nextAction =
+    mostMissed.missed > 0
+      ? {
+          title: `Protect ${mostMissed.habit.name}`,
+          detail: `Make this the first win you log next. It has ${mostMissed.missed} open day${
+            mostMissed.missed === 1 ? "" : "s"
+          } this month.`
+        }
+      : best.completed > 0
+        ? {
+            title: `Repeat ${best.habit.name}`,
+            detail: "Your strongest pattern is already visible. Use it as today's anchor win."
+          }
+        : {
+            title: "Tap one card today",
+            detail: "The dashboard gets smarter as soon as the first win is logged."
+          };
+  const sentence =
+    best.completed > 0
+      ? mostMissed.missed > 0
+        ? `You’re strongest on ${best.habit.name}; ${mostMissed.habit.name} needs the next tiny push.`
+        : `You’re clean across the board so far. Keep the daily rhythm simple.`
+      : `No wins logged yet this month. One tap today starts the pattern.`;
+
+  return {
+    sentence,
+    action: nextAction,
+    insights: [
+      {
+        label: "Best win",
+        value: bestValue,
+        detail: best.completed > 0 ? `${best.completed}/${dayCount} days won` : "Tap a card to begin."
+      },
+      {
+        label: "Most missed",
+        value: missedValue,
+        detail: mostMissed.missed > 0 ? `${mostMissed.missed} open day${mostMissed.missed === 1 ? "" : "s"}` : "Clean month so far."
+      },
+      {
+        label: "Strongest day",
+        value: strongestDay.completed > 0 ? formatInsightDate(strongestDay.day) : "Not yet",
+        detail: strongestDay.completed > 0 ? `${strongestDay.completed}/${activeHabits.length} wins logged` : "Today can be first."
+      },
+      {
+        label: "Current streak",
+        value: `${streak} day${streak === 1 ? "" : "s"}`,
+        detail: streak > 0 ? "Perfect-day streak." : "Start it with all wins today."
+      }
+    ]
+  };
+}
+
+function formatInsightDate(date: Date) {
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(date);
 }

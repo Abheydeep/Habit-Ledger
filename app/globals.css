@@ -60,7 +60,7 @@ img {
   --app-ink: #0f2f2e;
   min-height: 100vh;
   overflow-x: hidden;
-  padding: 8px 8px 88px;
+  padding: 8px 8px calc(122px + env(safe-area-inset-bottom));
   background:
     radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--app-primary), transparent 86%) 0 14%, transparent 36%),
     radial-gradient(circle at 92% 20%, color-mix(in srgb, var(--app-accent), transparent 84%) 0 10%, transparent 32%),
@@ -245,6 +245,10 @@ img {
   box-shadow: 0 8px 16px color-mix(in srgb, var(--app-primary), transparent 88%);
 }
 
+.today-panel .section-header {
+  display: none;
+}
+
 .eyebrow,
 .section-kicker {
   display: inline-flex;
@@ -352,7 +356,7 @@ img {
   border-radius: 999px;
   background: #ffffff;
   color: var(--app-ink);
-  font-weight: 900;
+  font-weight: 760;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-primary), transparent 80%), 0 10px 22px color-mix(in srgb, var(--app-primary), transparent 90%);
 }
 
@@ -372,7 +376,7 @@ img {
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), color-mix(in srgb, var(--app-soft), #ffffff 72%));
   color: var(--app-ink);
   font-size: 0.72rem;
-  font-weight: 820;
+  font-weight: 760;
   line-height: 1.05;
   text-align: center;
   box-shadow:
@@ -390,6 +394,18 @@ img {
   background: linear-gradient(135deg, var(--app-primary), var(--app-secondary));
   color: #ffffff;
   box-shadow: 0 14px 28px color-mix(in srgb, var(--app-primary), transparent 72%);
+}
+
+.icon-text-button.ghost {
+  background: color-mix(in srgb, var(--app-surface), #ffffff 72%);
+  color: color-mix(in srgb, var(--app-ink), #64748b 34%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-primary), transparent 84%);
+}
+
+.icon-text-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
 }
 
 .hero-actions .icon-text-button.hot {
@@ -889,7 +905,7 @@ img {
   background: rgba(255, 255, 255, 0.88);
   color: var(--mode-primary, var(--app-primary));
   font-size: 0.82rem;
-  font-weight: 900;
+  font-weight: 720;
   box-shadow: 0 8px 16px color-mix(in srgb, var(--mode-primary, var(--app-primary)), transparent 91%);
   transition:
     transform 160ms ease,
@@ -980,7 +996,7 @@ img {
   margin: 6px 0 0;
   color: #53635f;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 620;
   line-height: 1.45;
 }
 
@@ -1000,13 +1016,114 @@ img {
 .personalizer-compact p {
   margin: 0;
   color: #0f2f2e;
-  font-weight: 850;
+  font-weight: 720;
 }
 
 .personalizer-compact span {
   color: #64748b;
   font-size: 0.84rem;
   font-weight: 750;
+}
+
+.personalizer-intro {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--mode-primary), transparent 84%);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--mode-accent), transparent 76%), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), color-mix(in srgb, var(--mode-surface), #ffffff 36%));
+  box-shadow: 0 18px 38px color-mix(in srgb, var(--mode-primary), transparent 90%);
+}
+
+.personalizer-intro-art {
+  position: relative;
+  display: grid;
+  grid-template-columns: 76px 112px;
+  align-items: center;
+  justify-content: center;
+  min-height: 116px;
+}
+
+.personalizer-intro-logo {
+  width: 86px;
+  filter: drop-shadow(0 12px 20px color-mix(in srgb, var(--mode-primary), transparent 84%));
+}
+
+.personalizer-intro .answer-character.avatar-photo {
+  width: 126px;
+  margin-left: -18px;
+  border-radius: 28px;
+}
+
+.personalizer-intro h3 {
+  margin: 4px 0 0;
+  color: #0f2f2e;
+  font-size: clamp(1.65rem, 9vw, 2.45rem);
+  font-weight: 950;
+  line-height: 0.98;
+}
+
+.personalizer-intro p {
+  margin: 10px 0 0;
+  color: #53635f;
+  font-size: 0.95rem;
+  font-weight: 620;
+  line-height: 1.45;
+}
+
+.personalizer-stepper {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 14px;
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--mode-primary), transparent 86%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.personalizer-stepper button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #5c6b67;
+  font-size: 0.78rem;
+  font-weight: 720;
+}
+
+.personalizer-stepper button span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mode-primary), #ffffff 86%);
+  color: var(--mode-primary);
+  font-size: 0.68rem;
+  font-weight: 820;
+}
+
+.personalizer-stepper button.selected {
+  background: linear-gradient(135deg, var(--mode-primary), var(--mode-secondary));
+  color: #ffffff;
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--mode-primary), transparent 82%);
+}
+
+.personalizer-stepper button.selected span {
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .personalizer-grid {
@@ -1016,6 +1133,14 @@ img {
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   margin-top: 14px;
+}
+
+.personalizer-grid.step-preview {
+  grid-template-columns: 1fr;
+}
+
+.personalizer-step-card {
+  min-height: 0;
 }
 
 .personalizer-form,
@@ -1056,7 +1181,7 @@ img {
 .sample-strip > span {
   color: #60716d;
   font-size: 0.72rem;
-  font-weight: 900;
+  font-weight: 720;
   text-transform: uppercase;
 }
 
@@ -1127,7 +1252,7 @@ img {
   background: #ffffff;
   color: #173d39;
   font-size: 0.72rem;
-  font-weight: 850;
+  font-weight: 680;
   padding: 0 9px;
 }
 
@@ -1136,6 +1261,26 @@ img {
   background: color-mix(in srgb, var(--mode-soft), #ffffff 22%);
   color: #0f2f2e;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mode-primary), transparent 82%);
+}
+
+.personalizer-footer {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 9px;
+  margin-top: 14px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--mode-primary), transparent 86%);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--mode-primary), transparent 88%);
+  backdrop-filter: blur(10px);
+}
+
+.personalizer-footer .icon-text-button {
+  min-height: 44px;
+  border-radius: 12px;
 }
 
 .life-mode-strip {
@@ -1155,13 +1300,13 @@ img {
   flex: 0 0 auto;
   color: var(--mode-primary);
   font-size: 0.86rem;
-  font-weight: 950;
+  font-weight: 820;
 }
 
 .life-mode-strip span {
   color: #53635f;
   font-size: 0.82rem;
-  font-weight: 740;
+  font-weight: 620;
   line-height: 1.35;
 }
 
@@ -1193,14 +1338,14 @@ img {
 .character-persona-strip span {
   color: var(--mode-primary);
   font-size: 0.72rem;
-  font-weight: 950;
+  font-weight: 760;
   text-transform: uppercase;
 }
 
 .character-persona-strip strong {
   color: #10201f;
   font-size: 0.9rem;
-  font-weight: 950;
+  font-weight: 820;
   line-height: 1.15;
 }
 
@@ -1208,7 +1353,7 @@ img {
   margin: 0;
   color: #53635f;
   font-size: 0.78rem;
-  font-weight: 760;
+  font-weight: 620;
   line-height: 1.38;
 }
 
@@ -1231,7 +1376,7 @@ img {
 .plan-preview > span {
   color: #60716d;
   font-size: 0.72rem;
-  font-weight: 900;
+  font-weight: 720;
   text-transform: uppercase;
 }
 
@@ -1263,7 +1408,7 @@ img {
   min-width: 0;
   color: #173d39;
   font-size: 0.82rem;
-  font-weight: 900;
+  font-weight: 820;
   line-height: 1.15;
 }
 
@@ -2100,6 +2245,7 @@ img {
   grid-template-columns: 1fr;
   gap: 12px;
   align-items: start;
+  padding-bottom: 20px;
 }
 
 .today-panel,
@@ -2145,6 +2291,46 @@ img {
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
+}
+
+.section-collapse-button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 82%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-surface), #ffffff 72%);
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 18%);
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--app-primary), transparent 94%);
+}
+
+.section-collapse-button svg {
+  transition: transform 160ms ease;
+}
+
+.today-panel.collapsed .section-collapse-button svg,
+.month-panel.collapsed .section-collapse-button svg {
+  transform: rotate(-90deg);
+}
+
+.mobile-collapse-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 9px;
+}
+
+.mobile-collapse-row .section-collapse-button {
+  min-height: 36px;
+  padding-inline: 12px;
 }
 
 .section-title-lockup,
@@ -2244,7 +2430,7 @@ img {
   display: block;
   color: #60716d;
   font-size: 0.74rem;
-  font-weight: 850;
+  font-weight: 680;
   text-transform: uppercase;
 }
 
@@ -2259,7 +2445,7 @@ img {
   flex: 0 0 auto;
   color: #0f766e;
   font-size: 0.68rem;
-  font-weight: 950;
+  font-weight: 720;
   letter-spacing: 0;
   opacity: 0;
   text-transform: none;
@@ -2306,10 +2492,12 @@ img {
   width: 100%;
   min-height: 42px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #0f766e, #2563eb);
-  color: #ffffff;
-  font-weight: 950;
-  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.2);
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 78%);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86), color-mix(in srgb, var(--app-soft), #ffffff 72%));
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 20%);
+  font-weight: 760;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 8px 18px color-mix(in srgb, var(--app-primary), transparent 92%);
 }
 
 .day-toggle {
@@ -2347,10 +2535,25 @@ img {
   box-shadow: 0 10px 26px rgba(15, 47, 43, 0.07);
 }
 
+.habit-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--habit), color-mix(in srgb, var(--habit), #ffffff 32%));
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
 .habit-card.done {
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--habit) 16%, white), #ffffff),
     #ffffff;
+}
+
+.habit-card.done::before {
+  opacity: 0.92;
 }
 
 .habit-card.celebrating {
@@ -2537,7 +2740,7 @@ img {
   background: color-mix(in srgb, var(--habit) 11%, white);
   color: color-mix(in srgb, var(--habit), #0f172a 24%);
   font-size: 0.72rem;
-  font-weight: 950;
+  font-weight: 760;
   white-space: nowrap;
 }
 
@@ -2575,7 +2778,7 @@ img {
   background: #ffffff;
   color: #173d39;
   font-size: 0.78rem;
-  font-weight: 950;
+  font-weight: 760;
   box-shadow: 0 8px 18px rgba(15, 47, 43, 0.07);
 }
 
@@ -2625,7 +2828,7 @@ img {
   background: rgba(255, 255, 255, 0.94);
   color: #173d39;
   font-size: 0.66rem;
-  font-weight: 900;
+  font-weight: 720;
 }
 
 .mood-sticker img {
@@ -2811,6 +3014,70 @@ img {
   margin-bottom: 12px;
 }
 
+.analytics-insights {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.analytics-narrative {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--app-accent), transparent 78%);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--app-accent), transparent 84%), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), color-mix(in srgb, var(--app-soft), #ffffff 70%));
+  color: var(--app-ink);
+  font-size: 0.82rem;
+  font-weight: 680;
+  line-height: 1.38;
+}
+
+.insight-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 84%);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), color-mix(in srgb, var(--app-soft), #ffffff 70%));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--app-primary), transparent 94%);
+}
+
+.insight-card span {
+  display: block;
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 20%);
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.insight-card strong {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--app-ink);
+  font-size: 0.94rem;
+  font-weight: 850;
+  line-height: 1.15;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.insight-card p {
+  margin: 5px 0 0;
+  color: #60716d;
+  font-size: 0.76rem;
+  font-weight: 620;
+  line-height: 1.25;
+}
+
 .heatmap-summary {
   position: relative;
   z-index: 1;
@@ -2829,14 +3096,14 @@ img {
   display: block;
   color: var(--app-ink);
   font-size: 1rem;
-  font-weight: 950;
+  font-weight: 850;
 }
 
 .heatmap-summary p {
   margin: 0;
   color: #60716d;
   font-size: 0.82rem;
-  font-weight: 720;
+  font-weight: 620;
   line-height: 1.35;
 }
 
@@ -2860,7 +3127,7 @@ img {
   background: rgba(255, 255, 255, 0.82);
   color: #53635f;
   font-size: 0.72rem;
-  font-weight: 850;
+  font-weight: 680;
 }
 
 .heatmap-legend i {
@@ -2909,7 +3176,7 @@ img {
 
 .grid-row {
   display: grid;
-  grid-template-columns: minmax(108px, 118px) repeat(var(--day-count), minmax(26px, 28px));
+  grid-template-columns: minmax(142px, 154px) repeat(var(--day-count), minmax(25px, 27px));
   min-width: 0;
 }
 
@@ -2942,7 +3209,7 @@ img {
   padding: 0 12px;
   color: #0f766e;
   font-size: 0.76rem;
-  font-weight: 950;
+  font-weight: 760;
   text-transform: uppercase;
 }
 
@@ -2955,13 +3222,13 @@ img {
   gap: 1px;
   background: #f4faf7;
   color: #0f2f2e;
-  font-weight: 900;
+  font-weight: 760;
 }
 
 .day-header small {
   color: #64748b;
   font-size: 0.58rem;
-  font-weight: 850;
+  font-weight: 620;
 }
 
 .day-header.selected,
@@ -2976,7 +3243,7 @@ img {
   padding: 5px 6px;
   color: #0f2f2e;
   font-size: 0.72rem;
-  font-weight: 900;
+  font-weight: 720;
 }
 
 .grid-habit-label img {
@@ -2988,10 +3255,12 @@ img {
 }
 
 .grid-habit-label span {
+  display: -webkit-box;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.15;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .grid-cell {
@@ -3217,7 +3486,7 @@ img {
 .personalization-drawer .plan-preview > span {
   color: #5b6a66;
   font-size: 0.72rem;
-  font-weight: 760;
+  font-weight: 680;
   letter-spacing: 0.04em;
 }
 
@@ -3246,7 +3515,7 @@ img {
   border-radius: 999px;
   color: #173d39;
   font-size: 0.8rem;
-  font-weight: 720;
+  font-weight: 660;
 }
 
 .personalizer-preview .character-persona-strip {
@@ -3265,12 +3534,12 @@ img {
 }
 
 .personalizer-preview .character-persona-strip span {
-  font-weight: 820;
+  font-weight: 720;
 }
 
 .personalizer-preview .character-persona-strip strong {
   font-size: 0.92rem;
-  font-weight: 840;
+  font-weight: 760;
   line-height: 1.25;
 }
 
@@ -3290,7 +3559,7 @@ img {
 .personalizer-preview .life-mode-strip strong {
   color: #143b37;
   font-size: 0.88rem;
-  font-weight: 820;
+  font-weight: 760;
 }
 
 .personalizer-preview .life-mode-strip span {
@@ -3370,7 +3639,7 @@ img {
   margin: 0;
   color: var(--app-ink);
   font-size: 1rem;
-  font-weight: 950;
+  font-weight: 820;
   line-height: 1.12;
 }
 
@@ -3380,7 +3649,7 @@ img {
   margin: 4px 0 0;
   color: #60716d;
   font-size: 0.82rem;
-  font-weight: 680;
+  font-weight: 620;
   line-height: 1.35;
 }
 
@@ -3433,7 +3702,7 @@ img {
   background: transparent;
   color: #53635f;
   font-size: 0.92rem;
-  font-weight: 900;
+  font-weight: 720;
 }
 
 .appearance-toggle button.selected {
@@ -3454,6 +3723,7 @@ img {
 .theme-picker.compact {
   grid-template-columns: 1fr;
   margin-top: 0;
+  gap: 8px;
 }
 
 .theme-card {
@@ -3463,12 +3733,12 @@ img {
   --theme-bg: #eef7f3;
   --theme-ink: #0f2f2e;
   display: grid;
-  grid-template-columns: 78px minmax(0, 1fr);
-  gap: 10px 12px;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 4px 10px;
   align-items: center;
   width: 100%;
-  min-height: 82px;
-  padding: 10px;
+  min-height: 62px;
+  padding: 8px;
   border: 1px solid color-mix(in srgb, var(--theme-primary), transparent 76%);
   border-radius: 10px;
   background:
@@ -3487,10 +3757,10 @@ img {
   grid-row: span 2;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
-  height: 56px;
-  padding: 7px;
-  border-radius: 10px;
+  gap: 4px;
+  height: 44px;
+  padding: 6px;
+  border-radius: 9px;
   background: var(--theme-bg);
 }
 
@@ -3512,16 +3782,16 @@ img {
 
 .theme-card strong {
   align-self: end;
-  font-size: 1rem;
-  font-weight: 950;
+  font-size: 0.92rem;
+  font-weight: 820;
 }
 
 .theme-card small {
   align-self: start;
   color: #53635f;
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 720;
-  line-height: 1.35;
+  line-height: 1.25;
 }
 
 .add-habit-box {
@@ -3661,7 +3931,7 @@ img {
   background: #fff7f7;
   color: #7f1d1d;
   font-size: 0.74rem;
-  font-weight: 900;
+  font-weight: 680;
 }
 
 .delete-confirm-row button {
@@ -3672,7 +3942,7 @@ img {
   background: #ffffff;
   color: #173d39;
   font-size: 0.72rem;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .delete-confirm-row button.danger {
@@ -3692,14 +3962,14 @@ img {
 
 .inline-warning-card strong {
   font-size: 0.92rem;
-  font-weight: 950;
+  font-weight: 820;
 }
 
 .inline-warning-card p {
   margin: 0;
   color: #7f1d1d;
   font-size: 0.8rem;
-  font-weight: 720;
+  font-weight: 620;
   line-height: 1.35;
 }
 
@@ -3717,7 +3987,7 @@ img {
   background: #ffffff;
   color: #173d39;
   font-size: 0.78rem;
-  font-weight: 950;
+  font-weight: 720;
 }
 
 .inline-warning-card button.danger {
@@ -3732,7 +4002,7 @@ img {
   background: #edf7f3;
   color: #0f766e;
   font-size: 0.78rem;
-  font-weight: 900;
+  font-weight: 720;
 }
 
 .reset-button {
@@ -3748,7 +4018,7 @@ img {
   border-radius: 8px;
   background: #fff7f7;
   color: #b91c1c;
-  font-weight: 950;
+  font-weight: 760;
 }
 
 .perfect-day-overlay {
@@ -4027,6 +4297,7 @@ img {
   .appearance-toggle button.selected,
   .add-habit-box,
   .editor-card,
+  .insight-card,
   .heatmap-summary,
   .streak-nudge,
   .note-box textarea,
@@ -4044,6 +4315,7 @@ img {
   .settings-section,
   .appearance-toggle,
   .theme-card,
+  .insight-card,
   .heatmap-summary,
   .editor-card {
     background: linear-gradient(135deg, #ffffff, #eef8f5);
@@ -4051,12 +4323,16 @@ img {
   }
 
   .icon-text-button.hot,
-  .day-toggle,
-  .month-toggle,
   .cloud-hero-icon,
   .appearance-toggle button.selected {
     background: linear-gradient(135deg, #0f766e, #2563eb);
     box-shadow: 0 14px 28px rgba(15, 118, 110, 0.28);
+  }
+
+  .day-toggle,
+  .month-toggle {
+    background: linear-gradient(135deg, #ffffff, #eef8f5);
+    box-shadow: 0 8px 18px rgba(15, 118, 110, 0.1);
   }
 
   .settings-section-title > svg,
@@ -4084,6 +4360,8 @@ img {
   .life-mode-strip,
   .character-persona-strip,
   .plan-preview article,
+  .personalizer-stepper,
+  .personalizer-footer,
   .personalizer-preview,
   .personalization-drawer .personalizer-form,
   .character-card {
@@ -4253,6 +4531,14 @@ img {
     padding: 16px;
   }
 
+  .today-panel .section-header {
+    display: flex;
+  }
+
+  .mobile-collapse-row {
+    display: none;
+  }
+
   .tracker-hero {
     position: relative;
     top: auto;
@@ -4314,6 +4600,22 @@ img {
 
   .personalizer-compact {
     align-items: center;
+  }
+
+  .personalizer-intro {
+    grid-template-columns: 240px minmax(0, 1fr);
+    align-items: center;
+    padding: 20px;
+  }
+
+  .personalizer-intro .icon-text-button {
+    grid-column: 2;
+    width: min(260px, 100%);
+    justify-self: start;
+  }
+
+  .personalizer-intro-art {
+    grid-row: span 2;
   }
 
   .personalizer-header .drawer-close-button {
@@ -4431,23 +4733,37 @@ img {
     display: block;
   }
 
+  .personalization-drawer .personalizer-stepper,
+  .personalization-drawer .personalizer-footer {
+    width: 100%;
+    max-width: 940px;
+    margin-inline: auto;
+  }
+
   .personalization-drawer .drawer-close-button {
     width: auto;
     padding: 0 13px;
   }
 
   .personalization-drawer .personalizer-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px;
+  }
+
+  .personalization-drawer .personalizer-grid.step-preview {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .personalization-drawer .personalizer-form,
   .personalizer-preview {
+    width: 100%;
+    max-width: 940px;
+    justify-self: center;
     padding: 16px;
   }
 
   .personalizer-preview {
-    position: sticky;
+    position: static;
   }
 
   .personalizer-preview .character-persona-strip {
@@ -4592,6 +4908,10 @@ img {
 
   .settings-action-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .analytics-insights {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .theme-picker.compact {
@@ -4794,10 +5114,10 @@ img {
 .tracker-shell.scheme-dark {
   --app-ink: #e4f5ef;
   background:
-    radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--app-primary), transparent 78%) 0 14%, transparent 36%),
-    radial-gradient(circle at 92% 20%, color-mix(in srgb, var(--app-accent), transparent 78%) 0 10%, transparent 32%),
-    radial-gradient(circle at 88% 82%, color-mix(in srgb, var(--app-secondary), transparent 82%) 0 12%, transparent 34%),
-    linear-gradient(180deg, #0b1211, #111816);
+    radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--app-primary), transparent 84%) 0 14%, transparent 36%),
+    radial-gradient(circle at 92% 20%, color-mix(in srgb, var(--app-accent), transparent 84%) 0 10%, transparent 32%),
+    radial-gradient(circle at 88% 82%, color-mix(in srgb, var(--app-secondary), transparent 86%) 0 12%, transparent 34%),
+    linear-gradient(180deg, #141f1c, #192722);
   color: var(--app-ink);
 }
 
@@ -4810,10 +5130,10 @@ img {
 .tracker-shell.scheme-dark .admin-empty {
   border-color: rgba(255, 255, 255, 0.14);
   background:
-    radial-gradient(circle at 5% 0%, color-mix(in srgb, var(--app-primary), transparent 88%), transparent 34%),
-    radial-gradient(circle at 92% 5%, color-mix(in srgb, var(--app-accent), transparent 88%), transparent 30%),
-    linear-gradient(135deg, #101816, #111f1c);
-  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.38);
+    radial-gradient(circle at 5% 0%, color-mix(in srgb, var(--app-primary), transparent 91%), transparent 34%),
+    radial-gradient(circle at 92% 5%, color-mix(in srgb, var(--app-accent), transparent 91%), transparent 30%),
+    linear-gradient(135deg, #17231f, #1a2b26);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
 }
 
 .tracker-shell.scheme-dark .settings-layer {
@@ -4828,6 +5148,8 @@ img {
 .tracker-shell.scheme-dark .habit-card,
 .tracker-shell.scheme-dark .mood-preview,
 .tracker-shell.scheme-dark .mood-sticker,
+.tracker-shell.scheme-dark .insight-card,
+.tracker-shell.scheme-dark .analytics-narrative,
 .tracker-shell.scheme-dark .heatmap-summary,
 .tracker-shell.scheme-dark .month-grid-wrap,
 .tracker-shell.scheme-dark .habit-sticky,
@@ -4837,13 +5159,45 @@ img {
 .tracker-shell.scheme-dark .cloud-hero-card,
 .tracker-shell.scheme-dark .cloud-box,
 .tracker-shell.scheme-dark .personalizer-form,
+.tracker-shell.scheme-dark .personalizer-preview,
+.tracker-shell.scheme-dark .personalizer-intro,
 .tracker-shell.scheme-dark .character-card,
 .tracker-shell.scheme-dark .note-box textarea,
 .tracker-shell.scheme-dark .add-habit-box,
 .tracker-shell.scheme-dark .appearance-toggle {
   border-color: rgba(255, 255, 255, 0.14);
-  background: linear-gradient(135deg, #14211e, #101916);
+  background: linear-gradient(135deg, #1a2a25, #17231f);
   color: #f6fbf8;
+}
+
+.tracker-shell.scheme-dark .personalizer-stepper,
+.tracker-shell.scheme-dark .personalizer-footer {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(16, 25, 22, 0.9);
+  color: #f6fbf8;
+}
+
+.tracker-shell.scheme-dark .personalizer-intro h3 {
+  color: #f6fbf8;
+}
+
+.tracker-shell.scheme-dark .personalizer-intro p {
+  color: #b9cbc5;
+}
+
+.tracker-shell.scheme-dark .personalizer-stepper button {
+  color: #b9cbc5;
+}
+
+.tracker-shell.scheme-dark .personalizer-stepper button.selected {
+  color: #ffffff;
+}
+
+.tracker-shell.scheme-dark .character-persona-strip,
+.tracker-shell.scheme-dark .life-mode-strip,
+.tracker-shell.scheme-dark .plan-preview article {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(135deg, #20332d, #192822);
 }
 
 .tracker-shell.scheme-dark .icon-text-button:not(.hot),
@@ -4855,12 +5209,18 @@ img {
 }
 
 .tracker-shell.scheme-dark .icon-text-button.hot,
-.tracker-shell.scheme-dark .day-toggle,
-.tracker-shell.scheme-dark .month-toggle,
 .tracker-shell.scheme-dark .cloud-hero-icon,
 .tracker-shell.scheme-dark .appearance-toggle button.selected {
   background: linear-gradient(135deg, var(--app-primary), var(--app-secondary));
   color: #ffffff;
+}
+
+.tracker-shell.scheme-dark .day-toggle,
+.tracker-shell.scheme-dark .month-toggle,
+.tracker-shell.scheme-dark .section-collapse-button {
+  background: linear-gradient(135deg, #20332d, #192822);
+  color: #dff4ed;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 18px rgba(0, 0, 0, 0.18);
 }
 
 .tracker-shell.scheme-dark .tracker-hero h1,
@@ -4873,6 +5233,8 @@ img {
 .tracker-shell.scheme-dark .settings-section-title strong,
 .tracker-shell.scheme-dark .character-copy h3,
 .tracker-shell.scheme-dark .heatmap-summary strong,
+.tracker-shell.scheme-dark .insight-card strong,
+.tracker-shell.scheme-dark .analytics-narrative,
 .tracker-shell.scheme-dark .cloud-hero-card h3,
 .tracker-shell.scheme-dark .cloud-box h3,
 .tracker-shell.scheme-dark .theme-card strong,
@@ -4880,23 +5242,32 @@ img {
 .tracker-shell.scheme-dark .day-header,
 .tracker-shell.scheme-dark .personalizer-panel h2,
 .tracker-shell.scheme-dark .personalizer-form label span,
+.tracker-shell.scheme-dark .character-persona-strip strong,
+.tracker-shell.scheme-dark .life-mode-strip strong,
+.tracker-shell.scheme-dark .plan-preview strong,
 .tracker-shell.scheme-dark .add-habit-box label span {
   color: #f6fbf8;
 }
 
 .tracker-shell.scheme-dark .section-kicker,
 .tracker-shell.scheme-dark .eyebrow,
+.tracker-shell.scheme-dark .insight-card span,
+.tracker-shell.scheme-dark .character-persona-strip span,
 .tracker-shell.scheme-dark .tracker-hero p,
 .tracker-shell.scheme-dark .character-copy p,
 .tracker-shell.scheme-dark .stat-card span,
 .tracker-shell.scheme-dark .settings-section-title p,
 .tracker-shell.scheme-dark .settings-section-title small,
 .tracker-shell.scheme-dark .heatmap-summary p,
+.tracker-shell.scheme-dark .insight-card p,
 .tracker-shell.scheme-dark .sync-message,
 .tracker-shell.scheme-dark .cloud-hero-card p,
 .tracker-shell.scheme-dark .cloud-box small,
 .tracker-shell.scheme-dark .theme-card small,
 .tracker-shell.scheme-dark .habit-card p,
+.tracker-shell.scheme-dark .character-persona-strip p,
+.tracker-shell.scheme-dark .life-mode-strip span,
+.tracker-shell.scheme-dark .plan-preview > span,
 .tracker-shell.scheme-dark .note-box span,
 .tracker-shell.scheme-dark .personalizer-lede {
   color: #b9cbc5;
@@ -5032,4 +5403,358 @@ img {
 .tracker-shell.scheme-dark .settings-section-title > svg {
   background: rgba(255, 255, 255, 0.09);
   color: #d9fff2;
+}
+
+/* 9.25 UX polish: calmer hierarchy, clearer mobile chrome, and softer dark mode. */
+.tracker-shell {
+  padding-bottom: calc(110px + env(safe-area-inset-bottom));
+}
+
+.hero-actions {
+  bottom: max(8px, env(safe-area-inset-bottom));
+  padding: 4px;
+  border-radius: 16px;
+  backdrop-filter: blur(14px);
+}
+
+.hero-actions .icon-text-button {
+  min-height: 50px;
+  padding: 5px 2px;
+  border-radius: 12px;
+  font-size: 0.68rem;
+  font-weight: 680;
+}
+
+.hero-actions .icon-text-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mobile-hero-status span,
+.mobile-hero-status strong,
+.section-header h2,
+.month-toolbar h2,
+.drawer-header h2,
+.progress-ring,
+.stat-card strong,
+.habit-card h3,
+.settings-section-title h3,
+.settings-section-title strong,
+.theme-card strong,
+.insight-card strong,
+.heatmap-summary strong,
+.personalizer-intro h3 {
+  letter-spacing: 0;
+}
+
+.mobile-hero-status span,
+.habit-card h3 {
+  font-weight: 820;
+}
+
+.section-kicker,
+.eyebrow,
+.stat-card span,
+.mini-title,
+.note-box span,
+.settings-section-title p,
+.settings-section-title small,
+.heatmap-summary p,
+.insight-card p,
+.theme-card small,
+.habit-card p,
+.streak-nudge,
+.tap-hint,
+.mood-preview,
+.backup-button,
+.section-collapse-button,
+.personalizer-lede,
+.personalizer-form label span,
+.chip-group > span,
+.plan-preview > span {
+  font-weight: 620;
+}
+
+.stat-card strong,
+.insight-card strong,
+.heatmap-summary strong,
+.settings-section-title h3,
+.settings-section-title strong,
+.theme-card strong {
+  font-weight: 760;
+}
+
+.streak-nudge {
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.day-group {
+  display: grid;
+  gap: 8px;
+}
+
+.day-group + .day-group {
+  margin-top: 2px;
+}
+
+.day-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 2px 0;
+  color: var(--app-ink);
+}
+
+.day-group-header div {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.day-group-header span {
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 26%);
+  font-size: 0.72rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.day-group-header small {
+  overflow: hidden;
+  color: #697874;
+  font-size: 0.72rem;
+  font-weight: 580;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-group-header strong {
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 18%);
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.day-group-list {
+  display: grid;
+  gap: 8px;
+}
+
+.drawer-done-button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 15px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 80%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-surface), #ffffff 76%);
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 24%);
+  font-size: 0.82rem;
+  font-weight: 720;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--app-primary), transparent 92%);
+}
+
+.analytics-action-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 78%);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 92% 6%, color-mix(in srgb, var(--app-accent), transparent 72%), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--app-primary), #ffffff 88%), #ffffff);
+  color: var(--app-ink);
+}
+
+.analytics-action-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--app-primary), var(--app-secondary));
+  content: "";
+}
+
+.analytics-action-card span {
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 24%);
+  font-size: 0.7rem;
+  font-weight: 720;
+  text-transform: uppercase;
+}
+
+.analytics-action-card strong {
+  color: var(--app-ink);
+  font-size: 1rem;
+  font-weight: 780;
+  line-height: 1.16;
+}
+
+.analytics-action-card p {
+  margin: 0;
+  color: #60716d;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.personalizer-step-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 3px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--mode-primary), transparent 86%);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mode-surface), #ffffff 46%);
+}
+
+.personalizer-step-copy span {
+  color: var(--mode-primary);
+  font-size: 0.7rem;
+  font-weight: 720;
+  text-transform: uppercase;
+}
+
+.personalizer-step-copy strong {
+  color: #10201f;
+  font-size: 1rem;
+  font-weight: 780;
+  line-height: 1.15;
+}
+
+.personalizer-step-copy p {
+  margin: 0;
+  color: #5b6a66;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.personalization-drawer .personalizer-form label,
+.personalization-drawer .chip-group {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--mode-primary), transparent 90%);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.personalization-drawer .form-row label {
+  min-width: 0;
+}
+
+.tracker-shell.scheme-dark {
+  --app-ink: #f3fbf7;
+  background:
+    radial-gradient(circle at 10% 8%, rgba(45, 212, 191, 0.12) 0 14%, transparent 36%),
+    radial-gradient(circle at 92% 20%, rgba(251, 191, 36, 0.1) 0 10%, transparent 32%),
+    radial-gradient(circle at 82% 80%, rgba(96, 165, 250, 0.1) 0 12%, transparent 34%),
+    linear-gradient(180deg, #18231f, #202d27);
+}
+
+.tracker-shell.scheme-dark .tracker-hero,
+.tracker-shell.scheme-dark .today-panel,
+.tracker-shell.scheme-dark .month-panel,
+.tracker-shell.scheme-dark .settings-drawer,
+.tracker-shell.scheme-dark .settings-section,
+.tracker-shell.scheme-dark .habit-card,
+.tracker-shell.scheme-dark .stat-card,
+.tracker-shell.scheme-dark .insight-card,
+.tracker-shell.scheme-dark .analytics-action-card,
+.tracker-shell.scheme-dark .analytics-narrative,
+.tracker-shell.scheme-dark .heatmap-summary,
+.tracker-shell.scheme-dark .month-grid-wrap,
+.tracker-shell.scheme-dark .editor-card,
+.tracker-shell.scheme-dark .theme-card,
+.tracker-shell.scheme-dark .appearance-toggle,
+.tracker-shell.scheme-dark .cloud-hero-card,
+.tracker-shell.scheme-dark .cloud-box,
+.tracker-shell.scheme-dark .personalizer-form,
+.tracker-shell.scheme-dark .personalizer-preview,
+.tracker-shell.scheme-dark .personalizer-intro,
+.tracker-shell.scheme-dark .personalizer-step-copy,
+.tracker-shell.scheme-dark .character-card,
+.tracker-shell.scheme-dark .note-box textarea,
+.tracker-shell.scheme-dark .add-habit-box {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, #22332d, #1b2924);
+  color: #f3fbf7;
+}
+
+.tracker-shell.scheme-dark .settings-drawer {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.1), transparent 32%),
+    linear-gradient(180deg, #22332d, #1a2823);
+}
+
+.tracker-shell.scheme-dark .hero-actions {
+  background: rgba(22, 32, 29, 0.86);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 30px rgba(0, 0, 0, 0.3);
+}
+
+.tracker-shell.scheme-dark .hero-actions .icon-text-button,
+.tracker-shell.scheme-dark .icon-text-button:not(.hot),
+.tracker-shell.scheme-dark .backup-button,
+.tracker-shell.scheme-dark .round-button,
+.tracker-shell.scheme-dark .drawer-done-button {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(135deg, #f8fbf7, #eef7f3);
+  color: #4a162b;
+}
+
+.tracker-shell.scheme-dark .analytics-action-card p,
+.tracker-shell.scheme-dark .personalizer-step-copy p,
+.tracker-shell.scheme-dark .day-group-header small {
+  color: #bfd0ca;
+}
+
+.tracker-shell.scheme-dark .analytics-action-card span,
+.tracker-shell.scheme-dark .personalizer-step-copy span,
+.tracker-shell.scheme-dark .day-group-header span,
+.tracker-shell.scheme-dark .day-group-header strong {
+  color: #8ee0d2;
+}
+
+.tracker-shell.scheme-dark .analytics-action-card strong,
+.tracker-shell.scheme-dark .personalizer-step-copy strong {
+  color: #f3fbf7;
+}
+
+.tracker-shell.scheme-dark .habit-card.done {
+  background:
+    radial-gradient(circle at 0% 50%, color-mix(in srgb, var(--habit), transparent 82%), transparent 42%),
+    linear-gradient(135deg, #213a32, #192722);
+}
+
+.tracker-shell.scheme-dark .progress-ring,
+.tracker-shell.scheme-dark .mobile-hero-status strong {
+  background:
+    radial-gradient(circle at center, #1d2a26 57%, transparent 59%),
+    conic-gradient(var(--app-primary) var(--progress, 0%), #344740 0);
+  color: #f3fbf7;
+}
+
+@media (min-width: 721px) {
+  .tracker-shell {
+    padding-bottom: 16px;
+  }
+
+  .hero-actions {
+    padding: 6px;
+    border-radius: 18px;
+  }
+
+  .hero-actions .icon-text-button {
+    min-height: 46px;
+    padding-inline: 10px;
+    font-size: 0.78rem;
+  }
 }
