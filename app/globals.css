@@ -3399,6 +3399,7 @@ img {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
   padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
@@ -3409,10 +3410,18 @@ img {
 }
 
 .personalization-drawer .personalizer-header {
+  position: sticky;
+  top: -16px;
+  z-index: 8;
   gap: 12px;
   align-items: flex-start;
-  padding-bottom: 14px;
+  margin: -16px -16px 0;
+  padding: 16px 16px 14px;
   border-bottom: 1px solid color-mix(in srgb, var(--mode-primary), transparent 88%);
+  background:
+    radial-gradient(circle at 1% 0%, color-mix(in srgb, var(--mode-secondary), transparent 90%), transparent 36%),
+    linear-gradient(180deg, color-mix(in srgb, var(--mode-surface), #ffffff 58%), rgba(255, 255, 255, 0.86));
+  backdrop-filter: blur(16px);
 }
 
 .personalization-drawer .personalizer-title {
@@ -4765,7 +4774,9 @@ img {
 
   .personalization-drawer .personalizer-header {
     gap: 14px;
-    padding-bottom: 18px;
+    top: -24px;
+    margin: -24px -24px 0;
+    padding: 24px 24px 18px;
   }
 
   .personalization-drawer .personalizer-title {
@@ -5570,8 +5581,16 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 2px 2px 0;
+  width: 100%;
+  min-height: 40px;
+  padding: 7px 9px;
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  border-color: color-mix(in srgb, var(--app-primary), transparent 86%);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.58);
   color: var(--app-ink);
+  text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.44);
 }
 
 .day-group-header div {
@@ -5581,11 +5600,34 @@ img {
   gap: 7px;
 }
 
-.day-group-header span {
+.day-group.current .day-group-header {
+  border-color: rgba(15, 118, 110, 0.24);
+  border-color: color-mix(in srgb, var(--app-primary), transparent 72%);
+  background: #eef8f5;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--app-accent), transparent 82%), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--app-primary), #ffffff 90%), rgba(255, 255, 255, 0.72));
+}
+
+.day-group-header > div > span {
   color: color-mix(in srgb, var(--app-primary), var(--app-ink) 26%);
   font-size: 0.72rem;
   font-weight: 760;
   text-transform: uppercase;
+}
+
+.day-group-header em {
+  display: inline-flex;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-accent), #ffffff 78%);
+  color: color-mix(in srgb, var(--app-primary), #0f172a 18%);
+  font-size: 0.6rem;
+  font-style: normal;
+  font-weight: 760;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .day-group-header small {
@@ -5597,11 +5639,31 @@ img {
   white-space: nowrap;
 }
 
-.day-group-header strong {
+.day-group-status {
+  display: inline-flex;
   flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+}
+
+.day-group-status strong {
   color: color-mix(in srgb, var(--app-primary), var(--app-ink) 18%);
   font-size: 0.78rem;
   font-weight: 760;
+}
+
+.day-group-chevron {
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 22%);
+  transform: rotate(-90deg);
+  transition: transform 160ms ease;
+}
+
+.day-group.open .day-group-chevron {
+  transform: rotate(0deg);
+}
+
+.day-group.collapsed {
+  gap: 0;
 }
 
 .day-group-list {
@@ -5672,6 +5734,88 @@ img {
   line-height: 1.35;
 }
 
+.analytics-sections {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+}
+
+.analytics-collapse {
+  overflow: hidden;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-color: color-mix(in srgb, var(--app-primary), transparent 84%);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--app-primary), transparent 94%);
+}
+
+.analytics-collapse-header {
+  display: flex;
+  width: 100%;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 0;
+  background: #ffffff;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--app-accent), transparent 88%), transparent 34%),
+    linear-gradient(135deg, #ffffff, color-mix(in srgb, var(--app-soft), #ffffff 64%));
+  color: var(--app-ink);
+  text-align: left;
+}
+
+.analytics-collapse-header span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.analytics-collapse-header strong {
+  color: var(--app-ink);
+  font-size: 1rem;
+  font-weight: 780;
+  line-height: 1.15;
+}
+
+.analytics-collapse-header em {
+  overflow: hidden;
+  color: #64736f;
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 620;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analytics-collapse-header svg {
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 20%);
+  transform: rotate(-90deg);
+  transition: transform 160ms ease;
+}
+
+.analytics-collapse.open .analytics-collapse-header svg {
+  transform: rotate(0deg);
+}
+
+.analytics-collapse-body {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.analytics-collapse-body .analytics-narrative,
+.analytics-collapse-body .analytics-action-card,
+.analytics-collapse-body .analytics-insights,
+.analytics-collapse-body .heatmap-summary,
+.analytics-collapse-body .heatmap-legend {
+  margin-bottom: 0;
+}
+
 .personalizer-step-copy {
   position: relative;
   z-index: 1;
@@ -5712,6 +5856,13 @@ img {
   border: 1px solid color-mix(in srgb, var(--mode-primary), transparent 90%);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.66);
+}
+
+.personalizer-footer .icon-text-button:disabled {
+  border-color: rgba(15, 47, 43, 0.08);
+  background: rgba(255, 255, 255, 0.52);
+  color: #879792;
+  box-shadow: none;
 }
 
 .personalization-drawer .form-row label {
@@ -5762,6 +5913,30 @@ img {
     linear-gradient(180deg, #22332d, #1a2823);
 }
 
+.tracker-shell.scheme-dark .personalization-layer .settings-backdrop {
+  background: rgba(5, 16, 14, 0.62);
+}
+
+.tracker-shell.scheme-dark .personalization-drawer {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0f1916;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.48);
+}
+
+.tracker-shell.scheme-dark .personalization-drawer .personalizer-panel {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.12), transparent 32%),
+    radial-gradient(circle at 98% 0%, rgba(251, 191, 36, 0.08), transparent 26%),
+    linear-gradient(135deg, #14231f, #1b271f);
+}
+
+.tracker-shell.scheme-dark .personalization-drawer .personalizer-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(19, 34, 30, 0.98), rgba(19, 34, 30, 0.9));
+}
+
 .tracker-shell.scheme-dark .hero-actions {
   background: rgba(22, 32, 29, 0.86);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 30px rgba(0, 0, 0, 0.3);
@@ -5793,6 +5968,90 @@ img {
 .tracker-shell.scheme-dark .analytics-action-card strong,
 .tracker-shell.scheme-dark .personalizer-step-copy strong {
   color: #f3fbf7;
+}
+
+.tracker-shell.scheme-dark .day-group-header,
+.tracker-shell.scheme-dark .analytics-collapse {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.045);
+  color: #f3fbf7;
+}
+
+.tracker-shell.scheme-dark .day-group.current .day-group-header,
+.tracker-shell.scheme-dark .analytics-collapse-header {
+  border-color: rgba(255, 255, 255, 0.14);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.1), transparent 34%),
+    linear-gradient(135deg, #20332d, #192822);
+}
+
+.tracker-shell.scheme-dark .day-group-header > div > span,
+.tracker-shell.scheme-dark .day-group-status strong,
+.tracker-shell.scheme-dark .day-group-chevron,
+.tracker-shell.scheme-dark .analytics-collapse-header strong,
+.tracker-shell.scheme-dark .analytics-collapse-header svg {
+  color: #dff4ed;
+}
+
+.tracker-shell.scheme-dark .day-group-header em {
+  background: rgba(125, 211, 252, 0.14);
+  color: #bdf7ee;
+}
+
+.tracker-shell.scheme-dark .analytics-collapse-header em {
+  color: #b9cbc5;
+}
+
+.tracker-shell.scheme-dark .analytics-collapse-body {
+  background: rgba(4, 14, 12, 0.12);
+}
+
+.tracker-shell.scheme-dark .personalization-drawer .personalizer-form label,
+.tracker-shell.scheme-dark .personalization-drawer .chip-group,
+.tracker-shell.scheme-dark .personalizer-footer {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.tracker-shell.scheme-dark .personalization-drawer .personalizer-form label span,
+.tracker-shell.scheme-dark .personalization-drawer .chip-group > span {
+  color: #c6d7d1;
+}
+
+.tracker-shell.scheme-dark .personalization-drawer .personalizer-form input,
+.tracker-shell.scheme-dark .personalization-drawer .personalizer-form select,
+.tracker-shell.scheme-dark .personalization-drawer .personalizer-form textarea {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(4, 14, 12, 0.76);
+  color: #f6fbf8;
+}
+
+.tracker-shell.scheme-dark .personalization-drawer .personalizer-form input::placeholder,
+.tracker-shell.scheme-dark .personalization-drawer .personalizer-form textarea::placeholder {
+  color: #8aa09a;
+}
+
+.tracker-shell.scheme-dark .personalization-drawer .range-field strong {
+  color: #dff8ef;
+}
+
+.tracker-shell.scheme-dark .personalization-drawer .chip-group button {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: #f4fbf8;
+  color: #15322e;
+}
+
+.tracker-shell.scheme-dark .personalization-drawer .chip-group button.selected {
+  border-color: rgba(125, 211, 252, 0.72);
+  background: linear-gradient(135deg, #e9fffa, #d8f3ff);
+  color: #0f3a35;
+}
+
+.tracker-shell.scheme-dark .personalizer-footer .icon-text-button:disabled {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
+  color: #9fb3ad;
 }
 
 .tracker-shell.scheme-dark .habit-card.done {

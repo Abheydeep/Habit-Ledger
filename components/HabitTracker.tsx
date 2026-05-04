@@ -103,6 +103,7 @@ const copy = {
   logoLabel: "The Win List logo"
 };
 const defaultWinMood = moodOptions.find((item) => item.key === "done");
+let completionAudioContext: AudioContext | null = null;
 const appThemes = {
   "fresh-ledger": {
     label: "Fresh Start",
@@ -164,6 +165,7 @@ type AppThemeKey = keyof typeof appThemes;
 type ColorScheme = "light" | "dark";
 type SettingsSectionKey = "personalize" | "backup" | "theme" | "wins" | "sync";
 type PersonalizerStep = "intro" | "about" | "goals" | "preview";
+type AnalyticsSectionKey = "review" | "matrix";
 type AnalyticsInsight = {
   label: string;
   value: string;
@@ -183,6 +185,10 @@ const collapsedSettingsSections: Record<SettingsSectionKey, boolean> = {
   theme: false,
   wins: false,
   sync: false
+};
+const defaultAnalyticsSections: Record<AnalyticsSectionKey, boolean> = {
+  review: true,
+  matrix: false
 };
 const personalizerFlowSteps: Array<{ key: Exclude<PersonalizerStep, "intro">; label: string }> = [
   { key: "about", label: "About" },
@@ -373,6 +379,11 @@ export function HabitTracker() {
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
   const [dayOpen, setDayOpen] = useState(true);
   const [monthOpen, setMonthOpen] = useState(true);
+  const [openDayParts, setOpenDayParts] = useState<Record<DayPartKey, boolean>>(() =>
+    createInitialDayPartOpenState()
+  );
+  const [analyticsSections, setAnalyticsSections] =
+    useState<Record<AnalyticsSectionKey, boolean>>(defaultAnalyticsSections);
   const [celebration, setCelebration] = useState<CompletionCelebration | null>(null);
   const celebrationTimeoutRef = useRef<number | null>(null);
   const [perfectDayCelebration, setPerfectDayCelebration] = useState<PerfectDayCelebration | null>(null);
@@ -595,6 +606,7 @@ export function HabitTracker() {
   const completionPercent =
     activeHabits.length > 0 ? Math.round((completedCount / activeHabits.length) * 100) : 0;
   const todayKey = localDateKey(new Date());
+  const currentDayPart = useMemo(() => getDayPartForHour(new Date().getHours()), []);
   const streak = useMemo(
     () => countStreakEndingAt(todayKey, tracker, activeHabits),
     [todayKey, tracker, activeHabits]
@@ -625,6 +637,20 @@ export function HabitTracker() {
     "--app-soft": isDarkScheme ? "#263d36" : appTheme.soft,
     "--app-ink": isDarkScheme ? "#e4f5ef" : appTheme.ink
   } as CSSProperties;
+
+  const toggleDayPart = useCallback((dayPart: DayPartKey) => {
+    setOpenDayParts((current) => ({
+      ...current,
+      [dayPart]: !current[dayPart]
+    }));
+  }, []);
+
+  const toggleAnalyticsSection = useCallback((section: AnalyticsSectionKey) => {
+    setAnalyticsSections((current) => ({
+      ...current,
+      [section]: !current[section]
+    }));
+  }, []);
 
   const showAppToast = useCallback((message: string, tone: AppToast["tone"] = "success") => {
     if (appToastTimeoutRef.current) {
@@ -1478,100 +1504,121 @@ export function HabitTracker() {
             <div className="checklist" aria-label={copy.todayWins}>
               {dayPartGroups.map((group) => {
                 const groupCompleted = group.habits.filter((habit) => completedSet.has(habit.id)).length;
+                const groupOpen = openDayParts[group.key];
+                const groupIsCurrent = group.key === currentDayPart;
                 return (
-                  <section className="day-group" key={group.key} aria-label={`${dayPartLabels[group.key]} wins`}>
-                    <div className="day-group-header">
+                  <section
+                    className={`day-group${groupOpen ? " open" : " collapsed"}${groupIsCurrent ? " current" : ""}`}
+                    key={group.key}
+                    aria-label={`${dayPartLabels[group.key]} wins`}
+                  >
+                    <button
+                      className="day-group-header"
+                      type="button"
+                      onClick={() => toggleDayPart(group.key)}
+                      aria-expanded={groupOpen}
+                    >
                       <div>
-                        <span>{dayPartLabels[group.key]}</span>
+                        <span>
+                          {dayPartLabels[group.key]}
+                          {groupIsCurrent ? <em>Now</em> : null}
+                        </span>
                         <small>{dayPartMicrocopy[group.key]}</small>
                       </div>
-                      <strong>
-                        {groupCompleted}/{group.habits.length}
-                      </strong>
-                    </div>
-                    <div className="day-group-list">
-                      {group.habits.map((habit) => {
-                        const done = completedSet.has(habit.id);
-                        const habitMood = selectedRecord.habitMoods?.[habit.id];
-                        const moodOption = moodOptions.find((item) => item.key === habitMood);
-                        const moodMenuOpen = expandedHabitId === habit.id;
-                        return (
-                          <article
-                            className={`habit-card${done ? " done" : ""}${moodMenuOpen ? " expanded" : ""}${
-                              celebration?.habitId === habit.id ? " celebrating" : ""
-                            }`}
-                            key={habit.id}
-                            style={{ "--habit": habit.color } as CSSProperties}
-                          >
-                            <div className="habit-card-main">
-                              <button
-                                className="habit-win-button"
-                                type="button"
-                                onClick={() => toggleHabitWin(habit)}
-                                aria-label={done ? `Undo ${habit.name} for ${formatPrettyDate(selectedDate)}` : `Mark ${habit.name} as won`}
-                              >
-                                <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
-                                <span className="habit-card-copy">
-                                  <h3>{habit.name}</h3>
-                                  <p>{habit.quip}</p>
-                                </span>
-                                <span className="tap-hint">{done ? "Won today" : "Tap to win"}</span>
-                              </button>
-                              <button
-                                className={`mood-preview${moodOption ? " selected" : ""}`}
-                                style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
-                                type="button"
-                                onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
-                                aria-expanded={moodMenuOpen}
-                                aria-label={`${done || moodOption ? "Change" : "Choose"} status for ${habit.name}`}
-                              >
-                                {moodOption ? (
-                                  <img src={assetUrl(moodOption.src)} alt="" />
-                                ) : (
-                                  <CircleDot size={16} aria-hidden="true" />
-                                )}
-                                <span>{done || moodOption ? "Edit" : "Status"}</span>
-                              </button>
-                            </div>
-                            {moodMenuOpen ? (
-                              <div className="activity-mood-panel" aria-label={`Win status choices for ${habit.name}`}>
-                                {moodOptions.map((mood) => (
-                                  <button
+                      <span className="day-group-status">
+                        <strong>
+                          {groupCompleted}/{group.habits.length}
+                        </strong>
+                        <ChevronDown className="day-group-chevron" size={17} aria-hidden="true" />
+                      </span>
+                    </button>
+                    {groupOpen ? (
+                      <div className="day-group-list">
+                        {group.habits.map((habit) => {
+                          const done = completedSet.has(habit.id);
+                          const habitMood = selectedRecord.habitMoods?.[habit.id];
+                          const moodOption = moodOptions.find((item) => item.key === habitMood);
+                          const moodMenuOpen = expandedHabitId === habit.id;
+                          return (
+                            <article
+                              className={`habit-card${done ? " done" : ""}${moodMenuOpen ? " expanded" : ""}${
+                                celebration?.habitId === habit.id ? " celebrating" : ""
+                              }`}
+                              key={habit.id}
+                              style={{ "--habit": habit.color } as CSSProperties}
+                            >
+                              <div className="habit-card-main">
+                                <button
+                                  className="habit-win-button"
+                                  type="button"
+                                  onPointerDown={primeCompletionFeedback}
+                                  onClick={() => toggleHabitWin(habit)}
+                                  aria-label={done ? `Undo ${habit.name} for ${formatPrettyDate(selectedDate)}` : `Mark ${habit.name} as won`}
+                                >
+                                  <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
+                                  <span className="habit-card-copy">
+                                    <h3>{habit.name}</h3>
+                                    <p>{habit.quip}</p>
+                                  </span>
+                                  <span className="tap-hint">{done ? "Won today" : "Tap to win"}</span>
+                                </button>
+                                <button
+                                  className={`mood-preview${moodOption ? " selected" : ""}`}
+                                  style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
+                                  type="button"
+                                  onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
+                                  aria-expanded={moodMenuOpen}
+                                  aria-label={`${done || moodOption ? "Change" : "Choose"} status for ${habit.name}`}
+                                >
+                                  {moodOption ? (
+                                    <img src={assetUrl(moodOption.src)} alt="" />
+                                  ) : (
+                                    <CircleDot size={16} aria-hidden="true" />
+                                  )}
+                                  <span>{done || moodOption ? "Edit" : "Status"}</span>
+                                </button>
+                              </div>
+                              {moodMenuOpen ? (
+                                <div className="activity-mood-panel" aria-label={`Win status choices for ${habit.name}`}>
+                                  {moodOptions.map((mood) => (
+                                    <button
                                     className={`mood-sticker${habitMood === mood.key ? " selected" : ""}`}
                                     key={mood.key}
                                     style={{ "--mood": mood.tone } as CSSProperties}
                                     type="button"
+                                    onPointerDown={primeCompletionFeedback}
                                     onClick={() => {
                                       const shouldCelebrate = habitMood !== mood.key && isCompletionMood(mood.key);
-                                      if (shouldCelebrate) {
-                                        maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
-                                      }
-                                      updateHabitMood(habit.id, mood.key);
-                                      if (shouldCelebrate) {
-                                        triggerCompletionCelebration(habit, mood);
-                                      }
-                                      setExpandedHabitId(null);
-                                    }}
-                                    aria-label={`${mood.label} status for ${habit.name}`}
-                                  >
-                                    <img src={assetUrl(mood.src)} alt="" />
-                                    <small>{mood.label}</small>
-                                  </button>
-                                ))}
-                              </div>
-                            ) : null}
-                            {celebration?.habitId === habit.id ? (
-                              <CompletionBurst
-                                key={celebration.id}
-                                message={celebration.message}
-                                tone={celebration.tone}
-                                onUndo={() => clearHabitMood(habit.id)}
-                              />
-                            ) : null}
-                          </article>
-                        );
-                      })}
-                    </div>
+                                        if (shouldCelebrate) {
+                                          maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
+                                        }
+                                        updateHabitMood(habit.id, mood.key);
+                                        if (shouldCelebrate) {
+                                          triggerCompletionCelebration(habit, mood);
+                                        }
+                                        setExpandedHabitId(null);
+                                      }}
+                                      aria-label={`${mood.label} status for ${habit.name}`}
+                                    >
+                                      <img src={assetUrl(mood.src)} alt="" />
+                                      <small>{mood.label}</small>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
+                              {celebration?.habitId === habit.id ? (
+                                <CompletionBurst
+                                  key={celebration.id}
+                                  message={celebration.message}
+                                  tone={celebration.tone}
+                                  onUndo={() => clearHabitMood(habit.id)}
+                                />
+                              ) : null}
+                            </article>
+                          );
+                        })}
+                      </div>
+                    ) : null}
                   </section>
                 );
               })}
@@ -1633,102 +1680,143 @@ export function HabitTracker() {
           </div>
 
           <div className="month-panel-content">
-            <p className="analytics-narrative">{analyticsSummary.sentence}</p>
-            <div className="analytics-action-card" aria-label="Recommended next action">
-              <span>Next best move</span>
-              <strong>{analyticsSummary.action.title}</strong>
-              <p>{analyticsSummary.action.detail}</p>
-            </div>
-            <div className="analytics-insights" aria-label="Monthly insights">
-              {analyticsInsights.map((insight) => (
-                <article className="insight-card" key={insight.label}>
-                  <span>{insight.label}</span>
-                  <strong>{insight.value}</strong>
-                  <p>{insight.detail}</p>
-                </article>
-              ))}
-            </div>
-            <div className="heatmap-summary">
-              <div>
-                <span className="section-kicker">Analytics</span>
-                <strong>Habit heat map</strong>
-              </div>
-              <p>{monthProgress.completed}/{monthProgress.total} wins so far. Darker cells mean stronger completed days.</p>
-            </div>
-            <div className="heatmap-legend" aria-label="Heat map legend">
-              <span><i className="heat-empty" /> Empty</span>
-              <span><i className="heat-partial" /> Partial</span>
-              <span><i className="heat-done" /> Won</span>
-              <span><i className="heat-strong" /> Strong</span>
-              <span><i className="heat-rest" /> Rest/skip</span>
-            </div>
-            <div className="month-grid-wrap" role="region" aria-label="Monthly win grid" tabIndex={0}>
-              <div
-                className="month-grid"
-                style={{ "--day-count": monthDays.length } as CSSProperties}
-              >
-                <div className="grid-row header-row">
-                  <div className="habit-sticky header-habit">Habit</div>
-                  {monthDays.map((day) => {
-                    const dayKey = localDateKey(day);
-                    return (
-                      <button
-                        className={`day-header${selectedDate === dayKey ? " selected" : ""}`}
-                        key={dayKey}
-                        type="button"
-                        onClick={() => selectDay(dayKey)}
-                      >
-                        <span>{day.getDate()}</span>
-                        <small>{weekdayLetter(day)}</small>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {activeHabits.map((habit) => (
-                  <div className="grid-row habit-row" key={habit.id}>
-                    <div className="habit-sticky grid-habit-label">
-                      <img src={assetUrl(habit.thumbnail)} alt="" />
-                      <span>{habit.name}</span>
+            <div className="analytics-sections">
+              <section className={`analytics-collapse${analyticsSections.review ? " open" : " collapsed"}`}>
+                <button
+                  className="analytics-collapse-header"
+                  type="button"
+                  onClick={() => toggleAnalyticsSection("review")}
+                  aria-expanded={analyticsSections.review}
+                >
+                  <span>
+                    <small className="section-kicker">Monthly Review</small>
+                    <strong>What this month is saying</strong>
+                    <em>{analyticsSummary.action.title}</em>
+                  </span>
+                  <ChevronDown size={18} aria-hidden="true" />
+                </button>
+                {analyticsSections.review ? (
+                  <div className="analytics-collapse-body">
+                    <p className="analytics-narrative">{analyticsSummary.sentence}</p>
+                    <div className="analytics-action-card" aria-label="Recommended next action">
+                      <span>Next best move</span>
+                      <strong>{analyticsSummary.action.title}</strong>
+                      <p>{analyticsSummary.action.detail}</p>
                     </div>
-                    {monthDays.map((day) => {
-                      const dayKey = localDateKey(day);
-                      const record = tracker.days[dayKey];
-                      const done = record ? isHabitComplete(record, habit.id) : false;
-                      const habitMood = record?.habitMoods?.[habit.id];
-                      const moodOption = moodOptions.find((item) => item.key === habitMood);
-                      const heatClass = getHeatClass(habitMood, done);
-                      return (
-                        <button
-                          className={`grid-cell ${heatClass}${done ? " done" : ""}${moodOption ? " mooded" : ""}${
-                            selectedDate === dayKey ? " selected" : ""
-                          }`}
-                          key={`${habit.id}-${dayKey}`}
-                          style={
-                            {
-                              "--habit": habit.color,
-                              "--mood": moodOption?.tone ?? habit.color
-                            } as CSSProperties
-                          }
-                          type="button"
-                          onClick={() => {
-                            selectDay(dayKey, habit.id);
-                          }}
-                          aria-label={
-                            moodOption
-                              ? `Edit ${habit.name} win on ${dayKey}, currently ${moodOption.label}`
-                              : `Mark ${habit.name} as won on ${dayKey}`
-                          }
-                        >
-                          {moodOption ? (
-                            <img className="grid-mood-img" src={assetUrl(moodOption.src)} alt="" />
-                          ) : null}
-                        </button>
-                      );
-                    })}
+                    <div className="analytics-insights" aria-label="Monthly insights">
+                      {analyticsInsights.map((insight) => (
+                        <article className="insight-card" key={insight.label}>
+                          <span>{insight.label}</span>
+                          <strong>{insight.value}</strong>
+                          <p>{insight.detail}</p>
+                        </article>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
+                ) : null}
+              </section>
+
+              <section className={`analytics-collapse${analyticsSections.matrix ? " open" : " collapsed"}`}>
+                <button
+                  className="analytics-collapse-header"
+                  type="button"
+                  onClick={() => toggleAnalyticsSection("matrix")}
+                  aria-expanded={analyticsSections.matrix}
+                >
+                  <span>
+                    <small className="section-kicker">Monthly Matrix</small>
+                    <strong>Win heat map</strong>
+                    <em>{monthProgress.completed}/{monthProgress.total} wins so far</em>
+                  </span>
+                  <ChevronDown size={18} aria-hidden="true" />
+                </button>
+                {analyticsSections.matrix ? (
+                  <div className="analytics-collapse-body">
+                    <div className="heatmap-summary">
+                      <div>
+                        <span className="section-kicker">Matrix</span>
+                        <strong>Habit heat map</strong>
+                      </div>
+                      <p>{monthProgress.completed}/{monthProgress.total} wins so far. Darker cells mean stronger completed days.</p>
+                    </div>
+                    <div className="heatmap-legend" aria-label="Heat map legend">
+                      <span><i className="heat-empty" /> Empty</span>
+                      <span><i className="heat-partial" /> Partial</span>
+                      <span><i className="heat-done" /> Won</span>
+                      <span><i className="heat-strong" /> Strong</span>
+                      <span><i className="heat-rest" /> Rest/skip</span>
+                    </div>
+                    <div className="month-grid-wrap" role="region" aria-label="Monthly win grid" tabIndex={0}>
+                      <div
+                        className="month-grid"
+                        style={{ "--day-count": monthDays.length } as CSSProperties}
+                      >
+                        <div className="grid-row header-row">
+                          <div className="habit-sticky header-habit">Habit</div>
+                          {monthDays.map((day) => {
+                            const dayKey = localDateKey(day);
+                            return (
+                              <button
+                                className={`day-header${selectedDate === dayKey ? " selected" : ""}`}
+                                key={dayKey}
+                                type="button"
+                                onClick={() => selectDay(dayKey)}
+                              >
+                                <span>{day.getDate()}</span>
+                                <small>{weekdayLetter(day)}</small>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {activeHabits.map((habit) => (
+                          <div className="grid-row habit-row" key={habit.id}>
+                            <div className="habit-sticky grid-habit-label">
+                              <img src={assetUrl(habit.thumbnail)} alt="" />
+                              <span>{habit.name}</span>
+                            </div>
+                            {monthDays.map((day) => {
+                              const dayKey = localDateKey(day);
+                              const record = tracker.days[dayKey];
+                              const done = record ? isHabitComplete(record, habit.id) : false;
+                              const habitMood = record?.habitMoods?.[habit.id];
+                              const moodOption = moodOptions.find((item) => item.key === habitMood);
+                              const heatClass = getHeatClass(habitMood, done);
+                              return (
+                                <button
+                                  className={`grid-cell ${heatClass}${done ? " done" : ""}${moodOption ? " mooded" : ""}${
+                                    selectedDate === dayKey ? " selected" : ""
+                                  }`}
+                                  key={`${habit.id}-${dayKey}`}
+                                  style={
+                                    {
+                                      "--habit": habit.color,
+                                      "--mood": moodOption?.tone ?? habit.color
+                                    } as CSSProperties
+                                  }
+                                  type="button"
+                                  onClick={() => {
+                                    selectDay(dayKey, habit.id);
+                                  }}
+                                  aria-label={
+                                    moodOption
+                                      ? `Edit ${habit.name} win on ${dayKey}, currently ${moodOption.label}`
+                                      : `Mark ${habit.name} as won on ${dayKey}`
+                                  }
+                                >
+                                  {moodOption ? (
+                                    <img className="grid-mood-img" src={assetUrl(moodOption.src)} alt="" />
+                                  ) : null}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </section>
             </div>
           </div>
         </section>
@@ -3503,9 +3591,70 @@ function getHeatClass(status: MoodKey | undefined, done: boolean) {
   return "heat-empty";
 }
 
+function primeCompletionFeedback() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const audio = getCompletionAudioContext();
+    if (audio?.state === "suspended") {
+      void audio.resume();
+    }
+  } catch {
+    // Some browsers only allow audio work after a completed tap gesture.
+  }
+}
+
 function playCompletionSound(tone: string, mode: "sequence" | "stack" = "sequence") {
   if (typeof window === "undefined") {
     return;
+  }
+
+  try {
+    const audio = getCompletionAudioContext();
+    if (!audio) {
+      return;
+    }
+
+    const play = () => {
+      const startedAt = audio.currentTime + 0.012;
+      const baseFrequency = colorToFrequency(tone);
+      const master = audio.createGain();
+      master.gain.setValueAtTime(0.0001, startedAt);
+      master.gain.exponentialRampToValueAtTime(0.045, startedAt + 0.018);
+      master.gain.exponentialRampToValueAtTime(0.0001, startedAt + 0.42);
+      master.connect(audio.destination);
+
+      [1, 1.25, 1.5].forEach((ratio, index) => {
+        const oscillator = audio.createOscillator();
+        const gain = audio.createGain();
+        const noteStart = mode === "stack" ? startedAt : startedAt + index * 0.065;
+        oscillator.type = index === 0 ? "sine" : "triangle";
+        oscillator.frequency.setValueAtTime(baseFrequency * ratio, noteStart);
+        gain.gain.setValueAtTime(0.0001, noteStart);
+        gain.gain.exponentialRampToValueAtTime(mode === "stack" ? 0.1 : index === 0 ? 0.2 : 0.12, noteStart + 0.018);
+        gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + (mode === "stack" ? 0.34 : 0.22));
+        oscillator.connect(gain);
+        gain.connect(master);
+        oscillator.start(noteStart);
+        oscillator.stop(noteStart + (mode === "stack" ? 0.36 : 0.24));
+      });
+    };
+
+    if (audio.state === "suspended") {
+      void audio.resume().then(play).catch(() => undefined);
+    } else {
+      play();
+    }
+  } catch {
+    // Audio is a bonus flourish; ignore browser autoplay or hardware limits.
+  }
+}
+
+function getCompletionAudioContext() {
+  if (typeof window === "undefined") {
+    return null;
   }
 
   try {
@@ -3514,37 +3663,16 @@ function playCompletionSound(tone: string, mode: "sequence" | "stack" = "sequenc
       (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 
     if (!AudioContextConstructor) {
-      return;
+      return null;
     }
 
-    const audio = new AudioContextConstructor();
-    const startedAt = audio.currentTime;
-    const baseFrequency = colorToFrequency(tone);
-    const master = audio.createGain();
-    master.gain.setValueAtTime(0.0001, startedAt);
-    master.gain.exponentialRampToValueAtTime(0.045, startedAt + 0.018);
-    master.gain.exponentialRampToValueAtTime(0.0001, startedAt + 0.42);
-    master.connect(audio.destination);
+    if (!completionAudioContext || completionAudioContext.state === "closed") {
+      completionAudioContext = new AudioContextConstructor();
+    }
 
-    [1, 1.25, 1.5].forEach((ratio, index) => {
-      const oscillator = audio.createOscillator();
-      const gain = audio.createGain();
-      const noteStart = mode === "stack" ? startedAt : startedAt + index * 0.065;
-      oscillator.type = index === 0 ? "sine" : "triangle";
-      oscillator.frequency.setValueAtTime(baseFrequency * ratio, noteStart);
-      gain.gain.setValueAtTime(0.0001, noteStart);
-      gain.gain.exponentialRampToValueAtTime(mode === "stack" ? 0.1 : index === 0 ? 0.2 : 0.12, noteStart + 0.018);
-      gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + (mode === "stack" ? 0.34 : 0.22));
-      oscillator.connect(gain);
-      gain.connect(master);
-      oscillator.start(noteStart);
-      oscillator.stop(noteStart + (mode === "stack" ? 0.36 : 0.24));
-    });
-
-    void audio.resume();
-    window.setTimeout(() => void audio.close(), 540);
+    return completionAudioContext;
   } catch {
-    // Audio is a bonus flourish; ignore browser autoplay or hardware limits.
+    return null;
   }
 }
 
@@ -3700,6 +3828,27 @@ function groupHabitsByDayPart(habits: Habit[]) {
   return (Object.keys(grouped) as DayPartKey[])
     .map((key) => ({ key, habits: grouped[key] }))
     .filter((group) => group.habits.length > 0);
+}
+
+function createInitialDayPartOpenState(): Record<DayPartKey, boolean> {
+  const current = getDayPartForHour(new Date().getHours());
+  return {
+    morning: current === "morning",
+    daytime: current === "daytime",
+    evening: current === "evening"
+  };
+}
+
+function getDayPartForHour(hour: number): DayPartKey {
+  if (hour < 12) {
+    return "morning";
+  }
+
+  if (hour < 18) {
+    return "daytime";
+  }
+
+  return "evening";
 }
 
 function getHabitDayPart(habit: Habit): DayPartKey {
