@@ -49,6 +49,7 @@ import {
   normalizeImportedState,
   thumbnailOptions,
   type DayRecord,
+  type DayPartKey,
   type Habit,
   type MoodKey,
   type TrackerState
@@ -163,7 +164,6 @@ type AppThemeKey = keyof typeof appThemes;
 type ColorScheme = "light" | "dark";
 type SettingsSectionKey = "personalize" | "backup" | "theme" | "wins" | "sync";
 type PersonalizerStep = "intro" | "about" | "goals" | "preview";
-type DayPartKey = "morning" | "daytime" | "evening";
 type AnalyticsInsight = {
   label: string;
   value: string;
@@ -367,6 +367,7 @@ export function HabitTracker() {
   const [newHabitName, setNewHabitName] = useState("");
   const [newHabitThumbnail, setNewHabitThumbnail] = useState(thumbnailOptions[0].src);
   const [newHabitColor, setNewHabitColor] = useState(colorPalette[0]);
+  const [newHabitDayPart, setNewHabitDayPart] = useState<DayPartKey>("daytime");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
@@ -850,7 +851,8 @@ export function HabitTracker() {
         color: newHabitColor,
         thumbnail: newHabitThumbnail,
         quip: "Custom win ready to track.",
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        dayPart: newHabitDayPart
       };
 
       return { ...current, habits: [...current.habits, habit] };
@@ -858,10 +860,10 @@ export function HabitTracker() {
 
     setNewHabitName("");
     setNewHabitColor((current) => colorPalette[(colorPalette.indexOf(current) + 1) % colorPalette.length]);
-  }, [commit, newHabitColor, newHabitName, newHabitThumbnail]);
+  }, [commit, newHabitColor, newHabitDayPart, newHabitName, newHabitThumbnail]);
 
   const updateHabit = useCallback(
-    (habitId: string, patch: Partial<Pick<Habit, "name" | "thumbnail" | "color" | "quip">>) => {
+    (habitId: string, patch: Partial<Pick<Habit, "name" | "thumbnail" | "color" | "quip" | "dayPart">>) => {
       commit((current) => ({
         ...current,
         habits: current.habits.map((habit) => (habit.id === habitId ? { ...habit, ...patch } : habit))
@@ -1906,6 +1908,11 @@ export function HabitTracker() {
                   selectedColor={newHabitColor}
                   onSelect={setNewHabitColor}
                 />
+                <DayPartPicker
+                  label="Choose time of day for new win"
+                  selectedDayPart={newHabitDayPart}
+                  onSelect={setNewHabitDayPart}
+                />
                 <button className="icon-text-button hot full" type="button" onClick={addHabit}>
                   <Plus size={18} aria-hidden="true" />
                   {copy.addWin}
@@ -1944,6 +1951,11 @@ export function HabitTracker() {
                         label={`Choose color for ${habit.name}`}
                         selectedColor={habit.color}
                         onSelect={(color) => updateHabit(habit.id, { color })}
+                      />
+                      <DayPartPicker
+                        label={`Choose time of day for ${habit.name}`}
+                        selectedDayPart={getHabitDayPart(habit)}
+                        onSelect={(dayPart) => updateHabit(habit.id, { dayPart })}
                       />
                     </div>
                     <div className="editor-actions">
@@ -3027,6 +3039,33 @@ function ColorSwatches({
   );
 }
 
+function DayPartPicker({
+  label,
+  selectedDayPart,
+  onSelect
+}: {
+  label: string;
+  selectedDayPart: DayPartKey;
+  onSelect: (dayPart: DayPartKey) => void;
+}) {
+  return (
+    <div className="day-part-picker" aria-label={label}>
+      {(Object.keys(dayPartLabels) as DayPartKey[]).map((dayPart) => (
+        <button
+          aria-label={`${label}: ${dayPartLabels[dayPart]}`}
+          className={selectedDayPart === dayPart ? "selected" : ""}
+          key={dayPart}
+          type="button"
+          onClick={() => onSelect(dayPart)}
+        >
+          <strong>{dayPartLabels[dayPart]}</strong>
+          <span>{dayPartMicrocopy[dayPart]}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function CompletionBurst({ message, tone, onUndo }: { message: string; tone: string; onUndo: () => void }) {
   return (
     <div className="completion-burst" style={{ "--celebration": tone } as CSSProperties} aria-live="polite">
@@ -3664,6 +3703,10 @@ function groupHabitsByDayPart(habits: Habit[]) {
 }
 
 function getHabitDayPart(habit: Habit): DayPartKey {
+  if (habit.dayPart) {
+    return habit.dayPart;
+  }
+
   const text = `${habit.id} ${habit.name} ${habit.quip}`.toLowerCase();
 
   if (

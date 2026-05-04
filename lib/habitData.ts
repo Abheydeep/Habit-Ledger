@@ -2,6 +2,7 @@ export const STORAGE_KEY = "pro-habit-tracker:india:v1";
 export const APP_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export type MoodKey = "done" | "strong" | "partial" | "skipped" | "rest";
+export type DayPartKey = "morning" | "daytime" | "evening";
 
 export type Habit = {
   id: string;
@@ -11,6 +12,7 @@ export type Habit = {
   thumbnail: string;
   quip: string;
   createdAt: string;
+  dayPart?: DayPartKey;
   pausedAt?: string;
 };
 
@@ -33,6 +35,10 @@ export type ThumbnailOption = {
   label: string;
   src: string;
 };
+
+export function isDayPartKey(value: unknown): value is DayPartKey {
+  return value === "morning" || value === "daytime" || value === "evening";
+}
 
 export const moodOptions: Array<{
   key: MoodKey;
@@ -204,6 +210,7 @@ export function normalizeImportedState(value: TrackerState): TrackerState {
           : fallback.habits[index % fallback.habits.length].thumbnail,
       quip: typeof habit.quip === "string" ? habit.quip : "Custom win ready to track.",
       createdAt: typeof habit.createdAt === "string" ? habit.createdAt : now,
+      dayPart: isDayPartKey(habit.dayPart) ? habit.dayPart : undefined,
       pausedAt: typeof habit.pausedAt === "string" ? habit.pausedAt : undefined
     }));
   const normalizedHabits = (habits.length > 0 ? habits : fallback.habits)
