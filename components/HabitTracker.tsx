@@ -8,6 +8,7 @@ import {
   BookOpen,
   Briefcase,
   CalendarDays,
+  ChartColumn,
   ChevronDown,
   Cloud,
   ClipboardCheck,
@@ -339,6 +340,9 @@ export function HabitTracker() {
   const perfectDayTimeoutRef = useRef<number | null>(null);
   const [appToast, setAppToast] = useState<AppToast | null>(null);
   const appToastTimeoutRef = useRef<number | null>(null);
+  const [noteSavedVisible, setNoteSavedVisible] = useState(false);
+  const noteSavedTimerRef = useRef<number | null>(null);
+  const noteSavedHideTimerRef = useRef<number | null>(null);
   const [personalizerOpen, setPersonalizerOpen] = useState(false);
   const [onboarding, setOnboarding] = useState<OnboardingInput>(defaultOnboardingInput);
   const [personalizationSnapshot, setPersonalizationSnapshot] = useState<PersonalizationSnapshot | null>(null);
@@ -408,6 +412,8 @@ export function HabitTracker() {
     const storedColorScheme = window.localStorage.getItem(COLOR_SCHEME_STORAGE_KEY);
     if (storedColorScheme === "light" || storedColorScheme === "dark") {
       setColorScheme(storedColorScheme);
+    } else if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+      setColorScheme("dark");
     }
 
     const today = new Date();
@@ -475,6 +481,12 @@ export function HabitTracker() {
       }
       if (appToastTimeoutRef.current) {
         window.clearTimeout(appToastTimeoutRef.current);
+      }
+      if (noteSavedTimerRef.current) {
+        window.clearTimeout(noteSavedTimerRef.current);
+      }
+      if (noteSavedHideTimerRef.current) {
+        window.clearTimeout(noteSavedHideTimerRef.current);
       }
     };
   }, []);
@@ -564,7 +576,7 @@ export function HabitTracker() {
     "--app-bg": isDarkScheme ? "#0b1512" : appTheme.background,
     "--app-surface": isDarkScheme ? "#13231f" : appTheme.surface,
     "--app-soft": isDarkScheme ? "#1f3832" : appTheme.soft,
-    "--app-ink": isDarkScheme ? "#f6fbf8" : appTheme.ink
+    "--app-ink": isDarkScheme ? "#e4f5ef" : appTheme.ink
   } as CSSProperties;
 
   const showAppToast = useCallback((message: string, tone: AppToast["tone"] = "success") => {
@@ -748,6 +760,20 @@ export function HabitTracker() {
 
   const updateSelectedNote = useCallback(
     (note: string) => {
+      setNoteSavedVisible(false);
+      if (noteSavedTimerRef.current) {
+        window.clearTimeout(noteSavedTimerRef.current);
+      }
+      if (noteSavedHideTimerRef.current) {
+        window.clearTimeout(noteSavedHideTimerRef.current);
+      }
+      noteSavedTimerRef.current = window.setTimeout(() => {
+        setNoteSavedVisible(true);
+        noteSavedHideTimerRef.current = window.setTimeout(() => {
+          setNoteSavedVisible(false);
+        }, 1800);
+      }, 800);
+
       commit((current) => {
         const record = current.days[selectedDate] ?? emptyDay;
         return {
@@ -1296,7 +1322,7 @@ export function HabitTracker() {
               type="button"
               onClick={openMonthView}
             >
-              <Sparkles size={18} aria-hidden="true" />
+              <ChartColumn size={18} aria-hidden="true" />
               Analytics
             </button>
             <button
@@ -1453,12 +1479,16 @@ export function HabitTracker() {
             </div>
 
             <label className="note-box">
-              <span>Daily note</span>
+              <span>
+                Daily note
+                <small className={`note-save-state${noteSavedVisible ? " visible" : ""}`} aria-live="polite">
+                  Saved ✓
+                </small>
+              </span>
               <textarea
                 ref={noteRef}
                 value={selectedRecord.note ?? ""}
                 onChange={(event) => updateSelectedNote(event.target.value)}
-                onInput={(event) => updateSelectedNote(event.currentTarget.value)}
                 placeholder="What made today easier or harder? One line is enough."
               />
             </label>
@@ -1519,7 +1549,7 @@ export function HabitTracker() {
                 style={{ "--day-count": monthDays.length } as CSSProperties}
               >
                 <div className="grid-row header-row">
-                  <div className="habit-sticky header-habit">Win</div>
+                  <div className="habit-sticky header-habit">Habit</div>
                   {monthDays.map((day) => {
                     const dayKey = localDateKey(day);
                     return (
