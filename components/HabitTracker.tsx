@@ -24,6 +24,7 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
+  Volume2,
   Sun,
   Trash2,
   Wand2,
@@ -82,6 +83,7 @@ const COOKIE_KEY = "pro_habit_tracker_india_v1";
 const HISTORY_STATE_KEY = "proHabitTrackerIndiaStateV1";
 const THEME_STORAGE_KEY = "habit-ledger:theme:v1";
 const COLOR_SCHEME_STORAGE_KEY = "the-win-list:color-scheme:v1";
+const FEEDBACK_STORAGE_KEY = "the-win-list:feedback:v1";
 const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
 const SETTINGS_SECTION_STORAGE_KEY = "the-win-list:settings-section:v1";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
@@ -104,6 +106,7 @@ const copy = {
 };
 const defaultWinMood = moodOptions.find((item) => item.key === "done");
 let completionAudioContext: AudioContext | null = null;
+type CompletionFeedbackMode = "sequence" | "stack" | "tap";
 const appThemes = {
   "fresh-ledger": {
     label: "Fresh Start",
@@ -163,9 +166,13 @@ const appThemes = {
 } as const;
 type AppThemeKey = keyof typeof appThemes;
 type ColorScheme = "light" | "dark";
-type SettingsSectionKey = "personalize" | "backup" | "theme" | "wins" | "sync";
+type SettingsSectionKey = "personalize" | "backup" | "theme" | "feedback" | "wins" | "sync";
 type PersonalizerStep = "intro" | "about" | "goals" | "preview";
 type AnalyticsSectionKey = "review" | "matrix";
+type FeedbackSettings = {
+  sound: boolean;
+  haptics: boolean;
+};
 type AnalyticsInsight = {
   label: string;
   value: string;
@@ -183,15 +190,20 @@ const collapsedSettingsSections: Record<SettingsSectionKey, boolean> = {
   personalize: false,
   backup: false,
   theme: false,
+  feedback: false,
   wins: false,
   sync: false
+};
+const defaultFeedbackSettings: FeedbackSettings = {
+  sound: true,
+  haptics: true
 };
 const defaultAnalyticsSections: Record<AnalyticsSectionKey, boolean> = {
   review: true,
   matrix: false
 };
 const personalizerFlowSteps: Array<{ key: Exclude<PersonalizerStep, "intro">; label: string }> = [
-  { key: "about", label: "About" },
+  { key: "about", label: "About you" },
   { key: "goals", label: "Goals" },
   { key: "preview", label: "Preview" }
 ];
@@ -393,12 +405,14 @@ export function HabitTracker() {
   const [noteSavedVisible, setNoteSavedVisible] = useState(false);
   const noteSavedTimerRef = useRef<number | null>(null);
   const noteSavedHideTimerRef = useRef<number | null>(null);
+  const [clientStateReady, setClientStateReady] = useState(false);
   const [personalizerOpen, setPersonalizerOpen] = useState(false);
   const [personalizerStep, setPersonalizerStep] = useState<PersonalizerStep>("intro");
   const [onboarding, setOnboarding] = useState<OnboardingInput>(defaultOnboardingInput);
   const [personalizationSnapshot, setPersonalizationSnapshot] = useState<PersonalizationSnapshot | null>(null);
   const [appThemeKey, setAppThemeKey] = useState<AppThemeKey>("fresh-ledger");
   const [colorScheme, setColorScheme] = useState<ColorScheme>("light");
+  const [feedbackSettings, setFeedbackSettings] = useState<FeedbackSettings>(defaultFeedbackSettings);
   const [expandedSettingsSections, setExpandedSettingsSections] =
     useState<Record<SettingsSectionKey, boolean>>(collapsedSettingsSections);
   const [cloudSession, setCloudSession] = useState<SupabaseSession | null>(null);
@@ -448,7 +462,7 @@ export function HabitTracker() {
       }
     } else {
       setPersonalizerStep("intro");
-      setPersonalizerOpen(true);
+      setPersonalizerOpen(false);
     }
 
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
@@ -463,6 +477,19 @@ export function HabitTracker() {
       setColorScheme("dark");
     }
 
+    const storedFeedback = window.localStorage.getItem(FEEDBACK_STORAGE_KEY);
+    if (storedFeedback) {
+      try {
+        const parsed = JSON.parse(storedFeedback) as Partial<FeedbackSettings>;
+        setFeedbackSettings({
+          sound: typeof parsed.sound === "boolean" ? parsed.sound : true,
+          haptics: typeof parsed.haptics === "boolean" ? parsed.haptics : true
+        });
+      } catch {
+        window.localStorage.removeItem(FEEDBACK_STORAGE_KEY);
+      }
+    }
+
     const storedSettingsSection = window.localStorage.getItem(SETTINGS_SECTION_STORAGE_KEY);
     if (isSettingsSectionKey(storedSettingsSection)) {
       setExpandedSettingsSections({ ...collapsedSettingsSections, [storedSettingsSection]: true });
@@ -473,6 +500,7 @@ export function HabitTracker() {
     selectedDateRef.current = todayKey;
     setSelectedDate(todayKey);
     setVisibleMonth(startOfMonth(today));
+    setClientStateReady(true);
   }, []);
 
   useEffect(() => {
@@ -621,6 +649,18 @@ export function HabitTracker() {
   );
   const analyticsInsights = analyticsSummary.insights;
   const streakNudge = getStreakNudge(streak, completedCount, activeHabits.length);
+  const shouldPromptPersonalization = clientStateReady && !personalizationSnapshot;
+  const companionNudge = useMemo(
+    () =>
+      getCompanionNudge({
+        groups: dayPartGroups,
+        completedSet,
+        completedCount,
+        totalCount: activeHabits.length,
+        currentDayPart
+      }),
+    [activeHabits.length, completedCount, completedSet, currentDayPart, dayPartGroups]
+  );
   const shouldShowPersonalizer = personalizerOpen;
   const activePersonalization = personalizationSnapshot?.input ?? onboarding;
   const activeModeTheme = lifeModeThemes[activePersonalization.routineType];
@@ -678,17 +718,13 @@ export function HabitTracker() {
         message: messages[Math.floor(Math.random() * messages.length)]
       });
 
-      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-        navigator.vibrate([12, 32, 18]);
-      }
-
-      playCompletionSound(moodOption?.tone ?? habit.color);
+      triggerCompletionFeedback(moodOption?.tone ?? habit.color, "sequence", feedbackSettings);
 
       celebrationTimeoutRef.current = window.setTimeout(() => {
         setCelebration(null);
       }, 1500);
     },
-    []
+    [feedbackSettings]
   );
 
   const triggerPerfectDayCelebration = useCallback((tone: string, total: number) => {
@@ -702,16 +738,12 @@ export function HabitTracker() {
       total
     });
 
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate([18, 34, 18, 42, 26]);
-    }
-
-    playCompletionSound(tone, "stack");
+    triggerCompletionFeedback(tone, "stack", feedbackSettings);
 
     perfectDayTimeoutRef.current = window.setTimeout(() => {
       setPerfectDayCelebration(null);
     }, 2400);
-  }, []);
+  }, [feedbackSettings]);
 
   const maybeTriggerPerfectDay = useCallback(
     (habitId: string, mood: MoodKey, tone: string) => {
@@ -818,6 +850,7 @@ export function HabitTracker() {
       const currentMood = record.habitMoods?.[habit.id];
 
       if (currentMood && isCompletionMood(currentMood)) {
+        triggerCompletionFeedback(habit.color, "tap", feedbackSettings);
         clearHabitMood(habit.id);
         return;
       }
@@ -828,7 +861,7 @@ export function HabitTracker() {
       setExpandedHabitId(null);
       triggerCompletionCelebration(habit, mood);
     },
-    [clearHabitMood, maybeTriggerPerfectDay, selectedDate, setHabitMood, triggerCompletionCelebration]
+    [clearHabitMood, feedbackSettings, maybeTriggerPerfectDay, selectedDate, setHabitMood, triggerCompletionCelebration]
   );
 
   const updateSelectedNote = useCallback(
@@ -1219,6 +1252,20 @@ export function HabitTracker() {
     window.localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, scheme);
   }, []);
 
+  const updateFeedbackSetting = useCallback((key: keyof FeedbackSettings, value: boolean) => {
+    setFeedbackSettings((current) => {
+      const next = { ...current, [key]: value };
+      window.localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const testFeedback = useCallback(() => {
+    primeCompletionFeedback();
+    triggerCompletionFeedback(appTheme.primary, "stack", feedbackSettings);
+    showAppToast("Feedback test played.", "success");
+  }, [appTheme.primary, feedbackSettings, showAppToast]);
+
   const toggleSettingsSection = useCallback((section: SettingsSectionKey) => {
     setExpandedSettingsSections((current) => {
       const willOpen = !current[section];
@@ -1416,7 +1463,10 @@ export function HabitTracker() {
               className={`icon-text-button${settingsOpen ? " hot" : ""}`}
               type="button"
               aria-pressed={settingsOpen}
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => {
+                setExpandedSettingsSections(collapsedSettingsSections);
+                setSettingsOpen(true);
+              }}
             >
               <Settings2 size={18} aria-hidden="true" />
               Settings
@@ -1426,14 +1476,19 @@ export function HabitTracker() {
       </section>
 
       {shouldShowPersonalizer ? (
-        <div className="settings-layer personalization-layer" role="dialog" aria-modal="true" aria-labelledby="personalizer-title">
+        <div
+          className={`settings-layer personalization-layer step-${personalizerStep}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="personalizer-title"
+        >
           <button
             className="settings-backdrop"
             type="button"
             onClick={() => setPersonalizerOpen(false)}
             aria-label="Close personalization"
           />
-          <aside className="settings-drawer personalization-drawer">
+          <aside className={`settings-drawer personalization-drawer step-${personalizerStep}`}>
             <PersonalizerPanel
               isOpen={personalizerOpen}
               step={personalizerStep}
@@ -1477,7 +1532,11 @@ export function HabitTracker() {
 
           <div className="stat-strip" aria-label="Daily progress">
             <StatCard label={copy.wonToday} value={`${completedCount}/${activeHabits.length}`} />
-            <StatCard label="Streak" value={`${streak} day${streak === 1 ? "" : "s"}`} />
+            <StatCard
+              label="Perfect streak"
+              value={`${streak} day${streak === 1 ? "" : "s"}`}
+              title="A perfect streak counts days where every active win is logged."
+            />
             <StatCard
               label="Month rate"
               value={monthProgress.total > 0 ? `${Math.round((monthProgress.completed / monthProgress.total) * 100)}%` : "0%"}
@@ -1485,7 +1544,37 @@ export function HabitTracker() {
             />
           </div>
 
+          {shouldPromptPersonalization ? (
+            <div className="starter-card" aria-label="Personalize The Win List">
+              <div>
+                <span>Make it yours</span>
+                <strong>Build a Win List around your real routine.</strong>
+                <p>The current list works now. Personalizing will tune the wins, theme, and companion.</p>
+              </div>
+              <button
+                className="starter-card-button"
+                type="button"
+                onClick={() => {
+                  setPersonalizerStep("intro");
+                  setPersonalizerOpen(true);
+                }}
+              >
+                <Wand2 size={16} aria-hidden="true" />
+                Build
+              </button>
+            </div>
+          ) : null}
+
           <p className="streak-nudge">{streakNudge}</p>
+
+          <div className="companion-nudge" aria-label="Win List companion check-in">
+            <AnswerCharacter input={activePersonalization} />
+            <div>
+              <span>Companion check-in</span>
+              <p>{companionNudge}</p>
+              <small>No login needed. Saved on this device.</small>
+            </div>
+          </div>
 
           <div className="mobile-collapse-row">
             <button
@@ -1552,6 +1641,7 @@ export function HabitTracker() {
                                   className="habit-win-button"
                                   type="button"
                                   onPointerDown={primeCompletionFeedback}
+                                  onTouchStart={primeCompletionFeedback}
                                   onClick={() => toggleHabitWin(habit)}
                                   aria-label={done ? `Undo ${habit.name} for ${formatPrettyDate(selectedDate)}` : `Mark ${habit.name} as won`}
                                 >
@@ -1566,6 +1656,8 @@ export function HabitTracker() {
                                   className={`mood-preview${moodOption ? " selected" : ""}`}
                                   style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
                                   type="button"
+                                  onPointerDown={primeCompletionFeedback}
+                                  onTouchStart={primeCompletionFeedback}
                                   onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
                                   aria-expanded={moodMenuOpen}
                                   aria-label={`${done || moodOption ? "Change" : "Choose"} status for ${habit.name}`}
@@ -1587,11 +1679,12 @@ export function HabitTracker() {
                                     style={{ "--mood": mood.tone } as CSSProperties}
                                     type="button"
                                     onPointerDown={primeCompletionFeedback}
+                                    onTouchStart={primeCompletionFeedback}
                                     onClick={() => {
                                       const shouldCelebrate = habitMood !== mood.key && isCompletionMood(mood.key);
-                                        if (shouldCelebrate) {
-                                          maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
-                                        }
+                  if (shouldCelebrate) {
+                    maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
+                  }
                                         updateHabitMood(habit.id, mood.key);
                                         if (shouldCelebrate) {
                                           triggerCompletionCelebration(habit, mood);
@@ -1958,6 +2051,51 @@ export function HabitTracker() {
                     </button>
                   )
                 )}
+              </div>
+            </SettingsAccordionSection>
+
+            <SettingsAccordionSection
+              id="feedback"
+              title="Feedback"
+              description="Control the tiny sound and haptic feel when a win lands."
+              icon={<Volume2 size={18} aria-hidden="true" />}
+              expanded={expandedSettingsSections.feedback}
+              onToggle={toggleSettingsSection}
+            >
+              <div className="feedback-settings">
+                <label className="preference-toggle">
+                  <input
+                    type="checkbox"
+                    checked={feedbackSettings.sound}
+                    onChange={(event) => updateFeedbackSetting("sound", event.target.checked)}
+                  />
+                  <span>
+                    <strong>Completion sound</strong>
+                    <small>A short, soft tone when you mark a win.</small>
+                  </span>
+                </label>
+                <label className="preference-toggle">
+                  <input
+                    type="checkbox"
+                    checked={feedbackSettings.haptics}
+                    onChange={(event) => updateFeedbackSetting("haptics", event.target.checked)}
+                  />
+                  <span>
+                    <strong>Haptic tap</strong>
+                    <small>Uses device vibration where the browser allows it.</small>
+                  </span>
+                </label>
+                <button
+                  className="backup-button feedback-test-button"
+                  type="button"
+                  onPointerDown={primeCompletionFeedback}
+                  onTouchStart={primeCompletionFeedback}
+                  onClick={testFeedback}
+                >
+                  <Volume2 size={17} aria-hidden="true" />
+                  Test feedback
+                </button>
+                <p className="feedback-note">iPhone Safari may block vibration, but the visual win moment still works.</p>
               </div>
             </SettingsAccordionSection>
 
@@ -2392,17 +2530,17 @@ function PersonalizerPanel({
   const stepCopy =
     step === "about"
       ? {
-          title: "About your day",
-          detail: "Give just enough context to shape the list, theme, and companion."
+          title: "Tell us the real day",
+          detail: "Thirty seconds of context is enough to shape useful wins, not a generic checklist."
         }
       : step === "goals"
         ? {
-            title: "What should improve",
-            detail: "Pick the outcomes and constraints that should influence your daily wins."
+            title: "Choose the outcomes",
+            detail: "Pick what should get easier and what usually gets in the way."
           }
         : {
-            title: "Preview the rhythm",
-            detail: "Check the companion, theme, and starting wins before applying the plan."
+            title: "See your first draft",
+            detail: "Review the companion, theme, and must-do wins before you start."
           };
   const panelStyle = {
     "--mode-primary": modeTheme.primary,
@@ -2428,8 +2566,8 @@ function PersonalizerPanel({
           </div>
           <div>
             <span className="section-kicker">{modeTheme.kicker}</span>
-            <h2 id="personalizer-title">Personalize {copy.brand}</h2>
-            <p className="personalizer-lede">Choose a few details. Your wins, theme, and character update around this routine.</p>
+            <h2 id="personalizer-title">Build your daily Win List</h2>
+            <p className="personalizer-lede">A quick guided setup. Your wins, theme, and companion adapt around the routine you actually live.</p>
           </div>
         </div>
         <button className="drawer-close-button" type="button" onClick={onToggle} aria-label="Close personalization">
@@ -2451,8 +2589,8 @@ function PersonalizerPanel({
           </div>
           <div>
             <span className="section-kicker">Start with what matters</span>
-            <h3>Let’s build your Win List</h3>
-            <p>A few answers, then your daily must-do wins, theme, and companion are ready.</p>
+            <h3>A daily list that fits your real day</h3>
+            <p>No account needed. Answer a few things, then start with must-do wins you can actually finish.</p>
           </div>
           <button className="icon-text-button hot full" type="button" onClick={() => onStepChange("about")}>
             <Wand2 size={18} aria-hidden="true" />
@@ -2487,7 +2625,7 @@ function PersonalizerPanel({
               <div className="personalizer-form personalizer-step-card">
                 <div className="form-row two">
                   <label>
-                    <span>Name or nickname</span>
+                    <span>What should we call you?</span>
                     <input
                       value={onboarding.displayName}
                       onChange={(event) => onUpdate("displayName", event.target.value)}
@@ -2495,7 +2633,7 @@ function PersonalizerPanel({
                     />
                   </label>
                   <label>
-                    <span>City</span>
+                    <span>Where is your day based?</span>
                     <input
                       value={onboarding.city}
                       onChange={(event) => onUpdate("city", event.target.value)}
@@ -2506,7 +2644,7 @@ function PersonalizerPanel({
 
                 <div className="form-row two">
                   <label>
-                    <span>Life mode</span>
+                    <span>Your current mode</span>
                     <select
                       value={onboarding.routineType}
                       onChange={(event) =>
@@ -2521,7 +2659,7 @@ function PersonalizerPanel({
                     </select>
                   </label>
                   <label>
-                    <span>Daily time</span>
+                    <span>Time you can honestly give</span>
                     <div className="range-field">
                       <input
                         type="range"
@@ -2538,7 +2676,7 @@ function PersonalizerPanel({
 
                 <div className="form-row two">
                   <label>
-                    <span>Age range</span>
+                    <span>Age band</span>
                     <select
                       value={onboarding.ageBand}
                       onChange={(event) => onUpdate("ageBand", event.target.value as OnboardingInput["ageBand"])}
@@ -2550,7 +2688,7 @@ function PersonalizerPanel({
                     </select>
                   </label>
                   <label>
-                    <span>Gender</span>
+                    <span>Avatar style</span>
                     <select
                       value={onboarding.avatarStyle}
                       onChange={(event) =>
@@ -2617,9 +2755,9 @@ function PersonalizerPanel({
                 <div className="character-persona-strip" aria-live="polite">
                   <AnswerCharacter input={onboarding} />
                   <div>
-                    <span>Meet your companion</span>
-                    <strong>{previewTitle}</strong>
-                    <p>{outfit.detail}</p>
+                  <span>Meet your companion</span>
+                  <strong>{previewTitle}</strong>
+                    <p>{outfit.detail} They’ll keep the open wins visible without nagging.</p>
                   </div>
                 </div>
 
@@ -3557,18 +3695,63 @@ function getStreakNudge(streak: number, completedCount: number, totalCount: numb
   }
 
   if (streak === 0 && completedCount === 0) {
-    return "Start your streak today. Tap any card to mark the first win.";
+    return "Perfect streak starts when every win is logged. First, tap one card and get the day moving.";
   }
 
   if (streak === 0) {
-    return "Streak starts again from here. One day is enough to restart momentum.";
+    return `${completedCount} win${completedCount === 1 ? "" : "s"} logged today. Perfect streak is still open if you finish the rest.`;
   }
 
   if (streak === 1) {
-    return "Day one is alive. Protect it with one more small win.";
+    return "Day one of the perfect streak is alive. Protect it with the remaining wins.";
   }
 
-  return `${streak} days in motion. Keep the chain warm.`;
+  return `${streak} perfect days in motion. Keep the chain warm.`;
+}
+
+function getCompanionNudge({
+  groups,
+  completedSet,
+  completedCount,
+  totalCount,
+  currentDayPart
+}: {
+  groups: Array<{ key: DayPartKey; habits: Habit[] }>;
+  completedSet: Set<string>;
+  completedCount: number;
+  totalCount: number;
+  currentDayPart: DayPartKey;
+}) {
+  if (totalCount === 0) {
+    return "Add one must-do win and I’ll keep the day simple.";
+  }
+
+  if (completedCount === totalCount) {
+    return "Everything is won today. Share-card energy, clean desk energy, sleep better energy.";
+  }
+
+  const currentGroup = groups.find((group) => group.key === currentDayPart);
+  const openInCurrentGroup =
+    currentGroup?.habits.filter((habit) => !completedSet.has(habit.id)).map((habit) => habit.name) ?? [];
+
+  if (openInCurrentGroup.length > 0) {
+    return `${completedCount > 0 ? "Nice, progress is moving. " : ""}${dayPartLabels[currentDayPart]} has ${
+      openInCurrentGroup.length
+    } open win${
+      openInCurrentGroup.length === 1 ? "" : "s"
+    }. Start with ${openInCurrentGroup[0]}.`;
+  }
+
+  const nextOpenGroup = groups.find((group) => group.habits.some((habit) => !completedSet.has(habit.id)));
+  const nextWin = nextOpenGroup?.habits.find((habit) => !completedSet.has(habit.id));
+
+  if (nextOpenGroup && nextWin) {
+    return `${dayPartLabels[currentDayPart]} is clean. I’d keep momentum with ${nextWin.name} in ${dayPartLabels[
+      nextOpenGroup.key
+    ].toLowerCase()}.`;
+  }
+
+  return "One small tap is enough. Keep the list lighter than the day.";
 }
 
 function getHeatClass(status: MoodKey | undefined, done: boolean) {
@@ -3606,7 +3789,34 @@ function primeCompletionFeedback() {
   }
 }
 
-function playCompletionSound(tone: string, mode: "sequence" | "stack" = "sequence") {
+function triggerCompletionFeedback(
+  tone: string,
+  mode: CompletionFeedbackMode = "sequence",
+  settings: FeedbackSettings = defaultFeedbackSettings
+) {
+  if (settings.haptics) {
+    triggerCompletionHaptic(mode);
+  }
+
+  if (settings.sound) {
+    playCompletionSound(tone, mode);
+  }
+}
+
+function triggerCompletionHaptic(mode: CompletionFeedbackMode = "sequence") {
+  if (typeof navigator === "undefined" || !("vibrate" in navigator)) {
+    return false;
+  }
+
+  try {
+    const pattern = mode === "stack" ? [32, 44, 32, 58, 42] : mode === "tap" ? [18] : [28, 34, 26];
+    return navigator.vibrate(pattern);
+  } catch {
+    return false;
+  }
+}
+
+function playCompletionSound(tone: string, mode: CompletionFeedbackMode = "sequence") {
   if (typeof window === "undefined") {
     return;
   }
@@ -3618,27 +3828,33 @@ function playCompletionSound(tone: string, mode: "sequence" | "stack" = "sequenc
     }
 
     const play = () => {
-      const startedAt = audio.currentTime + 0.012;
+      const startedAt = audio.currentTime + 0.008;
       const baseFrequency = colorToFrequency(tone);
       const master = audio.createGain();
+      const peak = mode === "stack" ? 0.12 : mode === "tap" ? 0.045 : 0.105;
+      const release = mode === "stack" ? 0.5 : mode === "tap" ? 0.16 : 0.36;
       master.gain.setValueAtTime(0.0001, startedAt);
-      master.gain.exponentialRampToValueAtTime(0.045, startedAt + 0.018);
-      master.gain.exponentialRampToValueAtTime(0.0001, startedAt + 0.42);
+      master.gain.exponentialRampToValueAtTime(peak, startedAt + 0.018);
+      master.gain.exponentialRampToValueAtTime(0.0001, startedAt + release);
       master.connect(audio.destination);
 
-      [1, 1.25, 1.5].forEach((ratio, index) => {
+      const ratios = mode === "tap" ? [1] : [1, 1.25, 1.5];
+      ratios.forEach((ratio, index) => {
         const oscillator = audio.createOscillator();
         const gain = audio.createGain();
-        const noteStart = mode === "stack" ? startedAt : startedAt + index * 0.065;
+        const noteStart = mode === "stack" ? startedAt : startedAt + index * 0.055;
         oscillator.type = index === 0 ? "sine" : "triangle";
         oscillator.frequency.setValueAtTime(baseFrequency * ratio, noteStart);
         gain.gain.setValueAtTime(0.0001, noteStart);
-        gain.gain.exponentialRampToValueAtTime(mode === "stack" ? 0.1 : index === 0 ? 0.2 : 0.12, noteStart + 0.018);
-        gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + (mode === "stack" ? 0.34 : 0.22));
+        gain.gain.exponentialRampToValueAtTime(
+          mode === "stack" ? 0.16 : mode === "tap" ? 0.12 : index === 0 ? 0.28 : 0.17,
+          noteStart + 0.016
+        );
+        gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + (mode === "stack" ? 0.38 : mode === "tap" ? 0.12 : 0.24));
         oscillator.connect(gain);
         gain.connect(master);
         oscillator.start(noteStart);
-        oscillator.stop(noteStart + (mode === "stack" ? 0.36 : 0.24));
+        oscillator.stop(noteStart + (mode === "stack" ? 0.4 : mode === "tap" ? 0.14 : 0.26));
       });
     };
 
@@ -3885,10 +4101,10 @@ function getAnalyticsSummary(
 
   if (activeHabits.length === 0 || dayCount === 0) {
     return {
-      sentence: "Add a few wins and this screen will start showing your strongest patterns.",
+      sentence: "Add a few wins and this review will turn into plain-language guidance for tomorrow.",
       action: {
-        title: "Create the first must-do",
-        detail: "Start with one repeatable win you can finish today."
+        title: "Create the first must-do win",
+        detail: "Start with one repeatable action you can finish today, then the review gets smarter."
       },
       insights: [
         { label: "Best win", value: "Add wins", detail: "Start with one must-do." },
@@ -3929,26 +4145,30 @@ function getAnalyticsSummary(
   const nextAction =
     mostMissed.missed > 0
       ? {
-          title: `Protect ${mostMissed.habit.name}`,
-          detail: `Make this the first win you log next. It has ${mostMissed.missed} open day${
+          title: `Tomorrow: protect ${mostMissed.habit.name}`,
+          detail: `Pattern read: this win needs a named slot, not willpower. Try it ${getHabitActionSlot(
+            mostMissed.habit
+          )} tomorrow; it has ${mostMissed.missed} open day${
             mostMissed.missed === 1 ? "" : "s"
           } this month.`
         }
       : best.completed > 0
         ? {
-            title: `Repeat ${best.habit.name}`,
-            detail: "Your strongest pattern is already visible. Use it as today's anchor win."
+            title: `Anchor the day with ${best.habit.name}`,
+            detail: `This is your easiest momentum builder. Repeat it ${getHabitActionSlot(
+              best.habit
+            )}, then let the rest of the list follow.`
           }
         : {
-            title: "Tap one card today",
-            detail: "The dashboard gets smarter as soon as the first win is logged."
+            title: "Tap one win today",
+            detail: "The review starts learning once you log the first real win."
           };
   const sentence =
     best.completed > 0
       ? mostMissed.missed > 0
-        ? `You’re strongest on ${best.habit.name}; ${mostMissed.habit.name} needs the next tiny push.`
-        : `You’re clean across the board so far. Keep the daily rhythm simple.`
-      : `No wins logged yet this month. One tap today starts the pattern.`;
+        ? `${best.habit.name} is carrying momentum. ${mostMissed.habit.name} is not failing; it just needs a better slot.`
+        : `You’re clean across the board so far. Keep tomorrow boring and repeatable.`
+      : `No wins logged yet this month. One tap today gives the month a starting point.`;
 
   return {
     sentence,
@@ -3980,4 +4200,18 @@ function getAnalyticsSummary(
 
 function formatInsightDate(date: Date) {
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(date);
+}
+
+function getHabitActionSlot(habit: Habit) {
+  const dayPart = getHabitDayPart(habit);
+
+  if (dayPart === "morning") {
+    return "before the phone gets interesting";
+  }
+
+  if (dayPart === "evening") {
+    return "before the day fully winds down";
+  }
+
+  return "before lunch or right after the first work block";
 }

@@ -1029,9 +1029,9 @@ img {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 14px;
-  margin-top: 16px;
-  padding: 16px;
+  gap: 11px;
+  margin-top: 12px;
+  padding: 14px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--mode-primary), transparent 84%);
   border-radius: 18px;
@@ -1044,29 +1044,29 @@ img {
 .personalizer-intro-art {
   position: relative;
   display: grid;
-  grid-template-columns: 76px 112px;
+  grid-template-columns: 58px 92px;
   align-items: center;
   justify-content: center;
-  min-height: 116px;
+  min-height: 88px;
 }
 
 .personalizer-intro-logo {
-  width: 86px;
+  width: 68px;
   filter: drop-shadow(0 12px 20px color-mix(in srgb, var(--mode-primary), transparent 84%));
 }
 
 .personalizer-intro .answer-character.avatar-photo {
-  width: 126px;
-  margin-left: -18px;
-  border-radius: 28px;
+  width: 104px;
+  margin-left: -14px;
+  border-radius: 24px;
 }
 
 .personalizer-intro h3 {
   margin: 4px 0 0;
   color: #0f2f2e;
-  font-size: clamp(1.65rem, 9vw, 2.45rem);
+  font-size: clamp(1.35rem, 7.2vw, 2.05rem);
   font-weight: 950;
-  line-height: 0.98;
+  line-height: 1.02;
 }
 
 .personalizer-intro p {
@@ -2466,6 +2466,68 @@ img {
   line-height: 1.1;
 }
 
+.starter-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, var(--app-secondary), transparent 76%);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--app-accent), transparent 80%), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--app-secondary), #ffffff 88%), #ffffff);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--app-secondary), transparent 92%);
+}
+
+.starter-card div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.starter-card span {
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 22%);
+  font-size: 0.68rem;
+  font-weight: 720;
+  text-transform: uppercase;
+}
+
+.starter-card strong {
+  color: var(--app-ink);
+  font-size: 0.92rem;
+  font-weight: 740;
+  line-height: 1.2;
+}
+
+.starter-card p {
+  display: none;
+  margin: 0;
+  color: #60716d;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.starter-card-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--app-primary), var(--app-secondary));
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 720;
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--app-primary), transparent 80%);
+}
+
 .streak-nudge {
   position: relative;
   z-index: 1;
@@ -2480,6 +2542,63 @@ img {
   font-size: 0.86rem;
   font-weight: 760;
   line-height: 1.35;
+}
+
+.companion-nudge {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin-top: 9px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 84%);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--app-secondary), transparent 84%), transparent 38%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86), color-mix(in srgb, var(--app-soft), #ffffff 56%));
+}
+
+.companion-nudge .answer-character.avatar-photo {
+  width: 58px;
+  border-radius: 16px;
+  box-shadow: 0 10px 18px color-mix(in srgb, var(--app-primary), transparent 88%);
+}
+
+.companion-nudge .avatar-action-badge {
+  right: 4px;
+  bottom: 4px;
+  width: 28%;
+  border-width: 2px;
+}
+
+.companion-nudge div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.companion-nudge span {
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 24%);
+  font-size: 0.68rem;
+  font-weight: 720;
+  text-transform: uppercase;
+}
+
+.companion-nudge p {
+  margin: 0;
+  color: var(--app-ink);
+  font-size: 0.83rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.companion-nudge small {
+  color: #6a7974;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .day-toggle,
@@ -3409,6 +3528,30 @@ img {
     linear-gradient(135deg, rgba(255, 255, 255, 0.98), color-mix(in srgb, var(--mode-surface), #ffffff 44%));
 }
 
+.personalization-layer.step-intro {
+  align-items: center;
+  padding: 10px;
+}
+
+.personalization-layer.step-intro .personalization-drawer {
+  width: min(500px, calc(100vw - 20px));
+  height: auto;
+  max-height: calc(100dvh - 20px);
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 84%);
+  border-radius: 18px;
+  overflow: auto;
+}
+
+.personalization-layer.step-intro .personalizer-panel {
+  height: auto;
+  max-height: none;
+  padding: 10px;
+}
+
+.personalization-layer.step-intro .personalizer-header {
+  padding-bottom: 10px;
+}
+
 .personalization-drawer .personalizer-header {
   position: sticky;
   top: -16px;
@@ -3719,6 +3862,58 @@ img {
   background: linear-gradient(135deg, var(--app-primary), var(--app-secondary));
   color: #ffffff;
   box-shadow: 0 10px 22px color-mix(in srgb, var(--app-primary), transparent 76%);
+}
+
+.feedback-settings {
+  display: grid;
+  gap: 9px;
+}
+
+.preference-toggle {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 86%);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--app-surface), var(--app-soft) 30%);
+}
+
+.preference-toggle input {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--app-primary);
+}
+
+.preference-toggle span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.preference-toggle strong {
+  color: var(--app-ink);
+  font-size: 0.9rem;
+  font-weight: 720;
+}
+
+.preference-toggle small,
+.feedback-note {
+  color: #61736e;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.feedback-test-button {
+  justify-content: center;
+}
+
+.feedback-note {
+  margin: 0;
+  padding-inline: 4px;
 }
 
 .theme-picker {
@@ -5527,7 +5722,7 @@ img {
 
 .mobile-hero-status span,
 .habit-card h3 {
-  font-weight: 820;
+  font-weight: 740;
 }
 
 .section-kicker,
@@ -5559,7 +5754,52 @@ img {
 .settings-section-title h3,
 .settings-section-title strong,
 .theme-card strong {
-  font-weight: 760;
+  font-weight: 720;
+}
+
+.personalizer-title h2,
+.personalizer-intro h3 {
+  font-weight: 800;
+}
+
+.drawer-header h2,
+.section-header h2,
+.month-toolbar h2 {
+  font-weight: 820;
+}
+
+.personalizer-stepper button,
+.personalizer-form label span,
+.chip-group > span,
+.sample-strip > span,
+.cloud-email-field span,
+.cloud-overview span,
+.sync-message,
+.cloud-env-note {
+  font-weight: 620;
+}
+
+.personalizer-form,
+.personalizer-preview,
+.personalizer-intro {
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--mode-primary), transparent 92%);
+}
+
+.personalization-drawer .personalizer-form label,
+.personalization-drawer .chip-group {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--mode-soft), transparent 36%), transparent 40%),
+    rgba(255, 255, 255, 0.76);
+}
+
+.personalizer-step-copy {
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--mode-accent), transparent 82%), transparent 34%),
+    color-mix(in srgb, var(--mode-surface), #ffffff 52%);
+}
+
+.personalizer-step-copy strong {
+  font-size: 1.05rem;
 }
 
 .streak-nudge {
@@ -5883,6 +6123,8 @@ img {
 .tracker-shell.scheme-dark .month-panel,
 .tracker-shell.scheme-dark .settings-drawer,
 .tracker-shell.scheme-dark .settings-section,
+.tracker-shell.scheme-dark .starter-card,
+.tracker-shell.scheme-dark .companion-nudge,
 .tracker-shell.scheme-dark .habit-card,
 .tracker-shell.scheme-dark .stat-card,
 .tracker-shell.scheme-dark .insight-card,
@@ -5954,19 +6196,28 @@ img {
 
 .tracker-shell.scheme-dark .analytics-action-card p,
 .tracker-shell.scheme-dark .personalizer-step-copy p,
-.tracker-shell.scheme-dark .day-group-header small {
+.tracker-shell.scheme-dark .day-group-header small,
+.tracker-shell.scheme-dark .starter-card p,
+.tracker-shell.scheme-dark .companion-nudge small,
+.tracker-shell.scheme-dark .feedback-note,
+.tracker-shell.scheme-dark .preference-toggle small {
   color: #bfd0ca;
 }
 
 .tracker-shell.scheme-dark .analytics-action-card span,
 .tracker-shell.scheme-dark .personalizer-step-copy span,
 .tracker-shell.scheme-dark .day-group-header span,
-.tracker-shell.scheme-dark .day-group-header strong {
+.tracker-shell.scheme-dark .day-group-header strong,
+.tracker-shell.scheme-dark .starter-card span,
+.tracker-shell.scheme-dark .companion-nudge span {
   color: #8ee0d2;
 }
 
 .tracker-shell.scheme-dark .analytics-action-card strong,
-.tracker-shell.scheme-dark .personalizer-step-copy strong {
+.tracker-shell.scheme-dark .personalizer-step-copy strong,
+.tracker-shell.scheme-dark .starter-card strong,
+.tracker-shell.scheme-dark .companion-nudge p,
+.tracker-shell.scheme-dark .preference-toggle strong {
   color: #f3fbf7;
 }
 
@@ -6008,6 +6259,7 @@ img {
 
 .tracker-shell.scheme-dark .personalization-drawer .personalizer-form label,
 .tracker-shell.scheme-dark .personalization-drawer .chip-group,
+.tracker-shell.scheme-dark .preference-toggle,
 .tracker-shell.scheme-dark .personalizer-footer {
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.055);
