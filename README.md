@@ -6,6 +6,8 @@ A professional, mobile-friendly app for today's must-do wins in India.
 
 - Daily win status tracking
 - Permanent wins with optional routines that can move both ways without losing logs
+- Simple Today mode with pressure guardrails for overloaded permanent lists
+- Quick win manager for reorder, pause, and permanent/optional changes
 - Monthly matrix view
 - Local browser storage
 - Installable PWA shell and lightweight local reminders

@@ -2311,6 +2311,30 @@ img {
   box-shadow: 0 6px 14px color-mix(in srgb, var(--app-primary), transparent 94%);
 }
 
+.simple-today-button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--app-secondary), transparent 82%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-surface), #ffffff 70%);
+  color: color-mix(in srgb, var(--app-secondary), var(--app-ink) 18%);
+  font-size: 0.78rem;
+  font-weight: 760;
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--app-secondary), transparent 94%);
+}
+
+.simple-today-button.active {
+  border-color: color-mix(in srgb, var(--app-primary), transparent 66%);
+  background: color-mix(in srgb, var(--app-primary), #ffffff 86%);
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 12%);
+}
+
 .section-collapse-button svg {
   transition: transform 160ms ease;
 }
@@ -2340,6 +2364,15 @@ img {
   min-width: 0;
   align-items: center;
   gap: 8px;
+}
+
+.today-panel .section-header {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.today-panel .section-title-lockup {
+  flex: 1 1 150px;
 }
 
 .section-logo,
@@ -2500,7 +2533,8 @@ img {
 }
 
 .return-path-prompt,
-.permanent-list-toolbar {
+.permanent-list-toolbar,
+.pressure-guard-card {
   position: relative;
   z-index: 1;
   display: grid;
@@ -2515,7 +2549,8 @@ img {
 }
 
 .return-path-prompt span,
-.permanent-list-toolbar span {
+.permanent-list-toolbar span,
+.pressure-guard-card span {
   display: block;
   color: #60716d;
   font-size: 0.7rem;
@@ -2524,12 +2559,33 @@ img {
 }
 
 .return-path-prompt strong,
-.permanent-list-toolbar strong {
+.permanent-list-toolbar strong,
+.pressure-guard-card strong {
   display: block;
   margin-top: 2px;
   color: #0f2f2e;
   font-size: 0.92rem;
   font-weight: 900;
+}
+
+.pressure-guard-card {
+  margin: 0 0 10px;
+  border-color: color-mix(in srgb, var(--app-accent), transparent 62%);
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--app-accent), transparent 78%), transparent 32%),
+    linear-gradient(135deg, #fffaf2, color-mix(in srgb, var(--app-surface), #ffffff 18%));
+}
+
+.pressure-guard-card.high {
+  border-color: rgba(220, 38, 38, 0.22);
+}
+
+.pressure-guard-card p {
+  margin: 4px 0 0;
+  color: #61736e;
+  font-size: 0.78rem;
+  font-weight: 640;
+  line-height: 1.35;
 }
 
 .return-path-prompt > div:last-child {
@@ -2538,7 +2594,8 @@ img {
 }
 
 .return-path-prompt button,
-.permanent-list-toolbar button {
+.permanent-list-toolbar button,
+.pressure-guard-card button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2557,6 +2614,13 @@ img {
   margin-top: 0;
   margin-bottom: 10px;
   background: rgba(255, 255, 255, 0.72);
+}
+
+.permanent-list-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .starter-card {
@@ -2728,10 +2792,27 @@ img {
   z-index: 1;
 }
 
+.today-panel.simple .day-panel-content {
+  margin-top: 12px;
+}
+
 .checklist {
   display: grid;
   gap: 12px;
   margin-top: 15px;
+}
+
+.today-panel.simple .checklist {
+  margin-top: 8px;
+  gap: 8px;
+}
+
+.today-panel.simple .day-group:not(.optional-routines) {
+  gap: 8px;
+}
+
+.today-panel.simple .day-group:not(.optional-routines) .day-group-header {
+  display: none;
 }
 
 .habit-card {
@@ -3585,10 +3666,137 @@ img {
   overflow: hidden;
 }
 
+.quick-manager-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 82;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  padding: 12px;
+}
+
 .settings-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(15, 47, 43, 0.28);
+}
+
+.quick-manager-sheet {
+  position: relative;
+  z-index: 1;
+  width: min(720px, 100%);
+  max-height: min(82dvh, 720px);
+  padding: 12px 12px calc(18px + env(safe-area-inset-bottom));
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 78%);
+  border-radius: 18px 18px 10px 10px;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--app-accent), transparent 84%), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--app-surface), #ffffff 24%), color-mix(in srgb, var(--app-soft), #ffffff 72%));
+  box-shadow: 0 28px 70px rgba(15, 47, 43, 0.24);
+}
+
+.quick-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.quick-manager-header h2 {
+  margin: 2px 0 0;
+  color: var(--app-ink);
+  font-size: 1.35rem;
+  font-weight: 860;
+  line-height: 1.08;
+}
+
+.quick-manager-summary {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 84%);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.quick-manager-summary strong {
+  color: var(--app-ink);
+  font-size: 0.94rem;
+  font-weight: 820;
+}
+
+.quick-manager-summary span {
+  color: #61736e;
+  font-size: 0.78rem;
+  font-weight: 640;
+  line-height: 1.35;
+}
+
+.quick-win-list {
+  display: grid;
+  gap: 8px;
+}
+
+.quick-win-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 86%);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.quick-win-row.paused {
+  opacity: 0.62;
+}
+
+.quick-win-row img {
+  width: 42px;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 8px 16px rgba(15, 47, 43, 0.1);
+}
+
+.quick-win-row strong,
+.quick-win-row span {
+  display: block;
+  min-width: 0;
+}
+
+.quick-win-row strong {
+  overflow-wrap: anywhere;
+  color: var(--app-ink);
+  font-size: 0.94rem;
+  font-weight: 780;
+  line-height: 1.16;
+}
+
+.quick-win-row span {
+  margin-top: 3px;
+  color: #61736e;
+  font-size: 0.72rem;
+  font-weight: 680;
+}
+
+.quick-win-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.quick-manager-full-settings {
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px;
 }
 
 .settings-drawer {
@@ -5152,6 +5360,11 @@ img {
     align-items: stretch;
   }
 
+  .quick-manager-layer {
+    align-items: flex-end;
+    padding: 24px;
+  }
+
   .settings-drawer {
     width: min(700px, calc(100vw - 32px));
     height: calc(100dvh - 32px);
@@ -5159,6 +5372,24 @@ img {
     margin: 16px;
     padding: 16px;
     border-radius: 10px;
+  }
+
+  .quick-manager-sheet {
+    border-radius: 18px;
+    padding: 16px;
+  }
+
+  .quick-win-row {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+  }
+
+  .quick-win-row img {
+    width: 52px;
+  }
+
+  .quick-win-actions {
+    grid-column: auto;
+    justify-content: flex-end;
   }
 
   .personalization-layer {
@@ -5641,6 +5872,10 @@ img {
 .tracker-shell.scheme-dark .character-card,
 .tracker-shell.scheme-dark .note-box textarea,
 .tracker-shell.scheme-dark .add-habit-box,
+.tracker-shell.scheme-dark .quick-manager-sheet,
+.tracker-shell.scheme-dark .quick-manager-summary,
+.tracker-shell.scheme-dark .quick-win-row,
+.tracker-shell.scheme-dark .pressure-guard-card,
 .tracker-shell.scheme-dark .appearance-toggle {
   border-color: rgba(255, 255, 255, 0.14);
   background: linear-gradient(135deg, #1a2a25, #17231f);
@@ -5737,6 +5972,10 @@ img {
 .tracker-shell.scheme-dark .settings-section-title small,
 .tracker-shell.scheme-dark .return-path-prompt span,
 .tracker-shell.scheme-dark .permanent-list-toolbar span,
+.tracker-shell.scheme-dark .pressure-guard-card span,
+.tracker-shell.scheme-dark .pressure-guard-card p,
+.tracker-shell.scheme-dark .quick-manager-summary span,
+.tracker-shell.scheme-dark .quick-win-row span,
 .tracker-shell.scheme-dark .heatmap-summary p,
 .tracker-shell.scheme-dark .insight-card p,
 .tracker-shell.scheme-dark .sync-message,
@@ -5822,14 +6061,24 @@ img {
 }
 
 .tracker-shell.scheme-dark .return-path-prompt strong,
-.tracker-shell.scheme-dark .permanent-list-toolbar strong {
+.tracker-shell.scheme-dark .permanent-list-toolbar strong,
+.tracker-shell.scheme-dark .pressure-guard-card strong,
+.tracker-shell.scheme-dark .quick-manager-header h2,
+.tracker-shell.scheme-dark .quick-manager-summary strong,
+.tracker-shell.scheme-dark .quick-win-row strong {
   color: #f6fbf8;
 }
 
 .tracker-shell.scheme-dark .return-path-prompt button,
-.tracker-shell.scheme-dark .permanent-list-toolbar button {
+.tracker-shell.scheme-dark .permanent-list-toolbar button,
+.tracker-shell.scheme-dark .pressure-guard-card button,
+.tracker-shell.scheme-dark .simple-today-button {
   background: #071411;
   color: #f6fbf8;
+}
+
+.tracker-shell.scheme-dark .simple-today-button.active {
+  background: color-mix(in srgb, var(--app-primary), #071411 64%);
 }
 
 .tracker-shell.scheme-dark .mood-preview {

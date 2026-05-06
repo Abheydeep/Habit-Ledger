@@ -42,7 +42,19 @@ const checks = [
   },
   {
     name: "auto backup states remain visible",
-    ok: component.includes("Cloud backup pending") && component.includes("Backup now")
+    ok: component.includes("Backup pending") && component.includes("Backup now")
+  },
+  {
+    name: "simple today mode remains default and toggleable",
+    ok: component.includes("SIMPLE_TODAY_STORAGE_KEY") && component.includes("simple-today-button")
+  },
+  {
+    name: "permanent list pressure guard remains visible",
+    ok: component.includes("getPressureGuard") && component.includes("Lighten list") && css.includes(".pressure-guard-card")
+  },
+  {
+    name: "quick win manager avoids settings friction",
+    ok: component.includes("quick-manager-sheet") && component.includes("Full win settings") && css.includes(".quick-manager-sheet")
   },
   {
     name: "settings opens as an overview instead of a heavy editor",
