@@ -1144,6 +1144,47 @@ export function HabitTracker() {
     [commit]
   );
 
+  const makeOptionalHabitPermanent = useCallback(
+    (habitId: string) => {
+      let promotedHabitName: string | null = null;
+      let displacedHabitName: string | null = null;
+
+      commit((current) => {
+        const orderedHabits = [...current.habits].sort((a, b) => a.order - b.order);
+        const active = orderedHabits.filter((habit) => !habit.pausedAt);
+        const optionalIndex = active.findIndex((habit) => habit.id === habitId);
+
+        if (optionalIndex < PRIMARY_WIN_COUNT) {
+          return current;
+        }
+
+        const [promotedHabit] = active.splice(optionalIndex, 1);
+        const primarySlotIndex = Math.max(0, PRIMARY_WIN_COUNT - 1);
+        const displacedHabit = active[primarySlotIndex];
+        active.splice(primarySlotIndex, 0, promotedHabit);
+
+        promotedHabitName = promotedHabit.name;
+        displacedHabitName = displacedHabit?.name ?? null;
+
+        const paused = orderedHabits.filter((habit) => habit.pausedAt);
+        return {
+          ...current,
+          habits: [...active, ...paused].map((habit, order) => ({ ...habit, order }))
+        };
+      });
+
+      setExpandedHabitId(null);
+      if (promotedHabitName) {
+        showAppToast(
+          displacedHabitName
+            ? `${promotedHabitName} is permanent now. ${displacedHabitName} moved to optional.`
+            : `${promotedHabitName} is permanent now.`
+        );
+      }
+    },
+    [commit, showAppToast]
+  );
+
   const togglePauseHabit = useCallback(
     (habitId: string) => {
       commit((current) => ({
@@ -1965,23 +2006,36 @@ export function HabitTracker() {
                                 </span>
                                 <span className="tap-hint">{done ? "Logged" : "Optional"}</span>
                               </button>
-                              <button
-                                className={`mood-preview${moodOption ? " selected" : ""}`}
-                                style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
-                                type="button"
-                                onPointerDown={primeCompletionFeedback}
-                                onTouchStart={primeCompletionFeedback}
-                                onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
-                                aria-expanded={moodMenuOpen}
-                                aria-label={`${done || moodOption ? "Change" : "Choose"} status for optional ${habit.name}`}
-                              >
-                                {moodOption ? (
-                                  <img src={assetUrl(moodOption.src)} alt="" />
-                                ) : (
-                                  <CircleDot size={16} aria-hidden="true" />
-                                )}
-                                <span>{done || moodOption ? "Edit" : "Status"}</span>
-                              </button>
+                              <div className="habit-card-actions">
+                                <button
+                                  className="promote-optional-button"
+                                  type="button"
+                                  title="Make permanent"
+                                  onPointerDown={primeCompletionFeedback}
+                                  onTouchStart={primeCompletionFeedback}
+                                  onClick={() => makeOptionalHabitPermanent(habit.id)}
+                                  aria-label={`Make ${habit.name} a permanent primary win`}
+                                >
+                                  <ArrowUp size={15} aria-hidden="true" />
+                                </button>
+                                <button
+                                  className={`mood-preview${moodOption ? " selected" : ""}`}
+                                  style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
+                                  type="button"
+                                  onPointerDown={primeCompletionFeedback}
+                                  onTouchStart={primeCompletionFeedback}
+                                  onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
+                                  aria-expanded={moodMenuOpen}
+                                  aria-label={`${done || moodOption ? "Change" : "Choose"} status for optional ${habit.name}`}
+                                >
+                                  {moodOption ? (
+                                    <img src={assetUrl(moodOption.src)} alt="" />
+                                  ) : (
+                                    <CircleDot size={16} aria-hidden="true" />
+                                  )}
+                                  <span>{done || moodOption ? "Edit" : "Status"}</span>
+                                </button>
+                              </div>
                             </div>
                             {moodMenuOpen ? (
                               <div className="activity-mood-panel" aria-label={`Win status choices for optional ${habit.name}`}>

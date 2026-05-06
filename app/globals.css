@@ -2743,6 +2743,10 @@ img {
   display: none;
 }
 
+.habit-card.expanded .habit-card-actions {
+  display: none;
+}
+
 .habit-card.expanded .activity-mood-panel {
   margin-top: 0;
   align-self: stretch;
@@ -2822,6 +2826,13 @@ img {
   min-height: 66px;
 }
 
+.habit-card-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 6px;
+}
+
 .habit-win-button {
   display: grid;
   grid-template-columns: 54px minmax(0, 1fr);
@@ -2838,7 +2849,8 @@ img {
 }
 
 .habit-win-button:focus-visible,
-.mood-preview:focus-visible {
+.mood-preview:focus-visible,
+.promote-optional-button:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--habit), white 48%);
   outline-offset: 3px;
 }
@@ -2945,6 +2957,24 @@ img {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.promote-optional-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--habit) 28%, white);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--habit) 10%, white);
+  color: color-mix(in srgb, var(--habit), #0f172a 20%);
+  box-shadow: 0 8px 18px rgba(15, 47, 43, 0.06);
+}
+
+.promote-optional-button:hover {
+  border-color: color-mix(in srgb, var(--habit) 46%, white);
+  background: color-mix(in srgb, var(--habit) 16%, white);
 }
 
 .activity-mood-panel {
@@ -5348,6 +5378,11 @@ img {
     font-size: 0.82rem;
   }
 
+  .promote-optional-button {
+    width: 38px;
+    min-height: 38px;
+  }
+
   .mood-preview span {
     display: inline-block;
   }
@@ -5504,6 +5539,7 @@ img {
 .tracker-shell.scheme-dark .stat-card,
 .tracker-shell.scheme-dark .habit-card,
 .tracker-shell.scheme-dark .mood-preview,
+.tracker-shell.scheme-dark .promote-optional-button,
 .tracker-shell.scheme-dark .mood-sticker,
 .tracker-shell.scheme-dark .insight-card,
 .tracker-shell.scheme-dark .analytics-narrative,
@@ -5700,6 +5736,11 @@ img {
 
 .tracker-shell.scheme-dark .mood-preview {
   background: #071411;
+  color: #f6fbf8;
+}
+
+.tracker-shell.scheme-dark .promote-optional-button {
+  background: color-mix(in srgb, var(--habit), #071411 78%);
   color: #f6fbf8;
 }
 
