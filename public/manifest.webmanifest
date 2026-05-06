@@ -1,0 +1,19 @@
+{
+  "name": "The Win List",
+  "short_name": "Win List",
+  "description": "A daily must-do wins app for planning and completing what matters today.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eef7f3",
+  "theme_color": "#0f766e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

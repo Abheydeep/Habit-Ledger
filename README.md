@@ -5,8 +5,10 @@ A professional, mobile-friendly app for today's must-do wins in India.
 ## Features
 
 - Daily win status tracking
+- 5 primary wins with optional routines that do not punish the day score
 - Monthly matrix view
 - Local browser storage
+- Installable PWA shell and lightweight local reminders
 - Optional Supabase cloud sync with consent controls
 - Admin console for aggregate launch metrics
 - Image export for daily progress

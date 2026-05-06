@@ -43,6 +43,7 @@ import {
 } from "react";
 import {
   STORAGE_KEY,
+  APP_BASE_PATH,
   assetUrl,
   createDefaultState,
   isTrackerState,
@@ -84,8 +85,10 @@ const HISTORY_STATE_KEY = "proHabitTrackerIndiaStateV1";
 const THEME_STORAGE_KEY = "habit-ledger:theme:v1";
 const COLOR_SCHEME_STORAGE_KEY = "the-win-list:color-scheme:v1";
 const FEEDBACK_STORAGE_KEY = "the-win-list:feedback:v1";
+const REMINDER_STORAGE_KEY = "the-win-list:reminders:v1";
 const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
 const SETTINGS_SECTION_STORAGE_KEY = "the-win-list:settings-section:v1";
+const PRIMARY_WIN_COUNT = 5;
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
 const copy = {
   brand: "The Win List",
@@ -166,12 +169,17 @@ const appThemes = {
 } as const;
 type AppThemeKey = keyof typeof appThemes;
 type ColorScheme = "light" | "dark";
-type SettingsSectionKey = "personalize" | "backup" | "theme" | "feedback" | "wins" | "sync";
+type SettingsSectionKey = "personalize" | "backup" | "theme" | "feedback" | "reminders" | "wins" | "sync";
 type PersonalizerStep = "intro" | "about" | "goals" | "preview";
 type AnalyticsSectionKey = "review" | "matrix";
 type FeedbackSettings = {
   sound: boolean;
   haptics: boolean;
+};
+type ReminderSettings = {
+  enabled: boolean;
+  time: string;
+  lastFiredDate?: string;
 };
 type AnalyticsInsight = {
   label: string;
@@ -191,12 +199,17 @@ const collapsedSettingsSections: Record<SettingsSectionKey, boolean> = {
   backup: false,
   theme: false,
   feedback: false,
+  reminders: false,
   wins: false,
   sync: false
 };
 const defaultFeedbackSettings: FeedbackSettings = {
   sound: true,
   haptics: true
+};
+const defaultReminderSettings: ReminderSettings = {
+  enabled: false,
+  time: "20:30"
 };
 const defaultAnalyticsSections: Record<AnalyticsSectionKey, boolean> = {
   review: true,
@@ -374,6 +387,11 @@ type AppToast = {
   tone: "success" | "error";
 };
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
 export function HabitTracker() {
   const [tracker, setTracker] = useState<TrackerState>(() => createDefaultState());
   const trackerRef = useRef(tracker);
@@ -413,6 +431,12 @@ export function HabitTracker() {
   const [appThemeKey, setAppThemeKey] = useState<AppThemeKey>("fresh-ledger");
   const [colorScheme, setColorScheme] = useState<ColorScheme>("light");
   const [feedbackSettings, setFeedbackSettings] = useState<FeedbackSettings>(defaultFeedbackSettings);
+  const [reminderSettings, setReminderSettings] = useState<ReminderSettings>(defaultReminderSettings);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installReady, setInstallReady] = useState(false);
+  const [isInstalledApp, setIsInstalledApp] = useState(false);
+  const [optionalOpen, setOptionalOpen] = useState(false);
   const [expandedSettingsSections, setExpandedSettingsSections] =
     useState<Record<SettingsSectionKey, boolean>>(collapsedSettingsSections);
   const [cloudSession, setCloudSession] = useState<SupabaseSession | null>(null);
@@ -490,6 +514,21 @@ export function HabitTracker() {
       }
     }
 
+    const storedReminders = window.localStorage.getItem(REMINDER_STORAGE_KEY);
+    if (storedReminders) {
+      try {
+        setReminderSettings(normalizeReminderSettings(JSON.parse(storedReminders) as Partial<ReminderSettings>));
+      } catch {
+        window.localStorage.removeItem(REMINDER_STORAGE_KEY);
+      }
+    }
+
+    if ("Notification" in window) {
+      setNotificationPermission(window.Notification.permission);
+    }
+
+    setIsInstalledApp(isRunningAsInstalledApp());
+
     const storedSettingsSection = window.localStorage.getItem(SETTINGS_SECTION_STORAGE_KEY);
     if (isSettingsSectionKey(storedSettingsSection)) {
       setExpandedSettingsSections({ ...collapsedSettingsSections, [storedSettingsSection]: true });
@@ -501,6 +540,36 @@ export function HabitTracker() {
     setSelectedDate(todayKey);
     setVisibleMonth(startOfMonth(today));
     setClientStateReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) {
+      return;
+    }
+
+    navigator.serviceWorker.register(`${APP_BASE_PATH}/sw.js`).catch(() => {
+      // PWA support is a return-path bonus; the app remains fully local-first without it.
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+      setInstallReady(true);
+    };
+    const handleInstalled = () => {
+      setInstallReady(false);
+      setInstallPrompt(null);
+      setIsInstalledApp(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
   }, []);
 
   useEffect(() => {
@@ -618,7 +687,10 @@ export function HabitTracker() {
     [tracker.habits]
   );
   const activeHabits = useMemo(() => sortedHabits.filter((habit) => !habit.pausedAt), [sortedHabits]);
-  const dayPartGroups = useMemo(() => groupHabitsByDayPart(activeHabits), [activeHabits]);
+  const primaryHabits = useMemo(() => activeHabits.slice(0, PRIMARY_WIN_COUNT), [activeHabits]);
+  const optionalHabits = useMemo(() => activeHabits.slice(PRIMARY_WIN_COUNT), [activeHabits]);
+  const primaryHabitIds = useMemo(() => new Set(primaryHabits.map((habit) => habit.id)), [primaryHabits]);
+  const dayPartGroups = useMemo(() => groupHabitsByDayPart(primaryHabits), [primaryHabits]);
   const monthDays = useMemo(() => getMonthDays(visibleMonth), [visibleMonth]);
   const selectedRecord = tracker.days[selectedDate] ?? emptyDay;
   const completedSet = useMemo(
@@ -630,36 +702,46 @@ export function HabitTracker() {
       ),
     [activeHabits, selectedRecord]
   );
-  const completedCount = completedSet.size;
+  const primaryCompletedSet = useMemo(
+    () =>
+      new Set(
+        primaryHabits
+          .filter((habit) => isHabitComplete(selectedRecord, habit.id))
+          .map((habit) => habit.id)
+      ),
+    [primaryHabits, selectedRecord]
+  );
+  const completedCount = primaryCompletedSet.size;
+  const optionalCompletedCount = optionalHabits.filter((habit) => completedSet.has(habit.id)).length;
   const completionPercent =
-    activeHabits.length > 0 ? Math.round((completedCount / activeHabits.length) * 100) : 0;
+    primaryHabits.length > 0 ? Math.round((completedCount / primaryHabits.length) * 100) : 0;
   const todayKey = localDateKey(new Date());
   const currentDayPart = useMemo(() => getDayPartForHour(new Date().getHours()), []);
   const streak = useMemo(
-    () => countStreakEndingAt(todayKey, tracker, activeHabits),
-    [todayKey, tracker, activeHabits]
+    () => countStreakEndingAt(todayKey, tracker, primaryHabits),
+    [todayKey, tracker, primaryHabits]
   );
   const monthProgress = useMemo(
-    () => countMonthProgress(monthDays, activeHabits, tracker),
-    [monthDays, activeHabits, tracker]
+    () => countMonthProgress(monthDays, primaryHabits, tracker),
+    [monthDays, primaryHabits, tracker]
   );
   const analyticsSummary = useMemo(
-    () => getAnalyticsSummary(monthDays, activeHabits, tracker, todayKey, streak),
-    [monthDays, activeHabits, tracker, todayKey, streak]
+    () => getAnalyticsSummary(monthDays, primaryHabits, tracker, todayKey, streak),
+    [monthDays, primaryHabits, tracker, todayKey, streak]
   );
   const analyticsInsights = analyticsSummary.insights;
-  const streakNudge = getStreakNudge(streak, completedCount, activeHabits.length);
+  const streakNudge = getStreakNudge(streak, completedCount, primaryHabits.length);
   const shouldPromptPersonalization = clientStateReady && !personalizationSnapshot;
   const companionNudge = useMemo(
     () =>
       getCompanionNudge({
         groups: dayPartGroups,
-        completedSet,
+        completedSet: primaryCompletedSet,
         completedCount,
-        totalCount: activeHabits.length,
+        totalCount: primaryHabits.length,
         currentDayPart
       }),
-    [activeHabits.length, completedCount, completedSet, currentDayPart, dayPartGroups]
+    [primaryHabits.length, completedCount, primaryCompletedSet, currentDayPart, dayPartGroups]
   );
   const shouldShowPersonalizer = personalizerOpen;
   const activePersonalization = personalizationSnapshot?.input ?? onboarding;
@@ -677,6 +759,12 @@ export function HabitTracker() {
     "--app-soft": isDarkScheme ? "#263d36" : appTheme.soft,
     "--app-ink": isDarkScheme ? "#e4f5ef" : appTheme.ink
   } as CSSProperties;
+  const localSaveLabel = formatSaveStatus(tracker.updatedAt);
+  const cloudSaveLabel = cloudOverview?.lastSyncedAt
+    ? `Cloud backup ${formatSaveStatus(cloudOverview.lastSyncedAt).replace(/^Saved/, "saved")}`
+    : cloudSession
+      ? "Cloud backup not uploaded yet"
+      : "Cloud backup optional";
 
   const toggleDayPart = useCallback((dayPart: DayPartKey) => {
     setOpenDayParts((current) => ({
@@ -702,6 +790,105 @@ export function HabitTracker() {
       setAppToast(null);
     }, 2600);
   }, []);
+
+  const saveReminderSettings = useCallback((recipe: (current: ReminderSettings) => ReminderSettings) => {
+    setReminderSettings((current) => {
+      const next = normalizeReminderSettings(recipe(current));
+      window.localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const fireReminder = useCallback(
+    (message: string) => {
+      if ("Notification" in window && window.Notification.permission === "granted") {
+        try {
+          new window.Notification("The Win List", {
+            body: message,
+            icon: `${APP_BASE_PATH}/icon.svg`,
+            tag: "the-win-list-daily-reminder"
+          });
+          return;
+        } catch {
+          // Fall back to the in-app toast below.
+        }
+      }
+
+      showAppToast(message);
+    },
+    [showAppToast]
+  );
+
+  const requestReminderPermission = useCallback(async () => {
+    if (!("Notification" in window)) {
+      showAppToast("This browser cannot show notifications, so reminders will stay in-app.", "error");
+      saveReminderSettings((current) => ({ ...current, enabled: true }));
+      return;
+    }
+
+    const permission =
+      window.Notification.permission === "default"
+        ? await window.Notification.requestPermission()
+        : window.Notification.permission;
+    setNotificationPermission(permission);
+    saveReminderSettings((current) => ({ ...current, enabled: true }));
+    showAppToast(
+      permission === "granted"
+        ? "Daily reminder is on."
+        : "Daily reminder is on as an in-app fallback while The Win List is open.",
+      permission === "denied" ? "error" : "success"
+    );
+  }, [saveReminderSettings, showAppToast]);
+
+  const handleInstallApp = useCallback(async () => {
+    if (isInstalledApp) {
+      showAppToast("The Win List already looks installed on this device.");
+      return;
+    }
+
+    if (!installPrompt) {
+      showAppToast("Use your browser menu to add The Win List to your home screen.");
+      return;
+    }
+
+    await installPrompt.prompt();
+    const choice = await installPrompt.userChoice;
+    setInstallPrompt(null);
+    setInstallReady(false);
+    if (choice.outcome === "accepted") {
+      setIsInstalledApp(true);
+      showAppToast("The Win List is installed. The return path is shorter now.");
+    } else {
+      showAppToast("Install skipped. You can add it later from Settings.");
+    }
+  }, [installPrompt, installReady, isInstalledApp, showAppToast]);
+
+  useEffect(() => {
+    if (!reminderSettings.enabled || primaryHabits.length === 0) {
+      return;
+    }
+
+    const tick = () => {
+      const now = new Date();
+      const today = localDateKey(now);
+      const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+      if (currentTime !== reminderSettings.time || reminderSettings.lastFiredDate === today) {
+        return;
+      }
+
+      const remaining = primaryHabits.length - completedCount;
+      saveReminderSettings((current) => ({ ...current, lastFiredDate: today }));
+
+      if (remaining > 0) {
+        fireReminder(`${remaining} primary win${remaining === 1 ? "" : "s"} still open for today.`);
+      }
+    };
+
+    tick();
+    const intervalId = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(intervalId);
+  }, [completedCount, fireReminder, primaryHabits.length, reminderSettings, saveReminderSettings]);
 
   const triggerCompletionCelebration = useCallback(
     (habit: Habit, moodOption: (typeof moodOptions)[number] | undefined) => {
@@ -747,12 +934,17 @@ export function HabitTracker() {
 
   const maybeTriggerPerfectDay = useCallback(
     (habitId: string, mood: MoodKey, tone: string) => {
-      if (selectedDate !== todayKey || !isCompletionMood(mood) || activeHabits.length === 0) {
+      if (
+        selectedDate !== todayKey ||
+        !isCompletionMood(mood) ||
+        primaryHabits.length === 0 ||
+        !primaryHabits.some((habit) => habit.id === habitId)
+      ) {
         return;
       }
 
       const record = trackerRef.current.days[selectedDate] ?? emptyDay;
-      const alreadyPerfect = activeHabits.every((habit) => isHabitComplete(record, habit.id));
+      const alreadyPerfect = primaryHabits.every((habit) => isHabitComplete(record, habit.id));
       const nextRecord: DayRecord = {
         ...record,
         completedHabitIds: record.completedHabitIds.includes(habitId)
@@ -760,13 +952,13 @@ export function HabitTracker() {
           : [...record.completedHabitIds, habitId],
         habitMoods: { ...(record.habitMoods ?? {}), [habitId]: mood }
       };
-      const nextPerfect = activeHabits.every((habit) => isHabitComplete(nextRecord, habit.id));
+      const nextPerfect = primaryHabits.every((habit) => isHabitComplete(nextRecord, habit.id));
 
       if (!alreadyPerfect && nextPerfect) {
-        triggerPerfectDayCelebration(tone, activeHabits.length);
+        triggerPerfectDayCelebration(tone, primaryHabits.length);
       }
     },
-    [activeHabits, selectedDate, todayKey, triggerPerfectDayCelebration]
+    [primaryHabits, selectedDate, todayKey, triggerPerfectDayCelebration]
   );
 
   const updateHabitMood = useCallback(
@@ -1003,7 +1195,7 @@ export function HabitTracker() {
     }
 
     const dateLabel = formatPrettyDate(selectedDate);
-    const habitRows = activeHabits.slice(0, 10);
+    const habitRows = primaryHabits;
     const completed = habitRows.filter((habit) => isHabitComplete(selectedRecord, habit.id)).length;
     const gradient = context.createLinearGradient(0, 0, 1080, 1620);
     gradient.addColorStop(0, "#f8faf6");
@@ -1109,7 +1301,7 @@ export function HabitTracker() {
 
     downloadBlob(blob, `${copy.shareImagePrefix}-${selectedDate}.png`);
     showAppToast("Share image saved.", "success");
-  }, [activeHabits, selectedDate, selectedRecord, showAppToast]);
+  }, [primaryHabits, selectedDate, selectedRecord, showAppToast]);
 
   const exportBackup = useCallback(() => {
     const blob = new Blob([JSON.stringify(tracker, null, 2)], { type: "application/json" });
@@ -1531,25 +1723,30 @@ export function HabitTracker() {
           </div>
 
           <div className="stat-strip" aria-label="Daily progress">
-            <StatCard label={copy.wonToday} value={`${completedCount}/${activeHabits.length}`} />
+            <StatCard label="Primary wins" value={`${completedCount}/${primaryHabits.length}`} />
             <StatCard
               label="Perfect streak"
               value={`${streak} day${streak === 1 ? "" : "s"}`}
-              title="A perfect streak counts days where every active win is logged."
+              title="A perfect streak counts days where every primary win is logged."
             />
             <StatCard
               label="Month rate"
               value={monthProgress.total > 0 ? `${Math.round((monthProgress.completed / monthProgress.total) * 100)}%` : "0%"}
-              title={`${monthProgress.completed}/${monthProgress.total} wins logged so far this month`}
+              title={`${monthProgress.completed}/${monthProgress.total} primary wins logged so far this month`}
             />
+          </div>
+
+          <div className="persistence-strip" aria-label="Save status">
+            <span>{localSaveLabel}</span>
+            <span>{cloudSaveLabel}</span>
           </div>
 
           {shouldPromptPersonalization ? (
             <div className="starter-card" aria-label="Personalize The Win List">
               <div>
                 <span>Make it yours</span>
-                <strong>Build a Win List around your real routine.</strong>
-                <p>The current list works now. Personalizing will tune the wins, theme, and companion.</p>
+                <strong>Ready now. Personalize later.</strong>
+                <p>Your 5 primary wins already work. Personalizing tunes the list when you have a minute.</p>
               </div>
               <button
                 className="starter-card-button"
@@ -1572,7 +1769,7 @@ export function HabitTracker() {
             <div>
               <span>Companion check-in</span>
               <p>{companionNudge}</p>
-              <small>No login needed. Saved on this device.</small>
+              <small>{localSaveLabel}. No login needed.</small>
             </div>
           </div>
 
@@ -1715,6 +1912,118 @@ export function HabitTracker() {
                   </section>
                 );
               })}
+              {optionalHabits.length > 0 ? (
+                <section
+                  className={`day-group optional-routines${optionalOpen ? " open" : " collapsed"}`}
+                  aria-label="Optional routines"
+                >
+                  <button
+                    className="day-group-header"
+                    type="button"
+                    onClick={() => setOptionalOpen((open) => !open)}
+                    aria-expanded={optionalOpen}
+                  >
+                    <div>
+                      <span>Optional routines</span>
+                      <small>Extra credit, never required for 100%</small>
+                    </div>
+                    <span className="day-group-status">
+                      <strong>
+                        {optionalCompletedCount}/{optionalHabits.length}
+                      </strong>
+                      <ChevronDown className="day-group-chevron" size={17} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {optionalOpen ? (
+                    <div className="day-group-list">
+                      {optionalHabits.map((habit) => {
+                        const done = completedSet.has(habit.id);
+                        const habitMood = selectedRecord.habitMoods?.[habit.id];
+                        const moodOption = moodOptions.find((item) => item.key === habitMood);
+                        const moodMenuOpen = expandedHabitId === habit.id;
+                        return (
+                          <article
+                            className={`habit-card optional${done ? " done" : ""}${moodMenuOpen ? " expanded" : ""}${
+                              celebration?.habitId === habit.id ? " celebrating" : ""
+                            }`}
+                            key={habit.id}
+                            style={{ "--habit": habit.color } as CSSProperties}
+                          >
+                            <div className="habit-card-main">
+                              <button
+                                className="habit-win-button"
+                                type="button"
+                                onPointerDown={primeCompletionFeedback}
+                                onTouchStart={primeCompletionFeedback}
+                                onClick={() => toggleHabitWin(habit)}
+                                aria-label={done ? `Undo optional ${habit.name} for ${formatPrettyDate(selectedDate)}` : `Mark optional ${habit.name} as won`}
+                              >
+                                <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
+                                <span className="habit-card-copy">
+                                  <h3>{habit.name}</h3>
+                                  <p>{habit.quip}</p>
+                                </span>
+                                <span className="tap-hint">{done ? "Logged" : "Optional"}</span>
+                              </button>
+                              <button
+                                className={`mood-preview${moodOption ? " selected" : ""}`}
+                                style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
+                                type="button"
+                                onPointerDown={primeCompletionFeedback}
+                                onTouchStart={primeCompletionFeedback}
+                                onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
+                                aria-expanded={moodMenuOpen}
+                                aria-label={`${done || moodOption ? "Change" : "Choose"} status for optional ${habit.name}`}
+                              >
+                                {moodOption ? (
+                                  <img src={assetUrl(moodOption.src)} alt="" />
+                                ) : (
+                                  <CircleDot size={16} aria-hidden="true" />
+                                )}
+                                <span>{done || moodOption ? "Edit" : "Status"}</span>
+                              </button>
+                            </div>
+                            {moodMenuOpen ? (
+                              <div className="activity-mood-panel" aria-label={`Win status choices for optional ${habit.name}`}>
+                                {moodOptions.map((mood) => (
+                                  <button
+                                    className={`mood-sticker${habitMood === mood.key ? " selected" : ""}`}
+                                    key={mood.key}
+                                    style={{ "--mood": mood.tone } as CSSProperties}
+                                    type="button"
+                                    onPointerDown={primeCompletionFeedback}
+                                    onTouchStart={primeCompletionFeedback}
+                                    onClick={() => {
+                                      const shouldCelebrate = habitMood !== mood.key && isCompletionMood(mood.key);
+                                      updateHabitMood(habit.id, mood.key);
+                                      if (shouldCelebrate) {
+                                        triggerCompletionCelebration(habit, mood);
+                                      }
+                                      setExpandedHabitId(null);
+                                    }}
+                                    aria-label={`${mood.label} status for optional ${habit.name}`}
+                                  >
+                                    <img src={assetUrl(mood.src)} alt="" />
+                                    <small>{mood.label}</small>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
+                            {celebration?.habitId === habit.id ? (
+                              <CompletionBurst
+                                key={celebration.id}
+                                message={celebration.message}
+                                tone={celebration.tone}
+                                onUndo={() => clearHabitMood(habit.id)}
+                              />
+                            ) : null}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </section>
+              ) : null}
             </div>
 
             <label className="note-box">
@@ -1819,7 +2128,7 @@ export function HabitTracker() {
                   <span>
                     <small className="section-kicker">Monthly Matrix</small>
                     <strong>Win heat map</strong>
-                    <em>{monthProgress.completed}/{monthProgress.total} wins so far</em>
+                    <em>{monthProgress.completed}/{monthProgress.total} primary wins so far</em>
                   </span>
                   <ChevronDown size={18} aria-hidden="true" />
                 </button>
@@ -1830,7 +2139,7 @@ export function HabitTracker() {
                         <span className="section-kicker">Matrix</span>
                         <strong>Habit heat map</strong>
                       </div>
-                      <p>{monthProgress.completed}/{monthProgress.total} wins so far. Darker cells mean stronger completed days.</p>
+                      <p>{monthProgress.completed}/{monthProgress.total} primary wins so far. Optional routines stay loggable outside the score.</p>
                     </div>
                     <div className="heatmap-legend" aria-label="Heat map legend">
                       <span><i className="heat-empty" /> Empty</span>
@@ -1862,7 +2171,7 @@ export function HabitTracker() {
                           })}
                         </div>
 
-                        {activeHabits.map((habit) => (
+                        {primaryHabits.map((habit) => (
                           <div className="grid-row habit-row" key={habit.id}>
                             <div className="habit-sticky grid-habit-label">
                               <img src={assetUrl(habit.thumbnail)} alt="" />
@@ -2055,6 +2364,66 @@ export function HabitTracker() {
             </SettingsAccordionSection>
 
             <SettingsAccordionSection
+              id="reminders"
+              title="Return path"
+              description="Install The Win List and set a light local reminder."
+              icon={<CalendarDays size={18} aria-hidden="true" />}
+              expanded={expandedSettingsSections.reminders}
+              onToggle={toggleSettingsSection}
+            >
+              <div className="return-path-settings">
+                <div className="install-card">
+                  <div>
+                    <strong>{isInstalledApp ? "Installed app mode" : "Install for faster return"}</strong>
+                    <small>
+                      {isInstalledApp
+                        ? "The Win List is already running like an app on this device."
+                        : installReady
+                          ? "Your browser is ready to install The Win List."
+                          : "Use the browser menu if the install prompt is not available yet."}
+                    </small>
+                  </div>
+                  <button className="backup-button" type="button" onClick={handleInstallApp}>
+                    <Download size={17} aria-hidden="true" />
+                    {isInstalledApp ? "Installed" : "Install app"}
+                  </button>
+                </div>
+                <label className="preference-toggle">
+                  <input
+                    type="checkbox"
+                    checked={reminderSettings.enabled}
+                    onChange={(event) => {
+                      if (event.target.checked) {
+                        void requestReminderPermission();
+                      } else {
+                        saveReminderSettings((current) => ({ ...current, enabled: false }));
+                      }
+                    }}
+                  />
+                  <span>
+                    <strong>Daily return reminder</strong>
+                    <small>
+                      {notificationPermission === "granted"
+                        ? "Browser notification enabled while the app is allowed to notify."
+                        : "Falls back to an in-app reminder while The Win List is open."}
+                    </small>
+                  </span>
+                </label>
+                <label className="time-field">
+                  <span>Reminder time</span>
+                  <input
+                    type="time"
+                    value={reminderSettings.time}
+                    onChange={(event) =>
+                      saveReminderSettings((current) => ({ ...current, time: event.target.value || defaultReminderSettings.time }))
+                    }
+                  />
+                </label>
+                <p className="feedback-note">This release does not use server push. It keeps reminders local and lightweight.</p>
+              </div>
+            </SettingsAccordionSection>
+
+            <SettingsAccordionSection
               id="feedback"
               title="Feedback"
               description="Control the tiny sound and haptic feel when a win lands."
@@ -2150,6 +2519,9 @@ export function HabitTracker() {
                   <article className={`editor-card${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
                     <img className="editor-thumb" src={assetUrl(habit.thumbnail)} alt="" />
                     <div className="editor-fields">
+                      <span className={`priority-badge${primaryHabitIds.has(habit.id) ? " primary" : ""}`}>
+                        {primaryHabitIds.has(habit.id) ? "Primary win" : "Optional routine"}
+                      </span>
                       <input
                         value={habit.name}
                         onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
@@ -2517,7 +2889,7 @@ function PersonalizerPanel({
   onApply
 }: PersonalizerPanelProps) {
   const summary = createPersonalizationSummary(snapshot?.input ?? onboarding);
-  const planPreview = createPersonalizedHabits(onboarding, "preview").slice(0, 6);
+  const planPreview = createPersonalizedHabits(onboarding, "preview").slice(0, PRIMARY_WIN_COUNT);
   const modeTheme = lifeModeThemes[onboarding.routineType];
   const avatarStyle = resolveAvatarStyle(onboarding);
   const outfit = characterOutfits[onboarding.routineType];
@@ -3695,11 +4067,11 @@ function getStreakNudge(streak: number, completedCount: number, totalCount: numb
   }
 
   if (streak === 0 && completedCount === 0) {
-    return "Perfect streak starts when every win is logged. First, tap one card and get the day moving.";
+    return "Perfect streak starts when the 5 primary wins are logged. First, tap one card and get the day moving.";
   }
 
   if (streak === 0) {
-    return `${completedCount} win${completedCount === 1 ? "" : "s"} logged today. Perfect streak is still open if you finish the rest.`;
+    return `${completedCount} primary win${completedCount === 1 ? "" : "s"} logged today. Perfect streak is still open if you finish the rest.`;
   }
 
   if (streak === 1) {
@@ -3983,8 +4355,63 @@ function isCompactViewport() {
   return typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
 }
 
+function normalizeReminderSettings(value: Partial<ReminderSettings> | null | undefined): ReminderSettings {
+  const time = typeof value?.time === "string" && /^\d{2}:\d{2}$/.test(value.time)
+    ? value.time
+    : defaultReminderSettings.time;
+
+  return {
+    enabled: Boolean(value?.enabled),
+    time,
+    lastFiredDate: typeof value?.lastFiredDate === "string" ? value.lastFiredDate : undefined
+  };
+}
+
+function isRunningAsInstalledApp() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
+function formatSaveStatus(value: string | null | undefined) {
+  if (!value) {
+    return "Saved locally";
+  }
+
+  const savedAt = new Date(value);
+  if (Number.isNaN(savedAt.getTime())) {
+    return "Saved locally";
+  }
+
+  const diffMs = Date.now() - savedAt.getTime();
+  const diffMinutes = Math.max(0, Math.round(diffMs / 60_000));
+
+  if (diffMinutes < 1) {
+    return "Saved just now";
+  }
+
+  if (diffMinutes < 60) {
+    return `Saved ${diffMinutes} min ago`;
+  }
+
+  return `Saved ${savedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+}
+
 function isSettingsSectionKey(value: string | null): value is SettingsSectionKey {
-  return value === "personalize" || value === "backup" || value === "theme" || value === "wins" || value === "sync";
+  return (
+    value === "personalize" ||
+    value === "backup" ||
+    value === "theme" ||
+    value === "feedback" ||
+    value === "reminders" ||
+    value === "wins" ||
+    value === "sync"
+  );
 }
 
 function countStreakEndingAt(dateKey: string, tracker: TrackerState, activeHabits: Habit[]) {
@@ -4047,11 +4474,10 @@ function groupHabitsByDayPart(habits: Habit[]) {
 }
 
 function createInitialDayPartOpenState(): Record<DayPartKey, boolean> {
-  const current = getDayPartForHour(new Date().getHours());
   return {
-    morning: current === "morning",
-    daytime: current === "daytime",
-    evening: current === "evening"
+    morning: true,
+    daytime: true,
+    evening: true
   };
 }
 

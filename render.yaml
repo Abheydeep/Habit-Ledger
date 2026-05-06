@@ -3,7 +3,7 @@ services:
     name: the-win-list
     runtime: static
     repo: https://github.com/Abheydeep/Habit-Ledger
-    branch: codex/personalized-onboarding
+    branch: release/daily-driver-v1
     buildCommand: npm install && npm run build
     staticPublishPath: ./out
     domains:
