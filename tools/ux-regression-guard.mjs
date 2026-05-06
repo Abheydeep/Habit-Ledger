@@ -45,7 +45,10 @@ const checks = [
   },
   {
     name: "return path prompt stays close to today",
-    ok: component.includes("return-path-prompt") && css.includes(".return-path-prompt")
+    ok:
+      component.includes("return-path-prompt") &&
+      component.includes("const shouldShowReturnPrompt = !isInstalledApp || !reminderSettings.enabled;") &&
+      css.includes(".return-path-prompt")
   },
   {
     name: "auto backup states remain visible",

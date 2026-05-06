@@ -837,7 +837,7 @@ export function HabitTracker() {
   } as CSSProperties;
   const localSaveLabel = formatLocalSaveStatus(tracker.updatedAt);
   const cloudSaveLabel = getCloudBackupLabel(cloudBackupStatus, cloudOverview, cloudSession, cloudBackupError);
-  const shouldShowReturnPrompt = clientStateReady && (!isInstalledApp || !reminderSettings.enabled);
+  const shouldShowReturnPrompt = !isInstalledApp || !reminderSettings.enabled;
 
   const toggleDayPart = useCallback((dayPart: DayPartKey) => {
     setOpenDayParts((current) => ({
