@@ -287,7 +287,8 @@ function personalizeHabit(template: HabitTemplate, input: OnboardingInput, order
     color: template.color,
     thumbnail: template.thumbnail,
     quip: `${target}. ${template.quip}`,
-    createdAt: now
+    createdAt: now,
+    requirement: order < 5 ? "permanent" : "optional"
   };
 }
 

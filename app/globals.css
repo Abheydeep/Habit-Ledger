@@ -2434,11 +2434,17 @@ img {
   text-transform: uppercase;
 }
 
-.note-box > span {
+.note-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
 }
 
 .note-save-state {
@@ -2475,7 +2481,8 @@ img {
   margin-top: 8px;
 }
 
-.persistence-strip span {
+.persistence-strip span,
+.persistence-strip button {
   display: inline-flex;
   align-items: center;
   min-height: 26px;
@@ -2486,6 +2493,70 @@ img {
   color: #60716d;
   font-size: 0.72rem;
   font-weight: 760;
+}
+
+.persistence-strip button {
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 18%);
+}
+
+.return-path-prompt,
+.permanent-list-toolbar {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 82%);
+  border-radius: 8px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--app-primary), #ffffff 92%), rgba(255, 255, 255, 0.78));
+}
+
+.return-path-prompt span,
+.permanent-list-toolbar span {
+  display: block;
+  color: #60716d;
+  font-size: 0.7rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.return-path-prompt strong,
+.permanent-list-toolbar strong {
+  display: block;
+  margin-top: 2px;
+  color: #0f2f2e;
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.return-path-prompt > div:last-child {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.return-path-prompt button,
+.permanent-list-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 78%);
+  border-radius: 999px;
+  background: #ffffff;
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 20%);
+  font-size: 0.74rem;
+  font-weight: 820;
+}
+
+.permanent-list-toolbar {
+  margin-top: 0;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .starter-card {
@@ -2850,7 +2921,7 @@ img {
 
 .habit-win-button:focus-visible,
 .mood-preview:focus-visible,
-.promote-optional-button:focus-visible {
+.requirement-toggle-button:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--habit), white 48%);
   outline-offset: 3px;
 }
@@ -2959,7 +3030,7 @@ img {
   white-space: nowrap;
 }
 
-.promote-optional-button {
+.requirement-toggle-button {
   display: grid;
   place-items: center;
   width: 34px;
@@ -2972,7 +3043,7 @@ img {
   box-shadow: 0 8px 18px rgba(15, 47, 43, 0.06);
 }
 
-.promote-optional-button:hover {
+.requirement-toggle-button:hover {
   border-color: color-mix(in srgb, var(--habit) 46%, white);
   background: color-mix(in srgb, var(--habit) 16%, white);
 }
@@ -3156,6 +3227,17 @@ img {
   z-index: 1;
   display: block;
   margin-top: 15px;
+}
+
+.note-box.compact.collapsed {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 86%);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.note-box.compact.open .note-toggle svg {
+  transform: rotate(180deg);
 }
 
 .note-box textarea {
@@ -5378,7 +5460,7 @@ img {
     font-size: 0.82rem;
   }
 
-  .promote-optional-button {
+  .requirement-toggle-button {
     width: 38px;
     min-height: 38px;
   }
@@ -5539,11 +5621,13 @@ img {
 .tracker-shell.scheme-dark .stat-card,
 .tracker-shell.scheme-dark .habit-card,
 .tracker-shell.scheme-dark .mood-preview,
-.tracker-shell.scheme-dark .promote-optional-button,
+.tracker-shell.scheme-dark .requirement-toggle-button,
 .tracker-shell.scheme-dark .mood-sticker,
 .tracker-shell.scheme-dark .insight-card,
 .tracker-shell.scheme-dark .analytics-narrative,
 .tracker-shell.scheme-dark .heatmap-summary,
+.tracker-shell.scheme-dark .return-path-prompt,
+.tracker-shell.scheme-dark .permanent-list-toolbar,
 .tracker-shell.scheme-dark .month-grid-wrap,
 .tracker-shell.scheme-dark .habit-sticky,
 .tracker-shell.scheme-dark .settings-section,
@@ -5651,6 +5735,8 @@ img {
 .tracker-shell.scheme-dark .stat-card span,
 .tracker-shell.scheme-dark .settings-section-title p,
 .tracker-shell.scheme-dark .settings-section-title small,
+.tracker-shell.scheme-dark .return-path-prompt span,
+.tracker-shell.scheme-dark .permanent-list-toolbar span,
 .tracker-shell.scheme-dark .heatmap-summary p,
 .tracker-shell.scheme-dark .insight-card p,
 .tracker-shell.scheme-dark .sync-message,
@@ -5658,6 +5744,7 @@ img {
 .tracker-shell.scheme-dark .cloud-box small,
 .tracker-shell.scheme-dark .theme-card small,
 .tracker-shell.scheme-dark .habit-card p,
+.tracker-shell.scheme-dark .note-toggle,
 .tracker-shell.scheme-dark .character-persona-strip p,
 .tracker-shell.scheme-dark .life-mode-strip span,
 .tracker-shell.scheme-dark .plan-preview > span,
@@ -5734,12 +5821,23 @@ img {
   color: #d9fff2;
 }
 
+.tracker-shell.scheme-dark .return-path-prompt strong,
+.tracker-shell.scheme-dark .permanent-list-toolbar strong {
+  color: #f6fbf8;
+}
+
+.tracker-shell.scheme-dark .return-path-prompt button,
+.tracker-shell.scheme-dark .permanent-list-toolbar button {
+  background: #071411;
+  color: #f6fbf8;
+}
+
 .tracker-shell.scheme-dark .mood-preview {
   background: #071411;
   color: #f6fbf8;
 }
 
-.tracker-shell.scheme-dark .promote-optional-button {
+.tracker-shell.scheme-dark .requirement-toggle-button {
   background: color-mix(in srgb, var(--habit), #071411 78%);
   color: #f6fbf8;
 }

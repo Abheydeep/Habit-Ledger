@@ -5,11 +5,11 @@ A professional, mobile-friendly app for today's must-do wins in India.
 ## Features
 
 - Daily win status tracking
-- 5 default permanent wins with optional routines that can be promoted without demoting existing wins
+- Permanent wins with optional routines that can move both ways without losing logs
 - Monthly matrix view
 - Local browser storage
 - Installable PWA shell and lightweight local reminders
-- Optional Supabase cloud sync with consent controls
+- Optional Supabase cloud sync with consent controls and automatic backup states
 - Admin console for aggregate launch metrics
 - Image export for daily progress
 - Editable wins, icons, and order

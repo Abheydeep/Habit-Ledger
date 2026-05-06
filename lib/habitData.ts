@@ -3,6 +3,7 @@ export const APP_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export type MoodKey = "done" | "strong" | "partial" | "skipped" | "rest";
 export type DayPartKey = "morning" | "daytime" | "evening";
+export type HabitRequirement = "permanent" | "optional";
 
 export type Habit = {
   id: string;
@@ -14,7 +15,7 @@ export type Habit = {
   createdAt: string;
   dayPart?: DayPartKey;
   pausedAt?: string;
-  permanentAt?: string;
+  requirement?: HabitRequirement;
 };
 
 export type DayRecord = {
@@ -39,6 +40,10 @@ export type ThumbnailOption = {
 
 export function isDayPartKey(value: unknown): value is DayPartKey {
   return value === "morning" || value === "daytime" || value === "evening";
+}
+
+export function isHabitRequirement(value: unknown): value is HabitRequirement {
+  return value === "permanent" || value === "optional";
 }
 
 export const moodOptions: Array<{
@@ -158,7 +163,11 @@ const habitSeeds: Array<Omit<Habit, "createdAt">> = [
 export function createDefaultState(now = new Date().toISOString()): TrackerState {
   return {
     version: 1,
-    habits: habitSeeds.map((habit) => ({ ...habit, createdAt: now })),
+    habits: habitSeeds.map((habit, index) => ({
+      ...habit,
+      createdAt: now,
+      requirement: index < 5 ? "permanent" : "optional"
+    })),
     days: {},
     createdAt: now,
     updatedAt: now
@@ -200,24 +209,35 @@ export function normalizeImportedState(value: TrackerState): TrackerState {
   const fallback = createDefaultState(now);
   const habits = value.habits
     .filter((habit) => habit && typeof habit.id === "string" && typeof habit.name === "string")
-    .map((habit, index) => ({
-      id: habit.id,
-      name: habit.name,
-      order: Number.isFinite(habit.order) ? habit.order : index,
-      color: typeof habit.color === "string" ? habit.color : fallback.habits[index % fallback.habits.length].color,
-      thumbnail:
-        typeof habit.thumbnail === "string"
-          ? habit.thumbnail
-          : fallback.habits[index % fallback.habits.length].thumbnail,
-      quip: typeof habit.quip === "string" ? habit.quip : "Custom win ready to track.",
-      createdAt: typeof habit.createdAt === "string" ? habit.createdAt : now,
-      dayPart: isDayPartKey(habit.dayPart) ? habit.dayPart : undefined,
-      pausedAt: typeof habit.pausedAt === "string" ? habit.pausedAt : undefined,
-      permanentAt: typeof habit.permanentAt === "string" ? habit.permanentAt : undefined
-    }));
+    .map((habit, index) => {
+      const legacyHabit = habit as Partial<Habit> & { permanentAt?: unknown };
+      return {
+        id: habit.id,
+        name: habit.name,
+        order: Number.isFinite(habit.order) ? habit.order : index,
+        color: typeof habit.color === "string" ? habit.color : fallback.habits[index % fallback.habits.length].color,
+        thumbnail:
+          typeof habit.thumbnail === "string"
+            ? habit.thumbnail
+            : fallback.habits[index % fallback.habits.length].thumbnail,
+        quip: typeof habit.quip === "string" ? habit.quip : "Custom win ready to track.",
+        createdAt: typeof habit.createdAt === "string" ? habit.createdAt : now,
+        dayPart: isDayPartKey(habit.dayPart) ? habit.dayPart : undefined,
+        pausedAt: typeof habit.pausedAt === "string" ? habit.pausedAt : undefined,
+        requirement: isHabitRequirement(legacyHabit.requirement)
+          ? legacyHabit.requirement
+          : typeof legacyHabit.permanentAt === "string"
+            ? "permanent"
+            : undefined
+      };
+    });
   const normalizedHabits = (habits.length > 0 ? habits : fallback.habits)
     .sort((a, b) => a.order - b.order)
-    .map((habit, index) => ({ ...habit, order: index }));
+    .map((habit, index) => ({
+      ...habit,
+      order: index,
+      requirement: habit.requirement ?? (index < 5 ? "permanent" : "optional")
+    }));
   const habitIds = new Set(normalizedHabits.map((habit) => habit.id));
 
   const normalizedDays = Object.fromEntries(

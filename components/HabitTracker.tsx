@@ -58,9 +58,10 @@ import {
 } from "../lib/habitData";
 import {
   DEFAULT_PRIMARY_WIN_COUNT,
+  getPermanentHabits,
   getOptionalHabits,
-  getPrimaryHabits,
-  promoteOptionalHabitToPrimary
+  makeHabitOptional,
+  makeHabitPermanent
 } from "../lib/primaryWins";
 import {
   PERSONALIZATION_STORAGE_KEY,
@@ -392,6 +393,8 @@ type AppToast = {
   tone: "success" | "error";
 };
 
+type CloudBackupStatus = "idle" | "pending" | "syncing" | "synced" | "error";
+
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
@@ -413,7 +416,8 @@ export function HabitTracker() {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
   const [dayOpen, setDayOpen] = useState(true);
-  const [monthOpen, setMonthOpen] = useState(true);
+  const [monthOpen, setMonthOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
   const [openDayParts, setOpenDayParts] = useState<Record<DayPartKey, boolean>>(() =>
     createInitialDayPartOpenState()
   );
@@ -449,6 +453,9 @@ export function HabitTracker() {
   const [cloudBusy, setCloudBusy] = useState(false);
   const [cloudMessage, setCloudMessage] = useState("Local-first mode is on. Sign in only when you want backup or sync.");
   const [cloudOverview, setCloudOverview] = useState<CloudOverview | null>(null);
+  const [cloudBackupStatus, setCloudBackupStatus] = useState<CloudBackupStatus>("idle");
+  const [cloudBackupError, setCloudBackupError] = useState<string | null>(null);
+  const cloudBackupQueuedDuringSyncRef = useRef(false);
   const [consents, setConsents] = useState<ConsentState>(defaultConsentState);
 
   useEffect(() => {
@@ -619,7 +626,11 @@ export function HabitTracker() {
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 720px)");
-    const syncMonthState = () => setMonthOpen(!query.matches);
+    const syncMonthState = () => {
+      if (query.matches) {
+        setMonthOpen(false);
+      }
+    };
     syncMonthState();
     query.addEventListener("change", syncMonthState);
     return () => query.removeEventListener("change", syncMonthState);
@@ -679,20 +690,38 @@ export function HabitTracker() {
     };
   }, []);
 
-  const commit = useCallback((recipe: (current: TrackerState) => TrackerState) => {
-    const next = recipe(trackerRef.current);
-    const stamped = { ...next, updatedAt: new Date().toISOString() };
-    trackerRef.current = stamped;
-    saveTrackerState(stamped);
-    setTracker(stamped);
-  }, []);
+  const queueCloudBackup = useCallback(() => {
+    if (cloudSession?.user.id && consents.sync) {
+      setCloudBackupStatus((status) => {
+        if (status === "syncing") {
+          cloudBackupQueuedDuringSyncRef.current = true;
+          return status;
+        }
+
+        return "pending";
+      });
+      setCloudBackupError(null);
+    }
+  }, [cloudSession?.user.id, consents.sync]);
+
+  const commit = useCallback(
+    (recipe: (current: TrackerState) => TrackerState) => {
+      const next = recipe(trackerRef.current);
+      const stamped = { ...next, updatedAt: new Date().toISOString() };
+      trackerRef.current = stamped;
+      saveTrackerState(stamped);
+      setTracker(stamped);
+      queueCloudBackup();
+    },
+    [queueCloudBackup]
+  );
 
   const sortedHabits = useMemo(
     () => [...tracker.habits].sort((a, b) => a.order - b.order),
     [tracker.habits]
   );
   const activeHabits = useMemo(() => sortedHabits.filter((habit) => !habit.pausedAt), [sortedHabits]);
-  const primaryHabits = useMemo(() => getPrimaryHabits(activeHabits), [activeHabits]);
+  const primaryHabits = useMemo(() => getPermanentHabits(activeHabits), [activeHabits]);
   const optionalHabits = useMemo(() => getOptionalHabits(activeHabits), [activeHabits]);
   const primaryHabitIds = useMemo(() => new Set(primaryHabits.map((habit) => habit.id)), [primaryHabits]);
   const dayPartGroups = useMemo(() => groupHabitsByDayPart(primaryHabits), [primaryHabits]);
@@ -765,11 +794,8 @@ export function HabitTracker() {
     "--app-ink": isDarkScheme ? "#e4f5ef" : appTheme.ink
   } as CSSProperties;
   const localSaveLabel = formatSaveStatus(tracker.updatedAt);
-  const cloudSaveLabel = cloudOverview?.lastSyncedAt
-    ? `Cloud backup ${formatSaveStatus(cloudOverview.lastSyncedAt).replace(/^Saved/, "saved")}`
-    : cloudSession
-      ? "Cloud backup not uploaded yet"
-      : "Cloud backup optional";
+  const cloudSaveLabel = getCloudBackupLabel(cloudBackupStatus, cloudOverview, cloudSession, cloudBackupError);
+  const shouldShowReturnPrompt = clientStateReady && (!isInstalledApp || !reminderSettings.enabled);
 
   const toggleDayPart = useCallback((dayPart: DayPartKey) => {
     setOpenDayParts((current) => ({
@@ -1108,7 +1134,8 @@ export function HabitTracker() {
         thumbnail: newHabitThumbnail,
         quip: "Custom win ready to track.",
         createdAt: new Date().toISOString(),
-        dayPart: newHabitDayPart
+        dayPart: newHabitDayPart,
+        requirement: "permanent"
       };
 
       return { ...current, habits: [...current.habits, habit] };
@@ -1151,16 +1178,16 @@ export function HabitTracker() {
 
   const makeOptionalHabitPermanent = useCallback(
     (habitId: string) => {
-      let promotedHabitName: string | null = null;
+      let changedHabitName: string | null = null;
       let permanentCount: number | null = null;
 
       commit((current) => {
-        const promotion = promoteOptionalHabitToPrimary(current.habits, habitId);
+        const promotion = makeHabitPermanent(current.habits, habitId);
         if (!promotion.changed) {
           return current;
         }
 
-        promotedHabitName = promotion.promotedHabit.name;
+        changedHabitName = promotion.habit.name;
         permanentCount = promotion.permanentCount;
         return {
           ...current,
@@ -1169,8 +1196,35 @@ export function HabitTracker() {
       });
 
       setExpandedHabitId(null);
-      if (promotedHabitName) {
-        showAppToast(`${promotedHabitName} is permanent now. Permanent wins: ${permanentCount ?? primaryHabits.length + 1}.`);
+      if (changedHabitName) {
+        showAppToast(`${changedHabitName} is permanent now. Permanent wins: ${permanentCount ?? primaryHabits.length + 1}.`);
+      }
+    },
+    [commit, primaryHabits.length, showAppToast]
+  );
+
+  const makePermanentHabitOptional = useCallback(
+    (habitId: string) => {
+      let changedHabitName: string | null = null;
+      let permanentCount: number | null = null;
+
+      commit((current) => {
+        const demotion = makeHabitOptional(current.habits, habitId);
+        if (!demotion.changed) {
+          return current;
+        }
+
+        changedHabitName = demotion.habit.name;
+        permanentCount = demotion.permanentCount;
+        return {
+          ...current,
+          habits: demotion.habits
+        };
+      });
+
+      setExpandedHabitId(null);
+      if (changedHabitName) {
+        showAppToast(`${changedHabitName} is optional now. Permanent wins: ${permanentCount ?? Math.max(0, primaryHabits.length - 1)}.`);
       }
     },
     [commit, primaryHabits.length, showAppToast]
@@ -1359,20 +1413,22 @@ export function HabitTracker() {
       trackerRef.current = imported;
       setTracker(imported);
       saveTrackerState(imported);
+      queueCloudBackup();
       showAppToast("Backup imported.", "success");
     } catch {
       showAppToast("I could not read that backup file.", "error");
     }
-  }, [showAppToast]);
+  }, [queueCloudBackup, showAppToast]);
 
   const resetTracker = useCallback(() => {
     const next = createDefaultState();
     trackerRef.current = next;
     setTracker(next);
     saveTrackerState(next);
+    queueCloudBackup();
     setResetConfirmOpen(false);
     showAppToast("Win List reset.", "success");
-  }, [showAppToast]);
+  }, [queueCloudBackup, showAppToast]);
 
   const selectToday = useCallback(() => {
     const today = new Date();
@@ -1464,12 +1520,14 @@ export function HabitTracker() {
     setDayOpen(true);
     setPersonalizerStep("about");
     setPersonalizerOpen(false);
-  }, [onboarding]);
+    queueCloudBackup();
+  }, [onboarding, queueCloudBackup]);
 
   const selectAppTheme = useCallback((themeKey: AppThemeKey) => {
     setAppThemeKey(themeKey);
     window.localStorage.setItem(THEME_STORAGE_KEY, themeKey);
-  }, []);
+    queueCloudBackup();
+  }, [queueCloudBackup]);
 
   const selectColorScheme = useCallback((scheme: ColorScheme) => {
     setColorScheme(scheme);
@@ -1503,6 +1561,12 @@ export function HabitTracker() {
     });
   }, []);
 
+  const openWinsSettings = useCallback(() => {
+    setSettingsOpen(true);
+    setExpandedSettingsSections({ ...collapsedSettingsSections, wins: true });
+    window.localStorage.setItem(SETTINGS_SECTION_STORAGE_KEY, "wins");
+  }, []);
+
   const updateTermsAcceptance = useCallback((accepted: boolean) => {
     setConsents(() => {
       const next: ConsentState = {
@@ -1514,6 +1578,12 @@ export function HabitTracker() {
       saveStoredConsents(next);
       return next;
     });
+    if (accepted) {
+      setCloudBackupStatus((status) => (status === "syncing" ? "syncing" : "pending"));
+    } else {
+      setCloudBackupStatus("idle");
+      setCloudBackupError(null);
+    }
   }, []);
 
   const handleMagicLink = useCallback(async () => {
@@ -1542,22 +1612,28 @@ export function HabitTracker() {
     }
   }, [cloudEmail]);
 
-  const handleCloudUpload = useCallback(async () => {
+  const uploadCurrentTrackerToCloud = useCallback(async (mode: "manual" | "auto") => {
     const client = getSupabaseClient();
     const userId = cloudSession?.user.id;
 
     if (!client || !userId) {
       setCloudMessage("Sign in before uploading this browser's Win List.");
+      setCloudBackupStatus("idle");
       return;
     }
 
     if (!consents.sync) {
       setCloudMessage("Agree to the terms before syncing this Win List.");
+      setCloudBackupStatus("idle");
       return;
     }
 
-    setCloudBusy(true);
-    setCloudMessage("Uploading this local Win List to Supabase...");
+    if (mode === "manual") {
+      setCloudBusy(true);
+    }
+    setCloudBackupStatus("syncing");
+    setCloudBackupError(null);
+    setCloudMessage(mode === "manual" ? "Uploading this local Win List to Supabase..." : "Backing up recent changes...");
     try {
       const overview = await uploadLocalSnapshot({
         client,
@@ -1569,13 +1645,29 @@ export function HabitTracker() {
         anonymousId: getAnonymousId()
       });
       setCloudOverview(overview);
-      setCloudMessage("Synced. LocalStorage is still the offline source, and Supabase now has a backup.");
+      if (cloudBackupQueuedDuringSyncRef.current) {
+        cloudBackupQueuedDuringSyncRef.current = false;
+        setCloudBackupStatus("pending");
+        setCloudMessage("Backed up. One newer local change is queued next.");
+      } else {
+        setCloudBackupStatus("synced");
+        setCloudMessage("Backed up. LocalStorage is still the instant offline source.");
+      }
     } catch (error) {
-      setCloudMessage(error instanceof Error ? error.message : "Could not sync this Win List.");
+      const message = error instanceof Error ? error.message : "Could not sync this Win List.";
+      setCloudBackupStatus("error");
+      setCloudBackupError(message);
+      setCloudMessage(message);
     } finally {
-      setCloudBusy(false);
+      if (mode === "manual") {
+        setCloudBusy(false);
+      }
     }
   }, [appThemeKey, cloudSession?.user.id, consents, personalizationSnapshot]);
+
+  const handleCloudUpload = useCallback(async () => {
+    await uploadCurrentTrackerToCloud("manual");
+  }, [uploadCurrentTrackerToCloud]);
 
   const handleCloudRestore = useCallback(async () => {
     const client = getSupabaseClient();
@@ -1600,6 +1692,8 @@ export function HabitTracker() {
       saveTrackerState(restored);
       setExpandedHabitId(null);
       setDayOpen(true);
+      setCloudBackupStatus("synced");
+      setCloudBackupError(null);
       setCloudMessage("Cloud copy restored into this browser.");
       setCloudOverview(await getCloudOverview(client, userId));
     } catch (error) {
@@ -1618,8 +1712,32 @@ export function HabitTracker() {
     await client.auth.signOut();
     setCloudSession(null);
     setCloudOverview(null);
+    setCloudBackupStatus("idle");
+    setCloudBackupError(null);
     setCloudMessage("Signed out. This browser still keeps the local Win List.");
   }, []);
+
+  useEffect(() => {
+    if (!cloudSession?.user.id || !consents.sync) {
+      return;
+    }
+
+    if (!cloudOverview?.lastSyncedAt) {
+      setCloudBackupStatus((status) => (status === "idle" ? "pending" : status));
+    }
+  }, [cloudOverview?.lastSyncedAt, cloudSession?.user.id, consents.sync]);
+
+  useEffect(() => {
+    if (cloudBackupStatus !== "pending" || !cloudSession?.user.id || !consents.sync) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void uploadCurrentTrackerToCloud("auto");
+    }, 1400);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [cloudBackupStatus, cloudSession?.user.id, consents.sync, uploadCurrentTrackerToCloud]);
 
   return (
     <main className={`tracker-shell theme-${appThemeKey} scheme-${colorScheme}`} style={appStyle}>
@@ -1771,7 +1889,35 @@ export function HabitTracker() {
           <div className="persistence-strip" aria-label="Save status">
             <span>{localSaveLabel}</span>
             <span>{cloudSaveLabel}</span>
+            {cloudBackupStatus === "error" && cloudSession && consents.sync ? (
+              <button type="button" onClick={() => void uploadCurrentTrackerToCloud("manual")}>
+                Retry
+              </button>
+            ) : null}
           </div>
+
+          {shouldShowReturnPrompt ? (
+            <div className="return-path-prompt" aria-label="Return path">
+              <div>
+                <span>Return faster</span>
+                <strong>{isInstalledApp ? "Light reminder is off" : "Install the app shell"}</strong>
+              </div>
+              <div>
+                {!isInstalledApp ? (
+                  <button type="button" onClick={handleInstallApp}>
+                    <Download size={15} aria-hidden="true" />
+                    Install
+                  </button>
+                ) : null}
+                {!reminderSettings.enabled ? (
+                  <button type="button" onClick={() => void requestReminderPermission()}>
+                    <CalendarDays size={15} aria-hidden="true" />
+                    Reminder
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
 
           {shouldPromptPersonalization ? (
             <div className="starter-card" aria-label="Personalize The Win List">
@@ -1819,6 +1965,17 @@ export function HabitTracker() {
           </div>
 
           <div className="day-panel-content">
+            <div className="permanent-list-toolbar">
+              <div>
+                <span>Permanent wins</span>
+                <strong>{completedCount}/{primaryHabits.length} today</strong>
+              </div>
+              <button type="button" onClick={openWinsSettings}>
+                <Settings2 size={15} aria-hidden="true" />
+                Manage order
+              </button>
+            </div>
+
             <div className="checklist" aria-label={copy.todayWins}>
               {dayPartGroups.map((group) => {
                 const groupCompleted = group.habits.filter((habit) => completedSet.has(habit.id)).length;
@@ -1881,23 +2038,36 @@ export function HabitTracker() {
                                   </span>
                                   <span className="tap-hint">{done ? "Won today" : "Tap to win"}</span>
                                 </button>
-                                <button
-                                  className={`mood-preview${moodOption ? " selected" : ""}`}
-                                  style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
-                                  type="button"
-                                  onPointerDown={primeCompletionFeedback}
-                                  onTouchStart={primeCompletionFeedback}
-                                  onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
-                                  aria-expanded={moodMenuOpen}
-                                  aria-label={`${done || moodOption ? "Change" : "Choose"} status for ${habit.name}`}
-                                >
-                                  {moodOption ? (
-                                    <img src={assetUrl(moodOption.src)} alt="" />
-                                  ) : (
-                                    <CircleDot size={16} aria-hidden="true" />
-                                  )}
-                                  <span>{done || moodOption ? "Edit" : "Status"}</span>
-                                </button>
+                                <div className="habit-card-actions">
+                                  <button
+                                    className="requirement-toggle-button"
+                                    type="button"
+                                    title="Make optional"
+                                    onPointerDown={primeCompletionFeedback}
+                                    onTouchStart={primeCompletionFeedback}
+                                    onClick={() => makePermanentHabitOptional(habit.id)}
+                                    aria-label={`Make ${habit.name} optional`}
+                                  >
+                                    <ArrowDown size={15} aria-hidden="true" />
+                                  </button>
+                                  <button
+                                    className={`mood-preview${moodOption ? " selected" : ""}`}
+                                    style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
+                                    type="button"
+                                    onPointerDown={primeCompletionFeedback}
+                                    onTouchStart={primeCompletionFeedback}
+                                    onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
+                                    aria-expanded={moodMenuOpen}
+                                    aria-label={`${done || moodOption ? "Change" : "Choose"} status for ${habit.name}`}
+                                  >
+                                    {moodOption ? (
+                                      <img src={assetUrl(moodOption.src)} alt="" />
+                                    ) : (
+                                      <CircleDot size={16} aria-hidden="true" />
+                                    )}
+                                    <span>{done || moodOption ? "Edit" : "Status"}</span>
+                                  </button>
+                                </div>
                               </div>
                               {moodMenuOpen ? (
                                 <div className="activity-mood-panel" aria-label={`Win status choices for ${habit.name}`}>
@@ -1999,7 +2169,7 @@ export function HabitTracker() {
                               </button>
                               <div className="habit-card-actions">
                                 <button
-                                  className="promote-optional-button"
+                                  className="requirement-toggle-button"
                                   type="button"
                                   title="Make permanent"
                                   onPointerDown={primeCompletionFeedback}
@@ -2071,20 +2241,30 @@ export function HabitTracker() {
               ) : null}
             </div>
 
-            <label className="note-box">
-              <span>
-                Daily note
-                <small className={`note-save-state${noteSavedVisible ? " visible" : ""}`} aria-live="polite">
-                  Saved ✓
-                </small>
-              </span>
-              <textarea
-                ref={noteRef}
-                value={selectedRecord.note ?? ""}
-                onChange={(event) => updateSelectedNote(event.target.value)}
-                placeholder="What made today easier or harder? One line is enough."
-              />
-            </label>
+            <section className={`note-box compact${noteOpen ? " open" : " collapsed"}`}>
+              <button
+                className="note-toggle"
+                type="button"
+                onClick={() => setNoteOpen((open) => !open)}
+                aria-expanded={noteOpen}
+              >
+                <span>
+                  Daily note
+                  <small className={`note-save-state${noteSavedVisible ? " visible" : ""}`} aria-live="polite">
+                    Saved ✓
+                  </small>
+                </span>
+                <ChevronDown size={17} aria-hidden="true" />
+              </button>
+              {noteOpen ? (
+                <textarea
+                  ref={noteRef}
+                  value={selectedRecord.note ?? ""}
+                  onChange={(event) => updateSelectedNote(event.target.value)}
+                  placeholder="What made today easier or harder? One line is enough."
+                />
+              ) : null}
+            </section>
           </div>
         </section>
 
@@ -2867,7 +3047,7 @@ function CloudSyncPanel({
             <>
               <button className="icon-text-button hot full" type="button" onClick={onUpload} disabled={busy}>
                 <Cloud size={18} aria-hidden="true" />
-                Upload local Win List
+                Backup now
               </button>
               <button className="backup-button" type="button" onClick={() => setRestoreConfirmOpen(true)} disabled={busy}>
                 <Download size={17} aria-hidden="true" />
@@ -4445,6 +4625,35 @@ function formatSaveStatus(value: string | null | undefined) {
   }
 
   return `Saved ${savedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+}
+
+function getCloudBackupLabel(
+  status: CloudBackupStatus,
+  overview: CloudOverview | null,
+  session: SupabaseSession | null,
+  error: string | null
+) {
+  if (!session) {
+    return "Cloud backup optional";
+  }
+
+  if (status === "pending") {
+    return "Cloud backup pending";
+  }
+
+  if (status === "syncing") {
+    return "Cloud backup saving...";
+  }
+
+  if (status === "error") {
+    return error ? "Cloud backup failed" : "Cloud backup needs retry";
+  }
+
+  if (overview?.lastSyncedAt) {
+    return `Cloud backup ${formatSaveStatus(overview.lastSyncedAt).replace(/^Saved/, "saved")}`;
+  }
+
+  return "Cloud backup not uploaded yet";
 }
 
 function isSettingsSectionKey(value: string | null): value is SettingsSectionKey {

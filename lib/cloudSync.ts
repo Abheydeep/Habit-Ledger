@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { TrackerState, MoodKey } from "./habitData";
+import type { TrackerState, MoodKey, Habit } from "./habitData";
+import { cloudFlagToHabitRequirement, habitRequirementToCloudFlag } from "./primaryWins";
 import type { PersonalizationSnapshot } from "./personalization";
 
 export type ConsentType = "sync" | "analytics" | "recommendations" | "ads_personalization";
@@ -14,7 +15,7 @@ export type CloudOverview = {
   lastSyncedAt: string | null;
 };
 
-type CloudWinRow = {
+export type CloudWinRow = {
   id: string;
   local_id: string;
   title: string;
@@ -23,6 +24,22 @@ type CloudWinRow = {
   color: string;
   sort_order: number;
   is_active: boolean;
+  is_permanent?: boolean | null;
+  source: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CloudWinUpsertRow = {
+  user_id: string;
+  local_id: string;
+  title: string;
+  quip: string;
+  icon: string;
+  color: string;
+  sort_order: number;
+  is_active: boolean;
+  is_permanent: boolean;
   source: string;
   created_at: string;
   updated_at: string;
@@ -174,11 +191,7 @@ export async function uploadLocalSnapshot({
 
 export async function downloadCloudSnapshot(client: SupabaseClient, userId: string): Promise<TrackerState | null> {
   const [winsResult, logsResult, notesResult] = await Promise.all([
-    client
-      .from("wins")
-      .select("id,local_id,title,quip,icon,color,sort_order,is_active,source,created_at,updated_at")
-      .eq("user_id", userId)
-      .order("sort_order", { ascending: true }),
+    selectCloudWins(client, userId),
     client.from("daily_win_logs").select("win_id,local_date,status").eq("user_id", userId),
     client.from("daily_notes").select("local_date,note").eq("user_id", userId)
   ]);
@@ -234,16 +247,7 @@ export async function downloadCloudSnapshot(client: SupabaseClient, userId: stri
 
   return {
     version: 1,
-    habits: wins.map((win, index) => ({
-      id: win.local_id,
-      name: win.title,
-      order: Number.isFinite(win.sort_order) ? win.sort_order : index,
-      color: win.color,
-      thumbnail: win.icon,
-      quip: win.quip ?? "Synced win ready for today.",
-      createdAt: win.created_at,
-      pausedAt: win.is_active ? undefined : win.updated_at
-    })),
+    habits: cloudWinsToHabits(wins),
     days,
     createdAt,
     updatedAt
@@ -311,27 +315,89 @@ async function upsertProfile(
 }
 
 async function upsertWins(client: SupabaseClient, userId: string, tracker: TrackerState, now: string) {
-  const rows = tracker.habits.map((habit) => ({
-    user_id: userId,
-    local_id: habit.id,
-    title: habit.name,
-    quip: habit.quip,
-    icon: habit.thumbnail,
-    color: habit.color,
-    sort_order: habit.order,
-    is_active: !habit.pausedAt,
-    source: habit.id.startsWith("custom-") ? "user_created" : habit.id.startsWith("personal-") ? "personalized" : "default",
-    created_at: habit.createdAt || now,
-    updated_at: now
-  }));
+  const rows = trackerToCloudWinRows(tracker, userId, now);
 
   const { error } = await client.from("wins").upsert(rows, {
     onConflict: "user_id,local_id"
   });
 
   if (error) {
+    if (isMissingPermanentColumnError(error)) {
+      const fallbackRows = rows.map(({ is_permanent: _isPermanent, ...row }) => row);
+      const { error: fallbackError } = await client.from("wins").upsert(fallbackRows, {
+        onConflict: "user_id,local_id"
+      });
+
+      if (!fallbackError) {
+        return;
+      }
+
+      throw new Error(fallbackError.message);
+    }
+
     throw new Error(error.message);
   }
+}
+
+export function trackerToCloudWinRows(tracker: TrackerState, userId: string, now: string): CloudWinUpsertRow[] {
+  const orderedHabits = [...tracker.habits].sort((a, b) => a.order - b.order);
+  return tracker.habits.map((habit) => {
+    const activeIndex = orderedHabits.filter((item) => !item.pausedAt).findIndex((item) => item.id === habit.id);
+    const requirementIndex = activeIndex >= 0 ? activeIndex : habit.order;
+
+    return {
+      user_id: userId,
+      local_id: habit.id,
+      title: habit.name,
+      quip: habit.quip,
+      icon: habit.thumbnail,
+      color: habit.color,
+      sort_order: habit.order,
+      is_active: !habit.pausedAt,
+      is_permanent: habitRequirementToCloudFlag(habit, requirementIndex),
+      source: habit.id.startsWith("custom-") ? "user_created" : habit.id.startsWith("personal-") ? "personalized" : "default",
+      created_at: habit.createdAt || now,
+      updated_at: now
+    };
+  });
+}
+
+export function cloudWinsToHabits(wins: CloudWinRow[]): Habit[] {
+  return wins.map((win, index) => ({
+    id: win.local_id,
+    name: win.title,
+    order: Number.isFinite(win.sort_order) ? win.sort_order : index,
+    color: win.color,
+    thumbnail: win.icon,
+    quip: win.quip ?? "Synced win ready for today.",
+    createdAt: win.created_at,
+    pausedAt: win.is_active ? undefined : win.updated_at,
+    requirement: cloudFlagToHabitRequirement(win.is_permanent, index)
+  }));
+}
+
+async function selectCloudWins(client: SupabaseClient, userId: string) {
+  const selectWithRequirement = "id,local_id,title,quip,icon,color,sort_order,is_active,is_permanent,source,created_at,updated_at";
+  const selectLegacy = "id,local_id,title,quip,icon,color,sort_order,is_active,source,created_at,updated_at";
+  const result = await client
+    .from("wins")
+    .select(selectWithRequirement)
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true });
+
+  if (!result.error || !isMissingPermanentColumnError(result.error)) {
+    return result;
+  }
+
+  return client
+    .from("wins")
+    .select(selectLegacy)
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true });
+}
+
+function isMissingPermanentColumnError(error: { message?: string }) {
+  return /is_permanent/i.test(error.message ?? "");
 }
 
 async function getWinIdMap(client: SupabaseClient, userId: string) {

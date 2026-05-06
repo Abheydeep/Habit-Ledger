@@ -33,6 +33,18 @@ const checks = [
     ok: component.includes("Test feedback") && css.includes(".feedback-settings")
   },
   {
+    name: "permanent wins can move both ways inline",
+    ok: component.includes("makeOptionalHabitPermanent") && component.includes("makePermanentHabitOptional")
+  },
+  {
+    name: "return path prompt stays close to today",
+    ok: component.includes("return-path-prompt") && css.includes(".return-path-prompt")
+  },
+  {
+    name: "auto backup states remain visible",
+    ok: component.includes("Cloud backup pending") && component.includes("Backup now")
+  },
+  {
     name: "settings opens as an overview instead of a heavy editor",
     ok: component.includes("setExpandedSettingsSections(collapsedSettingsSections);")
   },
