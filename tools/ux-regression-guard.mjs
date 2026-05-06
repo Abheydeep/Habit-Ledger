@@ -26,15 +26,22 @@ const checks = [
   },
   {
     name: "perfect streak wording stays clear",
-    ok: component.includes("Perfect streak") && component.includes("A perfect streak counts days where every permanent win is logged.")
+    ok: component.includes("Perfect streak") && component.includes("A perfect streak counts days where every core win is logged.")
   },
   {
     name: "feedback controls remain available",
     ok: component.includes("Test feedback") && css.includes(".feedback-settings")
   },
   {
-    name: "permanent wins can move both ways inline",
+    name: "core wins can move both ways inline",
     ok: component.includes("makeOptionalHabitPermanent") && component.includes("makePermanentHabitOptional")
+  },
+  {
+    name: "core win demotion requires press and hold",
+    ok:
+      component.includes("startRequirementLongPress") &&
+      component.includes("requirement-longpress-panel") &&
+      !component.includes('title="Make optional"')
   },
   {
     name: "return path prompt stays close to today",
@@ -49,8 +56,20 @@ const checks = [
     ok: component.includes("SIMPLE_TODAY_STORAGE_KEY") && component.includes("simple-today-button")
   },
   {
-    name: "permanent list pressure guard remains visible",
-    ok: component.includes("getPressureGuard") && component.includes("Lighten list") && css.includes(".pressure-guard-card")
+    name: "core list pressure guard remains visible",
+    ok:
+      component.includes("missedPerfectDaysInARow") &&
+      component.includes('currentDayPart !== "evening"') &&
+      component.includes("PRESSURE_GUARD_SEEN_KEY") &&
+      css.includes(".pressure-guard-card")
+  },
+  {
+    name: "dark mode mobile text remains readable",
+    ok:
+      css.includes(".tracker-shell.scheme-dark .persistence-strip span") &&
+      css.includes(".tracker-shell.scheme-dark .note-box.compact.collapsed") &&
+      css.includes(".tracker-shell.scheme-dark .day-group-header small") &&
+      css.includes("color: #f3fbf7")
   },
   {
     name: "quick win manager avoids settings friction",

@@ -2510,7 +2510,7 @@ img {
   z-index: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 7px;
   margin-top: 8px;
 }
 
@@ -2518,14 +2518,15 @@ img {
 .persistence-strip button {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 9px;
-  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 82%);
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 76%);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--app-surface), #ffffff 35%);
-  color: #60716d;
-  font-size: 0.72rem;
-  font-weight: 760;
+  background: rgba(255, 255, 255, 0.88);
+  color: #30433f;
+  font-size: 0.74rem;
+  font-weight: 820;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--app-primary), transparent 94%);
 }
 
 .persistence-strip button {
@@ -2538,14 +2539,28 @@ img {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+  gap: 8px;
   margin-top: 10px;
-  padding: 10px;
+  padding: 11px;
   border: 1px solid color-mix(in srgb, var(--app-primary), transparent 82%);
   border-radius: 8px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--app-primary), #ffffff 92%), rgba(255, 255, 255, 0.78));
+}
+
+.return-path-prompt {
+  border-color: color-mix(in srgb, var(--app-primary), transparent 64%);
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--app-accent), transparent 82%), transparent 36%),
+    linear-gradient(135deg, color-mix(in srgb, var(--app-primary), #ffffff 88%), #ffffff);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--app-primary), transparent 90%);
+}
+
+.return-path-prompt > div:first-child,
+.permanent-list-toolbar > div:first-child,
+.pressure-guard-card > div:first-child {
+  min-width: 0;
 }
 
 .return-path-prompt span,
@@ -2564,7 +2579,7 @@ img {
   display: block;
   margin-top: 2px;
   color: #0f2f2e;
-  font-size: 0.92rem;
+  font-size: 0.96rem;
   font-weight: 900;
 }
 
@@ -2588,8 +2603,17 @@ img {
   line-height: 1.35;
 }
 
-.return-path-prompt > div:last-child {
+.pressure-guard-actions {
   display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: stretch;
+  gap: 6px;
+}
+
+.return-path-prompt > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: stretch;
   gap: 6px;
 }
 
@@ -2600,6 +2624,8 @@ img {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  flex: 1 1 112px;
+  min-width: 0;
   min-height: 34px;
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, var(--app-primary), transparent 78%);
@@ -2619,7 +2645,7 @@ img {
 .permanent-list-actions {
   display: inline-flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: stretch;
   gap: 6px;
 }
 
@@ -3127,6 +3153,39 @@ img {
 .requirement-toggle-button:hover {
   border-color: color-mix(in srgb, var(--habit) 46%, white);
   background: color-mix(in srgb, var(--habit) 16%, white);
+}
+
+.requirement-longpress-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--habit) 30%, white);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--habit) 8%, white);
+}
+
+.requirement-longpress-panel span {
+  color: color-mix(in srgb, var(--habit), #0f172a 18%);
+  font-size: 0.7rem;
+  font-weight: 780;
+  text-transform: uppercase;
+}
+
+.requirement-longpress-panel button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--habit) 34%, white);
+  border-radius: 999px;
+  background: #ffffff;
+  color: color-mix(in srgb, var(--habit), #0f172a 20%);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .activity-mood-panel {
@@ -3791,6 +3850,10 @@ img {
   grid-column: 1 / -1;
   flex-wrap: wrap;
   gap: 7px;
+}
+
+.quick-win-actions .tiny-text-button {
+  flex: 1 1 118px;
 }
 
 .quick-manager-full-settings {
@@ -5210,6 +5273,25 @@ img {
     display: flex;
   }
 
+  .return-path-prompt,
+  .permanent-list-toolbar,
+  .pressure-guard-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .return-path-prompt > div:last-child,
+  .permanent-list-actions,
+  .pressure-guard-actions {
+    justify-content: flex-end;
+  }
+
+  .return-path-prompt button,
+  .permanent-list-toolbar button,
+  .pressure-guard-card button {
+    flex: 0 0 auto;
+  }
+
   .mobile-collapse-row {
     display: none;
   }
@@ -5390,6 +5472,10 @@ img {
   .quick-win-actions {
     grid-column: auto;
     justify-content: flex-end;
+  }
+
+  .quick-win-actions .tiny-text-button {
+    flex: 0 0 auto;
   }
 
   .personalization-layer {
@@ -6814,6 +6900,61 @@ img {
     radial-gradient(circle at center, #1d2a26 57%, transparent 59%),
     conic-gradient(var(--app-primary) var(--progress, 0%), #344740 0);
   color: #f3fbf7;
+}
+
+.tracker-shell.scheme-dark .persistence-strip span,
+.tracker-shell.scheme-dark .persistence-strip button,
+.tracker-shell.scheme-dark .note-box.compact.collapsed,
+.tracker-shell.scheme-dark .return-path-prompt,
+.tracker-shell.scheme-dark .permanent-list-toolbar,
+.tracker-shell.scheme-dark .pressure-guard-card,
+.tracker-shell.scheme-dark .requirement-longpress-panel {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, rgba(10, 31, 27, 0.96), rgba(17, 43, 37, 0.9));
+  color: #f3fbf7;
+}
+
+.tracker-shell.scheme-dark .persistence-strip span,
+.tracker-shell.scheme-dark .persistence-strip button,
+.tracker-shell.scheme-dark .note-box.compact.collapsed .note-toggle,
+.tracker-shell.scheme-dark .note-box.compact.collapsed .note-toggle span,
+.tracker-shell.scheme-dark .return-path-prompt strong,
+.tracker-shell.scheme-dark .permanent-list-toolbar strong,
+.tracker-shell.scheme-dark .pressure-guard-card strong,
+.tracker-shell.scheme-dark .requirement-longpress-panel span {
+  color: #f3fbf7;
+}
+
+.tracker-shell.scheme-dark .return-path-prompt span,
+.tracker-shell.scheme-dark .permanent-list-toolbar span,
+.tracker-shell.scheme-dark .pressure-guard-card span,
+.tracker-shell.scheme-dark .pressure-guard-card p {
+  color: #cfe4dd;
+}
+
+.tracker-shell.scheme-dark .pressure-guard-card button,
+.tracker-shell.scheme-dark .return-path-prompt button,
+.tracker-shell.scheme-dark .permanent-list-toolbar button,
+.tracker-shell.scheme-dark .requirement-longpress-panel button {
+  border-color: rgba(189, 247, 238, 0.24);
+  background: #e9fffa;
+  color: #0a2a25;
+}
+
+.tracker-shell.scheme-dark .day-group-header,
+.tracker-shell.scheme-dark .day-group.optional-routines .day-group-header {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(10, 31, 27, 0.94), rgba(17, 43, 37, 0.86));
+}
+
+.tracker-shell.scheme-dark .day-group-header > div > span,
+.tracker-shell.scheme-dark .day-group-status strong,
+.tracker-shell.scheme-dark .day-group-chevron {
+  color: #f3fbf7;
+}
+
+.tracker-shell.scheme-dark .day-group-header small {
+  color: #cfe4dd;
 }
 
 @media (min-width: 721px) {

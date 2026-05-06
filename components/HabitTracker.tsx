@@ -96,6 +96,7 @@ const REMINDER_STORAGE_KEY = "the-win-list:reminders:v1";
 const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
 const SETTINGS_SECTION_STORAGE_KEY = "the-win-list:settings-section:v1";
 const SIMPLE_TODAY_STORAGE_KEY = "the-win-list:simple-today:v1";
+const PRESSURE_GUARD_SEEN_KEY = "the-win-list:pressure-guard-seen-date:v1";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
 const copy = {
   brand: "The Win List",
@@ -416,6 +417,7 @@ export function HabitTracker() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
+  const [requirementMenuHabitId, setRequirementMenuHabitId] = useState<string | null>(null);
   const [dayOpen, setDayOpen] = useState(true);
   const [monthOpen, setMonthOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -426,6 +428,8 @@ export function HabitTracker() {
     useState<Record<AnalyticsSectionKey, boolean>>(defaultAnalyticsSections);
   const [celebration, setCelebration] = useState<CompletionCelebration | null>(null);
   const celebrationTimeoutRef = useRef<number | null>(null);
+  const requirementPressTimerRef = useRef<number | null>(null);
+  const requirementPressTriggeredRef = useRef(false);
   const [perfectDayCelebration, setPerfectDayCelebration] = useState<PerfectDayCelebration | null>(null);
   const perfectDayTimeoutRef = useRef<number | null>(null);
   const [appToast, setAppToast] = useState<AppToast | null>(null);
@@ -448,6 +452,8 @@ export function HabitTracker() {
   const [isInstalledApp, setIsInstalledApp] = useState(false);
   const [simpleToday, setSimpleToday] = useState(true);
   const [quickManagerOpen, setQuickManagerOpen] = useState(false);
+  const [pressureGuardSeenDate, setPressureGuardSeenDate] = useState<string | null>(null);
+  const [pressureGuardSessionDate, setPressureGuardSessionDate] = useState<string | null>(null);
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [expandedSettingsSections, setExpandedSettingsSections] =
     useState<Record<SettingsSectionKey, boolean>>(collapsedSettingsSections);
@@ -553,6 +559,10 @@ export function HabitTracker() {
     if (storedSimpleToday === "full") {
       setSimpleToday(false);
     }
+    const storedPressureGuardSeenDate = window.localStorage.getItem(PRESSURE_GUARD_SEEN_KEY);
+    if (storedPressureGuardSeenDate) {
+      setPressureGuardSeenDate(storedPressureGuardSeenDate);
+    }
 
     const today = new Date();
     const todayKey = localDateKey(today);
@@ -648,6 +658,9 @@ export function HabitTracker() {
     return () => {
       if (celebrationTimeoutRef.current) {
         window.clearTimeout(celebrationTimeoutRef.current);
+      }
+      if (requirementPressTimerRef.current) {
+        window.clearTimeout(requirementPressTimerRef.current);
       }
       if (perfectDayTimeoutRef.current) {
         window.clearTimeout(perfectDayTimeoutRef.current);
@@ -781,7 +794,19 @@ export function HabitTracker() {
   );
   const analyticsInsights = analyticsSummary.insights;
   const streakNudge = getStreakNudge(streak, completedCount, primaryHabits.length);
-  const pressureGuard = getPressureGuard(primaryHabits.length);
+  const pressureGuardCandidate = getPressureGuard({
+    permanentCount: primaryHabits.length,
+    tracker,
+    habits: primaryHabits,
+    todayKey,
+    currentDayPart
+  });
+  const pressureGuard =
+    clientStateReady &&
+    pressureGuardCandidate &&
+    (pressureGuardSeenDate !== todayKey || pressureGuardSessionDate === todayKey)
+      ? pressureGuardCandidate
+      : null;
   const shouldPromptPersonalization = clientStateReady && !personalizationSnapshot;
   const companionNudge = useMemo(
     () =>
@@ -812,7 +837,7 @@ export function HabitTracker() {
   } as CSSProperties;
   const localSaveLabel = formatLocalSaveStatus(tracker.updatedAt);
   const cloudSaveLabel = getCloudBackupLabel(cloudBackupStatus, cloudOverview, cloudSession, cloudBackupError);
-  const shouldShowReturnPrompt = !simpleToday && clientStateReady && (!isInstalledApp || !reminderSettings.enabled);
+  const shouldShowReturnPrompt = clientStateReady && (!isInstalledApp || !reminderSettings.enabled);
 
   const toggleDayPart = useCallback((dayPart: DayPartKey) => {
     setOpenDayParts((current) => ({
@@ -846,6 +871,12 @@ export function HabitTracker() {
       return next;
     });
   }, []);
+
+  const hidePressureGuardForToday = useCallback(() => {
+    window.localStorage.setItem(PRESSURE_GUARD_SEEN_KEY, todayKey);
+    setPressureGuardSeenDate(todayKey);
+    setPressureGuardSessionDate(null);
+  }, [todayKey]);
 
   const saveReminderSettings = useCallback((recipe: (current: ReminderSettings) => ReminderSettings) => {
     setReminderSettings((current) => {
@@ -937,7 +968,7 @@ export function HabitTracker() {
       saveReminderSettings((current) => ({ ...current, lastFiredDate: today }));
 
       if (remaining > 0) {
-        fireReminder(`${remaining} permanent win${remaining === 1 ? "" : "s"} still open for today.`);
+        fireReminder(`${remaining} core win${remaining === 1 ? "" : "s"} still open for today.`);
       }
     };
 
@@ -969,6 +1000,49 @@ export function HabitTracker() {
     },
     [feedbackSettings]
   );
+
+  const clearRequirementPressTimer = useCallback(() => {
+    if (requirementPressTimerRef.current) {
+      window.clearTimeout(requirementPressTimerRef.current);
+      requirementPressTimerRef.current = null;
+    }
+  }, []);
+
+  const startRequirementLongPress = useCallback(
+    (habit: Habit) => {
+      primeCompletionFeedback();
+      clearRequirementPressTimer();
+      requirementPressTriggeredRef.current = false;
+      requirementPressTimerRef.current = window.setTimeout(() => {
+        requirementPressTimerRef.current = null;
+        requirementPressTriggeredRef.current = true;
+        setExpandedHabitId(null);
+        setRequirementMenuHabitId(habit.id);
+        if (feedbackSettings.haptics) {
+          triggerCompletionHaptic("tap");
+        }
+      }, 560);
+    },
+    [clearRequirementPressTimer, feedbackSettings.haptics]
+  );
+
+  const finishRequirementLongPress = useCallback(() => {
+    clearRequirementPressTimer();
+    if (requirementPressTriggeredRef.current) {
+      window.setTimeout(() => {
+        requirementPressTriggeredRef.current = false;
+      }, 220);
+    }
+  }, [clearRequirementPressTimer]);
+
+  const consumeRequirementLongPress = useCallback(() => {
+    if (!requirementPressTriggeredRef.current) {
+      return false;
+    }
+
+    requirementPressTriggeredRef.current = false;
+    return true;
+  }, []);
 
   const triggerPerfectDayCelebration = useCallback((tone: string, total: number) => {
     if (perfectDayTimeoutRef.current) {
@@ -1097,6 +1171,7 @@ export function HabitTracker() {
       const record = trackerRef.current.days[selectedDate] ?? emptyDay;
       const currentMood = record.habitMoods?.[habit.id];
 
+      setRequirementMenuHabitId(null);
       if (currentMood && isCompletionMood(currentMood)) {
         triggerCompletionFeedback(habit.color, "tap", feedbackSettings);
         clearHabitMood(habit.id);
@@ -1221,8 +1296,9 @@ export function HabitTracker() {
       });
 
       setExpandedHabitId(null);
+      setRequirementMenuHabitId(null);
       if (changedHabitName) {
-        showAppToast(`${changedHabitName} is permanent now. Permanent wins: ${permanentCount ?? primaryHabits.length + 1}.`);
+        showAppToast(`${changedHabitName} is a core win now. Core wins: ${permanentCount ?? primaryHabits.length + 1}.`);
       }
     },
     [commit, primaryHabits.length, showAppToast]
@@ -1248,8 +1324,9 @@ export function HabitTracker() {
       });
 
       setExpandedHabitId(null);
+      setRequirementMenuHabitId(null);
       if (changedHabitName) {
-        showAppToast(`${changedHabitName} is optional now. Permanent wins: ${permanentCount ?? Math.max(0, primaryHabits.length - 1)}.`);
+        showAppToast(`${changedHabitName} is optional now. Core wins: ${permanentCount ?? Math.max(0, primaryHabits.length - 1)}.`);
       }
     },
     [commit, primaryHabits.length, showAppToast]
@@ -1764,6 +1841,22 @@ export function HabitTracker() {
     return () => window.clearTimeout(timeoutId);
   }, [cloudBackupStatus, cloudSession?.user.id, consents.sync, uploadCurrentTrackerToCloud]);
 
+  useEffect(() => {
+    if (
+      !clientStateReady ||
+      !dayOpen ||
+      !pressureGuardCandidate ||
+      pressureGuardSeenDate === todayKey ||
+      pressureGuardSessionDate === todayKey
+    ) {
+      return;
+    }
+
+    window.localStorage.setItem(PRESSURE_GUARD_SEEN_KEY, todayKey);
+    setPressureGuardSeenDate(todayKey);
+    setPressureGuardSessionDate(todayKey);
+  }, [clientStateReady, dayOpen, pressureGuardCandidate, pressureGuardSeenDate, pressureGuardSessionDate, todayKey]);
+
   return (
     <main className={`tracker-shell theme-${appThemeKey} scheme-${colorScheme}`} style={appStyle}>
       <section className="tracker-hero" aria-labelledby="tracker-title">
@@ -1909,16 +2002,16 @@ export function HabitTracker() {
 
           {!simpleToday ? (
             <div className="stat-strip" aria-label="Daily progress">
-              <StatCard label="Permanent wins" value={`${completedCount}/${primaryHabits.length}`} />
+              <StatCard label="Core wins" value={`${completedCount}/${primaryHabits.length}`} />
               <StatCard
                 label="Perfect streak"
                 value={`${streak} day${streak === 1 ? "" : "s"}`}
-                title="A perfect streak counts days where every permanent win is logged."
+                title="A perfect streak counts days where every core win is logged."
               />
               <StatCard
                 label="Month rate"
                 value={monthProgress.total > 0 ? `${Math.round((monthProgress.completed / monthProgress.total) * 100)}%` : "0%"}
-                title={`${monthProgress.completed}/${monthProgress.total} permanent wins logged so far this month`}
+                title={`${monthProgress.completed}/${monthProgress.total} core wins logged so far this month`}
               />
             </div>
           ) : null}
@@ -1961,7 +2054,7 @@ export function HabitTracker() {
               <div>
                 <span>Make it yours</span>
                 <strong>Ready now. Personalize later.</strong>
-                <p>Your default 5 permanent wins already work. Personalizing tunes the list when you have a minute.</p>
+                <p>Your default 5 core wins already work. Personalizing tunes the list when you have a minute.</p>
               </div>
               <button
                 className="starter-card-button"
@@ -2011,15 +2104,26 @@ export function HabitTracker() {
                   <strong>{pressureGuard.title}</strong>
                   <p>{pressureGuard.detail}</p>
                 </div>
-                <button type="button" onClick={() => setQuickManagerOpen(true)}>
-                  Lighten list
-                </button>
+                <div className="pressure-guard-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hidePressureGuardForToday();
+                      setQuickManagerOpen(true);
+                    }}
+                  >
+                    Lighten list
+                  </button>
+                  <button type="button" onClick={hidePressureGuardForToday}>
+                    Not now
+                  </button>
+                </div>
               </div>
             ) : null}
 
             <div className="permanent-list-toolbar">
               <div>
-                <span>Permanent wins</span>
+                <span>Core wins</span>
                 <strong>{completedCount}/{primaryHabits.length} today</strong>
               </div>
               <div className="permanent-list-actions">
@@ -2072,9 +2176,12 @@ export function HabitTracker() {
                           const habitMood = selectedRecord.habitMoods?.[habit.id];
                           const moodOption = moodOptions.find((item) => item.key === habitMood);
                           const moodMenuOpen = expandedHabitId === habit.id;
+                          const requirementMenuOpen = requirementMenuHabitId === habit.id;
                           return (
                             <article
                               className={`habit-card${done ? " done" : ""}${moodMenuOpen ? " expanded" : ""}${
+                                requirementMenuOpen ? " requirement-menu-open" : ""
+                              }${
                                 celebration?.habitId === habit.id ? " celebrating" : ""
                               }`}
                               key={habit.id}
@@ -2084,10 +2191,29 @@ export function HabitTracker() {
                                 <button
                                   className="habit-win-button"
                                   type="button"
-                                  onPointerDown={primeCompletionFeedback}
-                                  onTouchStart={primeCompletionFeedback}
-                                  onClick={() => toggleHabitWin(habit)}
-                                  aria-label={done ? `Undo ${habit.name} for ${formatPrettyDate(selectedDate)}` : `Mark ${habit.name} as won`}
+                                  onPointerDown={() => startRequirementLongPress(habit)}
+                                  onPointerUp={finishRequirementLongPress}
+                                  onPointerLeave={finishRequirementLongPress}
+                                  onPointerCancel={finishRequirementLongPress}
+                                  onContextMenu={(event) => {
+                                    event.preventDefault();
+                                    clearRequirementPressTimer();
+                                    setExpandedHabitId(null);
+                                    setRequirementMenuHabitId(habit.id);
+                                  }}
+                                  onClick={() => {
+                                    clearRequirementPressTimer();
+                                    if (consumeRequirementLongPress()) {
+                                      return;
+                                    }
+                                    toggleHabitWin(habit);
+                                  }}
+                                  aria-label={
+                                    done
+                                      ? `Undo ${habit.name} for ${formatPrettyDate(selectedDate)}. Press and hold for options.`
+                                      : `Mark ${habit.name} as won. Press and hold for options.`
+                                  }
+                                  title="Press and hold for options"
                                 >
                                   <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
                                   <span className="habit-card-copy">
@@ -2097,17 +2223,6 @@ export function HabitTracker() {
                                   <span className="tap-hint">{done ? "Won today" : "Tap to win"}</span>
                                 </button>
                                 <div className="habit-card-actions">
-                                  <button
-                                    className="requirement-toggle-button"
-                                    type="button"
-                                    title="Make optional"
-                                    onPointerDown={primeCompletionFeedback}
-                                    onTouchStart={primeCompletionFeedback}
-                                    onClick={() => makePermanentHabitOptional(habit.id)}
-                                    aria-label={`Make ${habit.name} optional`}
-                                  >
-                                    <ArrowDown size={15} aria-hidden="true" />
-                                  </button>
                                   <button
                                     className={`mood-preview${moodOption ? " selected" : ""}`}
                                     style={{ "--mood": moodOption?.tone ?? habit.color } as CSSProperties}
@@ -2127,6 +2242,17 @@ export function HabitTracker() {
                                   </button>
                                 </div>
                               </div>
+                              {requirementMenuOpen ? (
+                                <div className="requirement-longpress-panel" aria-label={`Options for ${habit.name}`}>
+                                  <span>Hold menu</span>
+                                  <button type="button" onClick={() => makePermanentHabitOptional(habit.id)}>
+                                    Make optional
+                                  </button>
+                                  <button type="button" onClick={() => setRequirementMenuHabitId(null)}>
+                                    Keep core
+                                  </button>
+                                </div>
+                              ) : null}
                               {moodMenuOpen ? (
                                 <div className="activity-mood-panel" aria-label={`Win status choices for ${habit.name}`}>
                                   {moodOptions.map((mood) => (
@@ -2229,11 +2355,11 @@ export function HabitTracker() {
                                 <button
                                   className="requirement-toggle-button"
                                   type="button"
-                                  title="Make permanent"
+                                  title="Make core"
                                   onPointerDown={primeCompletionFeedback}
                                   onTouchStart={primeCompletionFeedback}
                                   onClick={() => makeOptionalHabitPermanent(habit.id)}
-                                  aria-label={`Make ${habit.name} a permanent win`}
+                                  aria-label={`Make ${habit.name} a core win`}
                                 >
                                   <ArrowUp size={15} aria-hidden="true" />
                                 </button>
@@ -2411,7 +2537,7 @@ export function HabitTracker() {
                   <span>
                     <small className="section-kicker">Monthly Matrix</small>
                     <strong>Win heat map</strong>
-                    <em>{monthProgress.completed}/{monthProgress.total} permanent wins so far</em>
+                    <em>{monthProgress.completed}/{monthProgress.total} core wins so far</em>
                   </span>
                   <ChevronDown size={18} aria-hidden="true" />
                 </button>
@@ -2422,7 +2548,7 @@ export function HabitTracker() {
                         <span className="section-kicker">Matrix</span>
                         <strong>Habit heat map</strong>
                       </div>
-                      <p>{monthProgress.completed}/{monthProgress.total} permanent wins so far. Optional routines stay loggable outside the score.</p>
+                      <p>{monthProgress.completed}/{monthProgress.total} core wins so far. Optional routines stay loggable outside the score.</p>
                     </div>
                     <div className="heatmap-legend" aria-label="Heat map legend">
                       <span><i className="heat-empty" /> Empty</span>
@@ -2529,7 +2655,7 @@ export function HabitTracker() {
             <div className="quick-manager-header">
               <div>
                 <span className="section-kicker">Quick manage</span>
-                <h2 id="quick-manager-title">Permanent wins</h2>
+                <h2 id="quick-manager-title">Core wins</h2>
               </div>
               <button className="drawer-done-button" type="button" onClick={() => setQuickManagerOpen(false)}>
                 Done
@@ -2537,7 +2663,7 @@ export function HabitTracker() {
             </div>
 
             <div className="quick-manager-summary">
-              <strong>{primaryHabits.length} permanent wins</strong>
+              <strong>{primaryHabits.length} core wins</strong>
               <span>
                 {primaryHabits.length > DEFAULT_PRIMARY_WIN_COUNT
                   ? "Keep this list honest for a normal tired day."
@@ -2553,7 +2679,7 @@ export function HabitTracker() {
                     <img src={assetUrl(habit.thumbnail)} alt="" />
                     <div>
                       <strong>{habit.name}</strong>
-                      <span>{isPermanent ? "Permanent win" : "Optional routine"}</span>
+                      <span>{isPermanent ? "Core win" : "Optional routine"}</span>
                     </div>
                     <div className="quick-win-actions">
                       <button
@@ -2581,7 +2707,7 @@ export function HabitTracker() {
                           isPermanent ? makePermanentHabitOptional(habit.id) : makeOptionalHabitPermanent(habit.id)
                         }
                       >
-                        {isPermanent ? "Make optional" : "Make permanent"}
+                        {isPermanent ? "Make optional" : "Make core"}
                       </button>
                       <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
                         {habit.pausedAt ? "Resume" : "Pause"}
@@ -2844,7 +2970,7 @@ export function HabitTracker() {
             <SettingsAccordionSection
               id="wins"
               title={copy.winsAndIcons}
-              description="Add, pause, reorder, and rename the daily must-do wins."
+              description="Add, pause, reorder, and rename the daily core wins."
               icon={<Settings2 size={18} aria-hidden="true" />}
               expanded={expandedSettingsSections.wins}
               onToggle={toggleSettingsSection}
@@ -2893,7 +3019,7 @@ export function HabitTracker() {
                     <img className="editor-thumb" src={assetUrl(habit.thumbnail)} alt="" />
                     <div className="editor-fields">
                       <span className={`priority-badge${permanentRequirementIds.has(habit.id) ? " primary" : ""}`}>
-                        {permanentRequirementIds.has(habit.id) ? "Permanent win" : "Optional routine"}
+                        {permanentRequirementIds.has(habit.id) ? "Core win" : "Optional routine"}
                       </span>
                       <input
                         value={habit.name}
@@ -4440,11 +4566,11 @@ function getStreakNudge(streak: number, completedCount: number, totalCount: numb
   }
 
   if (streak === 0 && completedCount === 0) {
-    return "Perfect streak starts when the permanent wins are logged. First, tap one card and get the day moving.";
+    return "Perfect streak starts when the core wins are logged. First, tap one card and get the day moving.";
   }
 
   if (streak === 0) {
-    return `${completedCount} permanent win${completedCount === 1 ? "" : "s"} logged today. Perfect streak is still open if you finish the rest.`;
+    return `${completedCount} core win${completedCount === 1 ? "" : "s"} logged today. Perfect streak is still open if you finish the rest.`;
   }
 
   if (streak === 1) {
@@ -4454,13 +4580,29 @@ function getStreakNudge(streak: number, completedCount: number, totalCount: numb
   return `${streak} perfect days in motion. Keep the chain warm.`;
 }
 
-function getPressureGuard(permanentCount: number) {
+function getPressureGuard({
+  permanentCount,
+  tracker,
+  habits,
+  todayKey,
+  currentDayPart
+}: {
+  permanentCount: number;
+  tracker: TrackerState;
+  habits: Habit[];
+  todayKey: string;
+  currentDayPart: DayPartKey;
+}) {
+  if (currentDayPart !== "evening" || !missedPerfectDaysInARow(tracker, habits, todayKey, 2)) {
+    return null;
+  }
+
   if (permanentCount >= 9) {
     return {
       tone: "high",
       label: "Pressure guard",
       title: "This is a lot for a normal day.",
-      detail: "Permanent wins can grow, but the daily driver works best when the must-do list stays humane."
+      detail: "Core wins can grow, but the daily driver works best when the must-do list stays humane."
     };
   }
 
@@ -4468,12 +4610,32 @@ function getPressureGuard(permanentCount: number) {
     return {
       tone: "medium",
       label: "Pressure guard",
-      title: "Your permanent list is getting heavy.",
+      title: "Your core list is getting heavy.",
       detail: "If one win is not truly must-do, make it optional and keep the day finishable."
     };
   }
 
   return null;
+}
+
+function missedPerfectDaysInARow(tracker: TrackerState, habits: Habit[], todayKey: string, days: number) {
+  if (habits.length === 0) {
+    return false;
+  }
+
+  const cursor = dateFromKey(todayKey);
+  for (let offset = 1; offset <= days; offset += 1) {
+    const date = new Date(cursor);
+    date.setDate(cursor.getDate() - offset);
+    const record = tracker.days[localDateKey(date)] ?? emptyDay;
+    const wasPerfect = habits.every((habit) => isHabitComplete(record, habit.id));
+
+    if (wasPerfect) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function getCompanionNudge({
