@@ -5,7 +5,7 @@ A professional, mobile-friendly app for today's must-do wins in India.
 ## Features
 
 - Daily win status tracking
-- 5 primary wins with optional routines that do not punish the day score
+- 5 default permanent wins with optional routines that can be promoted without demoting existing wins
 - Monthly matrix view
 - Local browser storage
 - Installable PWA shell and lightweight local reminders

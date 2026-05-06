@@ -18,7 +18,7 @@ const checks = [
   },
   {
     name: "local-first trust cue remains visible",
-    ok: component.includes("No login needed. Saved on this device.")
+    ok: component.includes("localSaveLabel") && component.includes("No login needed.") && component.includes("Cloud backup")
   },
   {
     name: "first run remains non-blocking",
@@ -26,7 +26,7 @@ const checks = [
   },
   {
     name: "perfect streak wording stays clear",
-    ok: component.includes("Perfect streak") && component.includes("A perfect streak counts days where every active win is logged.")
+    ok: component.includes("Perfect streak") && component.includes("A perfect streak counts days where every permanent win is logged.")
   },
   {
     name: "feedback controls remain available",

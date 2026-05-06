@@ -14,6 +14,7 @@ export type Habit = {
   createdAt: string;
   dayPart?: DayPartKey;
   pausedAt?: string;
+  permanentAt?: string;
 };
 
 export type DayRecord = {
@@ -211,7 +212,8 @@ export function normalizeImportedState(value: TrackerState): TrackerState {
       quip: typeof habit.quip === "string" ? habit.quip : "Custom win ready to track.",
       createdAt: typeof habit.createdAt === "string" ? habit.createdAt : now,
       dayPart: isDayPartKey(habit.dayPart) ? habit.dayPart : undefined,
-      pausedAt: typeof habit.pausedAt === "string" ? habit.pausedAt : undefined
+      pausedAt: typeof habit.pausedAt === "string" ? habit.pausedAt : undefined,
+      permanentAt: typeof habit.permanentAt === "string" ? habit.permanentAt : undefined
     }));
   const normalizedHabits = (habits.length > 0 ? habits : fallback.habits)
     .sort((a, b) => a.order - b.order)

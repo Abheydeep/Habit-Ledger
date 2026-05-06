@@ -57,6 +57,12 @@ import {
   type TrackerState
 } from "../lib/habitData";
 import {
+  DEFAULT_PRIMARY_WIN_COUNT,
+  getOptionalHabits,
+  getPrimaryHabits,
+  promoteOptionalHabitToPrimary
+} from "../lib/primaryWins";
+import {
   PERSONALIZATION_STORAGE_KEY,
   createCharacterBrief,
   createPersonalizationSummary,
@@ -88,7 +94,6 @@ const FEEDBACK_STORAGE_KEY = "the-win-list:feedback:v1";
 const REMINDER_STORAGE_KEY = "the-win-list:reminders:v1";
 const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
 const SETTINGS_SECTION_STORAGE_KEY = "the-win-list:settings-section:v1";
-const PRIMARY_WIN_COUNT = 5;
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
 const copy = {
   brand: "The Win List",
@@ -687,8 +692,8 @@ export function HabitTracker() {
     [tracker.habits]
   );
   const activeHabits = useMemo(() => sortedHabits.filter((habit) => !habit.pausedAt), [sortedHabits]);
-  const primaryHabits = useMemo(() => activeHabits.slice(0, PRIMARY_WIN_COUNT), [activeHabits]);
-  const optionalHabits = useMemo(() => activeHabits.slice(PRIMARY_WIN_COUNT), [activeHabits]);
+  const primaryHabits = useMemo(() => getPrimaryHabits(activeHabits), [activeHabits]);
+  const optionalHabits = useMemo(() => getOptionalHabits(activeHabits), [activeHabits]);
   const primaryHabitIds = useMemo(() => new Set(primaryHabits.map((habit) => habit.id)), [primaryHabits]);
   const dayPartGroups = useMemo(() => groupHabitsByDayPart(primaryHabits), [primaryHabits]);
   const monthDays = useMemo(() => getMonthDays(visibleMonth), [visibleMonth]);
@@ -881,7 +886,7 @@ export function HabitTracker() {
       saveReminderSettings((current) => ({ ...current, lastFiredDate: today }));
 
       if (remaining > 0) {
-        fireReminder(`${remaining} primary win${remaining === 1 ? "" : "s"} still open for today.`);
+        fireReminder(`${remaining} permanent win${remaining === 1 ? "" : "s"} still open for today.`);
       }
     };
 
@@ -1147,42 +1152,28 @@ export function HabitTracker() {
   const makeOptionalHabitPermanent = useCallback(
     (habitId: string) => {
       let promotedHabitName: string | null = null;
-      let displacedHabitName: string | null = null;
+      let permanentCount: number | null = null;
 
       commit((current) => {
-        const orderedHabits = [...current.habits].sort((a, b) => a.order - b.order);
-        const active = orderedHabits.filter((habit) => !habit.pausedAt);
-        const optionalIndex = active.findIndex((habit) => habit.id === habitId);
-
-        if (optionalIndex < PRIMARY_WIN_COUNT) {
+        const promotion = promoteOptionalHabitToPrimary(current.habits, habitId);
+        if (!promotion.changed) {
           return current;
         }
 
-        const [promotedHabit] = active.splice(optionalIndex, 1);
-        const primarySlotIndex = Math.max(0, PRIMARY_WIN_COUNT - 1);
-        const displacedHabit = active[primarySlotIndex];
-        active.splice(primarySlotIndex, 0, promotedHabit);
-
-        promotedHabitName = promotedHabit.name;
-        displacedHabitName = displacedHabit?.name ?? null;
-
-        const paused = orderedHabits.filter((habit) => habit.pausedAt);
+        promotedHabitName = promotion.promotedHabit.name;
+        permanentCount = promotion.permanentCount;
         return {
           ...current,
-          habits: [...active, ...paused].map((habit, order) => ({ ...habit, order }))
+          habits: promotion.habits
         };
       });
 
       setExpandedHabitId(null);
       if (promotedHabitName) {
-        showAppToast(
-          displacedHabitName
-            ? `${promotedHabitName} is permanent now. ${displacedHabitName} moved to optional.`
-            : `${promotedHabitName} is permanent now.`
-        );
+        showAppToast(`${promotedHabitName} is permanent now. Permanent wins: ${permanentCount ?? primaryHabits.length + 1}.`);
       }
     },
-    [commit, showAppToast]
+    [commit, primaryHabits.length, showAppToast]
   );
 
   const togglePauseHabit = useCallback(
@@ -1764,16 +1755,16 @@ export function HabitTracker() {
           </div>
 
           <div className="stat-strip" aria-label="Daily progress">
-            <StatCard label="Primary wins" value={`${completedCount}/${primaryHabits.length}`} />
+            <StatCard label="Permanent wins" value={`${completedCount}/${primaryHabits.length}`} />
             <StatCard
               label="Perfect streak"
               value={`${streak} day${streak === 1 ? "" : "s"}`}
-              title="A perfect streak counts days where every primary win is logged."
+              title="A perfect streak counts days where every permanent win is logged."
             />
             <StatCard
               label="Month rate"
               value={monthProgress.total > 0 ? `${Math.round((monthProgress.completed / monthProgress.total) * 100)}%` : "0%"}
-              title={`${monthProgress.completed}/${monthProgress.total} primary wins logged so far this month`}
+              title={`${monthProgress.completed}/${monthProgress.total} permanent wins logged so far this month`}
             />
           </div>
 
@@ -1787,7 +1778,7 @@ export function HabitTracker() {
               <div>
                 <span>Make it yours</span>
                 <strong>Ready now. Personalize later.</strong>
-                <p>Your 5 primary wins already work. Personalizing tunes the list when you have a minute.</p>
+                <p>Your default 5 permanent wins already work. Personalizing tunes the list when you have a minute.</p>
               </div>
               <button
                 className="starter-card-button"
@@ -2014,7 +2005,7 @@ export function HabitTracker() {
                                   onPointerDown={primeCompletionFeedback}
                                   onTouchStart={primeCompletionFeedback}
                                   onClick={() => makeOptionalHabitPermanent(habit.id)}
-                                  aria-label={`Make ${habit.name} a permanent primary win`}
+                                  aria-label={`Make ${habit.name} a permanent win`}
                                 >
                                   <ArrowUp size={15} aria-hidden="true" />
                                 </button>
@@ -2182,7 +2173,7 @@ export function HabitTracker() {
                   <span>
                     <small className="section-kicker">Monthly Matrix</small>
                     <strong>Win heat map</strong>
-                    <em>{monthProgress.completed}/{monthProgress.total} primary wins so far</em>
+                    <em>{monthProgress.completed}/{monthProgress.total} permanent wins so far</em>
                   </span>
                   <ChevronDown size={18} aria-hidden="true" />
                 </button>
@@ -2193,7 +2184,7 @@ export function HabitTracker() {
                         <span className="section-kicker">Matrix</span>
                         <strong>Habit heat map</strong>
                       </div>
-                      <p>{monthProgress.completed}/{monthProgress.total} primary wins so far. Optional routines stay loggable outside the score.</p>
+                      <p>{monthProgress.completed}/{monthProgress.total} permanent wins so far. Optional routines stay loggable outside the score.</p>
                     </div>
                     <div className="heatmap-legend" aria-label="Heat map legend">
                       <span><i className="heat-empty" /> Empty</span>
@@ -2574,7 +2565,7 @@ export function HabitTracker() {
                     <img className="editor-thumb" src={assetUrl(habit.thumbnail)} alt="" />
                     <div className="editor-fields">
                       <span className={`priority-badge${primaryHabitIds.has(habit.id) ? " primary" : ""}`}>
-                        {primaryHabitIds.has(habit.id) ? "Primary win" : "Optional routine"}
+                        {primaryHabitIds.has(habit.id) ? "Permanent win" : "Optional routine"}
                       </span>
                       <input
                         value={habit.name}
@@ -2943,7 +2934,7 @@ function PersonalizerPanel({
   onApply
 }: PersonalizerPanelProps) {
   const summary = createPersonalizationSummary(snapshot?.input ?? onboarding);
-  const planPreview = createPersonalizedHabits(onboarding, "preview").slice(0, PRIMARY_WIN_COUNT);
+  const planPreview = createPersonalizedHabits(onboarding, "preview").slice(0, DEFAULT_PRIMARY_WIN_COUNT);
   const modeTheme = lifeModeThemes[onboarding.routineType];
   const avatarStyle = resolveAvatarStyle(onboarding);
   const outfit = characterOutfits[onboarding.routineType];
@@ -4121,11 +4112,11 @@ function getStreakNudge(streak: number, completedCount: number, totalCount: numb
   }
 
   if (streak === 0 && completedCount === 0) {
-    return "Perfect streak starts when the 5 primary wins are logged. First, tap one card and get the day moving.";
+    return "Perfect streak starts when the permanent wins are logged. First, tap one card and get the day moving.";
   }
 
   if (streak === 0) {
-    return `${completedCount} primary win${completedCount === 1 ? "" : "s"} logged today. Perfect streak is still open if you finish the rest.`;
+    return `${completedCount} permanent win${completedCount === 1 ? "" : "s"} logged today. Perfect streak is still open if you finish the rest.`;
   }
 
   if (streak === 1) {

@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3005",
     "typecheck": "tsc --noEmit",
+    "test:primary-wins": "node --test tests/primaryWins.test.mjs",
     "ux:guard": "node tools/ux-regression-guard.mjs"
   },
   "dependencies": {
