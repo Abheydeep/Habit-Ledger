@@ -233,12 +233,12 @@ const personalizerFlowSteps: Array<{ key: Exclude<PersonalizerStep, "intro">; la
 const dayPartLabels: Record<DayPartKey, string> = {
   morning: "Morning",
   daytime: "Daytime",
-  evening: "Night"
+  evening: "Evening"
 };
 const dayPartMicrocopy: Record<DayPartKey, string> = {
   morning: "Start clean",
   daytime: "Protect focus",
-  evening: "Wind down"
+  evening: "Close gently"
 };
 const themeByRoutine: Record<OnboardingInput["routineType"], AppThemeKey> = {
   student: "study-lavender",

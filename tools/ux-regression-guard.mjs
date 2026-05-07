@@ -88,7 +88,7 @@ const checks = [
   {
     name: "simple today keeps day part headers visible",
     ok:
-      component.includes('evening: "Night"') &&
+      component.includes('evening: "Evening"') &&
       css.includes(".today-panel.simple .day-group:not(.optional-routines) .day-group-header small") &&
       !css.includes(".today-panel.simple .day-group:not(.optional-routines) .day-group-header {\n  display: none;")
   },
