@@ -428,7 +428,7 @@ export function HabitTracker() {
   const [monthOpen, setMonthOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [openDayParts, setOpenDayParts] = useState<Record<DayPartKey, boolean>>(() =>
-    createInitialDayPartOpenState()
+    createInitialDayPartOpenState(getDayPartForHour(new Date().getHours()))
   );
   const [analyticsSections, setAnalyticsSections] =
     useState<Record<AnalyticsSectionKey, boolean>>(defaultAnalyticsSections);
@@ -5239,11 +5239,11 @@ function groupHabitsByDayPart(habits: Habit[]) {
     .filter((group) => group.habits.length > 0);
 }
 
-function createInitialDayPartOpenState(): Record<DayPartKey, boolean> {
+function createInitialDayPartOpenState(currentDayPart: DayPartKey): Record<DayPartKey, boolean> {
   return {
-    morning: true,
-    daytime: true,
-    evening: true
+    morning: currentDayPart === "morning",
+    daytime: currentDayPart === "daytime",
+    evening: currentDayPart === "evening"
   };
 }
 

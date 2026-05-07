@@ -94,6 +94,9 @@ const checks = [
     name: "simple today keeps day part headers visible",
     ok:
       component.includes('evening: "Evening"') &&
+      component.includes("createInitialDayPartOpenState(getDayPartForHour(new Date().getHours()))") &&
+      component.includes('evening: currentDayPart === "evening"') &&
+      !component.includes("morning: true,\n    daytime: true,\n    evening: true") &&
       css.includes(".today-panel.simple .day-group:not(.optional-routines) .day-group-header small") &&
       !css.includes(".today-panel.simple .day-group:not(.optional-routines) .day-group-header {\n  display: none;")
   },
