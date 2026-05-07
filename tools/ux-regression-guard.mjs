@@ -86,6 +86,8 @@ const checks = [
       css.includes("calc(92px + env(safe-area-inset-bottom))") &&
       css.includes("grid-template-columns: 46px minmax(0, 1fr)") &&
       css.includes(".brand-media .brand-avatar") &&
+      component.includes('brand-lockup${personalizationSnapshot ? " personalized" : ""}') &&
+      css.includes(".brand-lockup.personalized .brand-media .brand-avatar") &&
       component.includes("mobile-collapse-summary") &&
       component.includes("permanent-list-progress") &&
       css.includes(".permanent-list-progress")

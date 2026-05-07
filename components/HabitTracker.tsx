@@ -1969,7 +1969,7 @@ export function HabitTracker() {
           <span />
         </div>
 
-        <div className="brand-lockup">
+        <div className={`brand-lockup${personalizationSnapshot ? " personalized" : ""}`}>
           <div className="brand-media">
             <LogoMark />
             <div className="brand-avatar" aria-hidden="true">
