@@ -3720,10 +3720,9 @@ function PersonalizerPanel({
                         onUpdate("avatarStyle", event.target.value as OnboardingInput["avatarStyle"])
                       }
                     >
-                      <option value="auto">Auto from name</option>
+                      <option value="neutral">Neutral</option>
                       <option value="feminine">Female</option>
                       <option value="masculine">Male</option>
-                      <option value="neutral">Neutral</option>
                     </select>
                   </label>
                 </div>

@@ -17,7 +17,7 @@ type HabitTemplate = Omit<Habit, "order" | "createdAt"> & {
 export const defaultOnboardingInput: OnboardingInput = {
   displayName: "",
   ageBand: "25-34",
-  avatarStyle: "auto",
+  avatarStyle: "neutral",
   avatarAction: "auto",
   city: "",
   routineType: "working-professional",
@@ -33,7 +33,10 @@ export function normalizeOnboardingInput(value: Partial<OnboardingInput> | Onboa
     ...value,
     primaryGoals: Array.isArray(value.primaryGoals) ? value.primaryGoals : defaultOnboardingInput.primaryGoals,
     constraints: Array.isArray(value.constraints) ? value.constraints : defaultOnboardingInput.constraints,
-    avatarStyle: value.avatarStyle ?? "auto",
+    avatarStyle:
+      value.avatarStyle === "feminine" || value.avatarStyle === "masculine" || value.avatarStyle === "neutral"
+        ? value.avatarStyle
+        : "neutral",
     avatarAction: value.avatarAction ?? "auto"
   };
 }

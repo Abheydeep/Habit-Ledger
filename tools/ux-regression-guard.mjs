@@ -4,6 +4,7 @@ const component = readFileSync("components/HabitTracker.tsx", "utf8");
 const css = readFileSync("app/globals.css", "utf8");
 const layout = readFileSync("app/layout.tsx", "utf8");
 const manifest = readFileSync("public/manifest.webmanifest", "utf8");
+const personalization = readFileSync("lib/personalization.ts", "utf8");
 
 const checks = [
   {
@@ -24,7 +25,12 @@ const checks = [
   },
   {
     name: "first run remains non-blocking",
-    ok: component.includes("setPersonalizerOpen(false);") && component.includes("starter-card")
+    ok:
+      component.includes("setPersonalizerOpen(false);") &&
+      component.includes("starter-card") &&
+      component.includes('<option value="neutral">Neutral</option>') &&
+      !component.includes("Auto from name") &&
+      personalization.includes('avatarStyle: "neutral"')
   },
   {
     name: "perfect streak wording stays clear",
