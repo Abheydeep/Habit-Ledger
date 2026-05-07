@@ -98,7 +98,7 @@ const REMINDER_STORAGE_KEY = "the-win-list:reminders:v1";
 const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
 const SETTINGS_SECTION_STORAGE_KEY = "the-win-list:settings-section:v1";
 const SIMPLE_TODAY_STORAGE_KEY = "the-win-list:simple-today:v1";
-const PRESSURE_GUARD_SEEN_KEY = "the-win-list:pressure-guard-seen-date:v1";
+const HOLD_MENU_HINT_SEEN_KEY = "the-win-list:hold-menu-hint-seen-date:v1";
 const APP_INSTALLED_STORAGE_KEY = "the-win-list:app-installed:v1";
 const RETURN_PROMPT_SEEN_DATE_KEY = "the-win-list:return-prompt-seen-date:v1";
 const SAVE_TRUST_TOAST_DATE_KEY = "the-win-list:save-trust-toast-date:v1";
@@ -460,8 +460,8 @@ export function HabitTracker() {
   const [simpleToday, setSimpleToday] = useState(true);
   const [quickManagerOpen, setQuickManagerOpen] = useState(false);
   const [winsMenuOpen, setWinsMenuOpen] = useState(false);
-  const [pressureGuardSeenDate, setPressureGuardSeenDate] = useState<string | null>(null);
-  const [pressureGuardSessionDate, setPressureGuardSessionDate] = useState<string | null>(null);
+  const [holdMenuHintSeenDate, setHoldMenuHintSeenDate] = useState<string | null>(null);
+  const [holdMenuHintSessionDate, setHoldMenuHintSessionDate] = useState<string | null>(null);
   const [returnPromptSeenDate, setReturnPromptSeenDate] = useState<string | null>(null);
   const [returnPromptVisible, setReturnPromptVisible] = useState(false);
   const [optionalOpen, setOptionalOpen] = useState(false);
@@ -574,9 +574,9 @@ export function HabitTracker() {
     if (storedSimpleToday === "full") {
       setSimpleToday(false);
     }
-    const storedPressureGuardSeenDate = window.localStorage.getItem(PRESSURE_GUARD_SEEN_KEY);
-    if (storedPressureGuardSeenDate) {
-      setPressureGuardSeenDate(storedPressureGuardSeenDate);
+    const storedHoldMenuHintSeenDate = window.localStorage.getItem(HOLD_MENU_HINT_SEEN_KEY);
+    if (storedHoldMenuHintSeenDate) {
+      setHoldMenuHintSeenDate(storedHoldMenuHintSeenDate);
     }
 
     const storedReturnPromptSeenDate = window.localStorage.getItem(RETURN_PROMPT_SEEN_DATE_KEY);
@@ -818,18 +818,15 @@ export function HabitTracker() {
   );
   const analyticsInsights = analyticsSummary.insights;
   const streakNudge = getStreakNudge(streak, completedCount, primaryHabits.length);
-  const pressureGuardCandidate = getPressureGuard({
+  const holdMenuHintCandidate = getHoldMenuHint({
     permanentCount: primaryHabits.length,
-    tracker,
-    habits: primaryHabits,
-    todayKey,
     currentDayPart
   });
-  const pressureGuard =
+  const holdMenuHint =
     clientStateReady &&
-    pressureGuardCandidate &&
-    (pressureGuardSeenDate !== todayKey || pressureGuardSessionDate === todayKey)
-      ? pressureGuardCandidate
+    holdMenuHintCandidate &&
+    (holdMenuHintSeenDate !== todayKey || holdMenuHintSessionDate === todayKey)
+      ? holdMenuHintCandidate
       : null;
   const shouldPromptPersonalization = clientStateReady && !personalizationSnapshot;
   const companionNudge = useMemo(
@@ -941,10 +938,10 @@ export function HabitTracker() {
     });
   }, []);
 
-  const hidePressureGuardForToday = useCallback(() => {
-    window.localStorage.setItem(PRESSURE_GUARD_SEEN_KEY, todayKey);
-    setPressureGuardSeenDate(todayKey);
-    setPressureGuardSessionDate(null);
+  const hideHoldMenuHintForToday = useCallback(() => {
+    window.localStorage.setItem(HOLD_MENU_HINT_SEEN_KEY, todayKey);
+    setHoldMenuHintSeenDate(todayKey);
+    setHoldMenuHintSessionDate(null);
   }, [todayKey]);
 
   const hideReturnPromptForToday = useCallback(() => {
@@ -1939,17 +1936,17 @@ export function HabitTracker() {
     if (
       !clientStateReady ||
       !dayOpen ||
-      !pressureGuardCandidate ||
-      pressureGuardSeenDate === todayKey ||
-      pressureGuardSessionDate === todayKey
+      !holdMenuHintCandidate ||
+      holdMenuHintSeenDate === todayKey ||
+      holdMenuHintSessionDate === todayKey
     ) {
       return;
     }
 
-    window.localStorage.setItem(PRESSURE_GUARD_SEEN_KEY, todayKey);
-    setPressureGuardSeenDate(todayKey);
-    setPressureGuardSessionDate(todayKey);
-  }, [clientStateReady, dayOpen, pressureGuardCandidate, pressureGuardSeenDate, pressureGuardSessionDate, todayKey]);
+    window.localStorage.setItem(HOLD_MENU_HINT_SEEN_KEY, todayKey);
+    setHoldMenuHintSeenDate(todayKey);
+    setHoldMenuHintSessionDate(todayKey);
+  }, [clientStateReady, dayOpen, holdMenuHintCandidate, holdMenuHintSeenDate, holdMenuHintSessionDate, todayKey]);
 
   return (
     <main className={`tracker-shell theme-${appThemeKey} scheme-${colorScheme}`} style={appStyle}>
@@ -2211,15 +2208,15 @@ export function HabitTracker() {
           </div>
 
           <div className="day-panel-content">
-            {pressureGuard ? (
-              <div className={`pressure-guard-card ${pressureGuard.tone}`} role="status">
+            {holdMenuHint ? (
+              <div className={`pressure-guard-card ${holdMenuHint.tone}`} role="status">
                 <div>
-                  <span>{pressureGuard.label}</span>
-                  <strong>{pressureGuard.title}</strong>
-                  <p>{pressureGuard.detail}</p>
+                  <span>{holdMenuHint.label}</span>
+                  <strong>{holdMenuHint.title}</strong>
+                  <p>{holdMenuHint.detail}</p>
                 </div>
                 <div className="pressure-guard-actions">
-                  <button type="button" onClick={hidePressureGuardForToday}>
+                  <button type="button" onClick={hideHoldMenuHintForToday}>
                     Got it
                   </button>
                 </div>
@@ -4733,20 +4730,14 @@ function getStreakNudge(streak: number, completedCount: number, totalCount: numb
   return `${streak} perfect days in motion. Keep the chain warm.`;
 }
 
-function getPressureGuard({
+function getHoldMenuHint({
   permanentCount,
-  tracker,
-  habits,
-  todayKey,
   currentDayPart
 }: {
   permanentCount: number;
-  tracker: TrackerState;
-  habits: Habit[];
-  todayKey: string;
   currentDayPart: DayPartKey;
 }) {
-  if (currentDayPart !== "evening" || !missedPerfectDaysInARow(tracker, habits, todayKey, 2)) {
+  if (currentDayPart !== "evening" || permanentCount < 8) {
     return null;
   }
 
@@ -4769,26 +4760,6 @@ function getPressureGuard({
   }
 
   return null;
-}
-
-function missedPerfectDaysInARow(tracker: TrackerState, habits: Habit[], todayKey: string, days: number) {
-  if (habits.length === 0) {
-    return false;
-  }
-
-  const cursor = dateFromKey(todayKey);
-  for (let offset = 1; offset <= days; offset += 1) {
-    const date = new Date(cursor);
-    date.setDate(cursor.getDate() - offset);
-    const record = tracker.days[localDateKey(date)] ?? emptyDay;
-    const wasPerfect = habits.every((habit) => isHabitComplete(record, habit.id));
-
-    if (wasPerfect) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 function getCompanionNudge({

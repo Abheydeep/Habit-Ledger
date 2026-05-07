@@ -126,11 +126,14 @@ const checks = [
   {
     name: "core list hint teaches hold menu without pressure copy",
     ok:
-      component.includes("missedPerfectDaysInARow") &&
+      component.includes("getHoldMenuHint") &&
       component.includes('currentDayPart !== "evening"') &&
-      component.includes("PRESSURE_GUARD_SEEN_KEY") &&
+      component.includes("permanentCount < 8") &&
+      component.includes("HOLD_MENU_HINT_SEEN_KEY") &&
       component.includes("Hold menu tip") &&
       component.includes("Press and hold any core win") &&
+      !component.includes("missedPerfectDaysInARow") &&
+      !component.includes("PRESSURE_GUARD_SEEN_KEY") &&
       !component.includes("Lighten list") &&
       !component.includes('label: "Pressure guard"') &&
       css.includes(".pressure-guard-card")
