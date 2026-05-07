@@ -85,7 +85,10 @@ const checks = [
       css.includes("Mobile daily-driver polish") &&
       css.includes("calc(92px + env(safe-area-inset-bottom))") &&
       css.includes("grid-template-columns: 46px minmax(0, 1fr)") &&
-      css.includes(".brand-media .brand-avatar")
+      css.includes(".brand-media .brand-avatar") &&
+      component.includes("mobile-collapse-summary") &&
+      component.includes("permanent-list-progress") &&
+      css.includes(".permanent-list-progress")
   },
   {
     name: "simple today keeps day part headers visible",

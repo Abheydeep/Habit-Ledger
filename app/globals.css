@@ -2348,11 +2348,37 @@ img {
   position: relative;
   z-index: 1;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-top: 9px;
 }
 
+.mobile-collapse-summary {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.mobile-collapse-summary span {
+  color: #60716d;
+  font-size: 0.66rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.mobile-collapse-summary strong {
+  overflow: hidden;
+  color: var(--app-ink);
+  font-size: 0.92rem;
+  font-weight: 850;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mobile-collapse-row .section-collapse-button {
+  flex: 0 0 auto;
   min-height: 36px;
   padding-inline: 12px;
 }
@@ -2680,9 +2706,36 @@ img {
 }
 
 .permanent-list-toolbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px 10px;
   margin-top: 0;
   margin-bottom: 10px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.72);
+}
+
+.permanent-list-summary {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.permanent-list-count-row {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.permanent-list-count-row small {
+  overflow: hidden;
+  color: #60716d;
+  font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .permanent-list-actions {
@@ -2699,6 +2752,22 @@ img {
   min-height: 36px;
   padding: 0;
   border-radius: 999px;
+}
+
+.permanent-list-progress {
+  grid-column: 1 / -1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-primary), transparent 88%);
+}
+
+.permanent-list-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--app-primary), var(--app-secondary));
 }
 
 .wins-overflow-menu {
@@ -6166,6 +6235,8 @@ img {
 .tracker-shell.scheme-dark .return-path-prompt span,
 .tracker-shell.scheme-dark .permanent-list-toolbar span,
 .tracker-shell.scheme-dark .backup-error-chip,
+.tracker-shell.scheme-dark .mobile-collapse-summary span,
+.tracker-shell.scheme-dark .permanent-list-count-row small,
 .tracker-shell.scheme-dark .pressure-guard-card span,
 .tracker-shell.scheme-dark .pressure-guard-card p,
 .tracker-shell.scheme-dark .quick-manager-summary span,
@@ -6193,6 +6264,10 @@ img {
 }
 
 .tracker-shell.scheme-dark .mobile-hero-status span {
+  color: #f6fbf8;
+}
+
+.tracker-shell.scheme-dark .mobile-collapse-summary strong {
   color: #f6fbf8;
 }
 

@@ -799,6 +799,9 @@ export function HabitTracker() {
   const optionalCompletedCount = optionalHabits.filter((habit) => completedSet.has(habit.id)).length;
   const completionPercent =
     primaryHabits.length > 0 ? Math.round((completedCount / primaryHabits.length) * 100) : 0;
+  const remainingCoreWins = Math.max(primaryHabits.length - completedCount, 0);
+  const coreWinsStatusLabel =
+    primaryHabits.length === 0 ? "No core wins" : remainingCoreWins === 0 ? "Finished" : `${remainingCoreWins} left`;
   const todayKey = localDateKey(new Date());
   const currentDayPart = useMemo(() => getDayPartForHour(new Date().getHours()), []);
   const streak = useMemo(
@@ -2191,6 +2194,10 @@ export function HabitTracker() {
           ) : null}
 
           <div className="mobile-collapse-row">
+            <div className="mobile-collapse-summary">
+              <span>Day plan</span>
+              <strong>{completedCount}/{primaryHabits.length} core</strong>
+            </div>
             <button
               className="section-collapse-button mobile"
               type="button"
@@ -2199,7 +2206,7 @@ export function HabitTracker() {
               aria-label={dayOpen ? "Hide day plan" : "Open day plan"}
             >
               <ChevronDown size={18} aria-hidden="true" />
-              <span>{dayOpen ? "Hide day plan" : "Open day plan"}</span>
+              <span>{dayOpen ? "Hide" : "Open"}</span>
             </button>
           </div>
 
@@ -2229,9 +2236,12 @@ export function HabitTracker() {
             ) : null}
 
             <div className="permanent-list-toolbar">
-              <div>
+              <div className="permanent-list-summary">
                 <span>Core wins</span>
-                <strong>{completedCount}/{primaryHabits.length} today</strong>
+                <div className="permanent-list-count-row">
+                  <strong>{completedCount}/{primaryHabits.length} today</strong>
+                  <small>{coreWinsStatusLabel}</small>
+                </div>
               </div>
               <div className="permanent-list-actions">
                 <button
@@ -2269,6 +2279,16 @@ export function HabitTracker() {
                     </button>
                   </div>
                 ) : null}
+              </div>
+              <div
+                className="permanent-list-progress"
+                role="progressbar"
+                aria-label="Core wins progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={completionPercent}
+              >
+                <span style={{ width: `${completionPercent}%` }} />
               </div>
             </div>
 
