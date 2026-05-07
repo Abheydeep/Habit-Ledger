@@ -97,6 +97,7 @@ const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
 const SETTINGS_SECTION_STORAGE_KEY = "the-win-list:settings-section:v1";
 const SIMPLE_TODAY_STORAGE_KEY = "the-win-list:simple-today:v1";
 const PRESSURE_GUARD_SEEN_KEY = "the-win-list:pressure-guard-seen-date:v1";
+const APP_INSTALLED_STORAGE_KEY = "the-win-list:app-installed:v1";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
 const copy = {
   brand: "The Win List",
@@ -548,7 +549,11 @@ export function HabitTracker() {
       setNotificationPermission(window.Notification.permission);
     }
 
-    setIsInstalledApp(isRunningAsInstalledApp());
+    const installedAppMode = isRunningAsInstalledApp();
+    setIsInstalledApp(installedAppMode);
+    if (installedAppMode) {
+      window.localStorage.setItem(APP_INSTALLED_STORAGE_KEY, "true");
+    }
 
     const storedSettingsSection = window.localStorage.getItem(SETTINGS_SECTION_STORAGE_KEY);
     if (isSettingsSectionKey(storedSettingsSection)) {
@@ -589,6 +594,7 @@ export function HabitTracker() {
       setInstallReady(true);
     };
     const handleInstalled = () => {
+      window.localStorage.setItem(APP_INSTALLED_STORAGE_KEY, "true");
       setInstallReady(false);
       setInstallPrompt(null);
       setIsInstalledApp(true);
@@ -943,6 +949,7 @@ export function HabitTracker() {
     setInstallPrompt(null);
     setInstallReady(false);
     if (choice.outcome === "accepted") {
+      window.localStorage.setItem(APP_INSTALLED_STORAGE_KEY, "true");
       setIsInstalledApp(true);
       showAppToast("The Win List is installed. The return path is shorter now.");
     } else {
@@ -2882,10 +2889,17 @@ export function HabitTracker() {
                           : "Use the browser menu if the install prompt is not available yet."}
                     </small>
                   </div>
-                  <button className="backup-button" type="button" onClick={handleInstallApp}>
-                    <Download size={17} aria-hidden="true" />
-                    {isInstalledApp ? "Installed" : "Install app"}
-                  </button>
+                  {isInstalledApp ? (
+                    <span className="installed-status-chip">
+                      <ShieldCheck size={17} aria-hidden="true" />
+                      Installed
+                    </span>
+                  ) : (
+                    <button className="backup-button" type="button" onClick={handleInstallApp}>
+                      <Download size={17} aria-hidden="true" />
+                      Install app
+                    </button>
+                  )}
                 </div>
                 <label className="preference-toggle">
                   <input
@@ -4930,6 +4944,7 @@ function isRunningAsInstalledApp() {
   }
 
   return (
+    window.localStorage.getItem(APP_INSTALLED_STORAGE_KEY) === "true" ||
     window.matchMedia?.("(display-mode: standalone)").matches ||
     (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   );

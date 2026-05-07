@@ -51,6 +51,22 @@ const checks = [
       css.includes(".return-path-prompt")
   },
   {
+    name: "installed PWA stops showing install actions",
+    ok:
+      component.includes("APP_INSTALLED_STORAGE_KEY") &&
+      component.includes("installed-status-chip") &&
+      component.includes("!isInstalledApp ? (") &&
+      css.includes(".installed-status-chip")
+  },
+  {
+    name: "mobile today keeps more wins above the fold",
+    ok:
+      css.includes("Mobile daily-driver polish") &&
+      css.includes("calc(92px + env(safe-area-inset-bottom))") &&
+      css.includes("grid-template-columns: 46px minmax(0, 1fr)") &&
+      css.includes(".brand-media .brand-avatar")
+  },
+  {
     name: "auto backup states remain visible",
     ok: component.includes("Backup pending") && component.includes("Backup now")
   },
