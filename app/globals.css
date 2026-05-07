@@ -2680,9 +2680,8 @@ img {
 }
 
 .return-path-prompt > div:last-child {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: stretch;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   gap: 6px;
 }
 
@@ -2693,8 +2692,9 @@ img {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  flex: 1 1 112px;
+  flex: none;
   min-width: 0;
+  width: 100%;
   min-height: 34px;
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, var(--app-primary), transparent 78%);
@@ -2703,6 +2703,14 @@ img {
   color: color-mix(in srgb, var(--app-primary), var(--app-ink) 20%);
   font-size: 0.74rem;
   font-weight: 820;
+  white-space: nowrap;
+}
+
+.permanent-list-toolbar button,
+.pressure-guard-card button {
+  flex: 1 1 112px;
+  width: auto;
+  white-space: normal;
 }
 
 .permanent-list-toolbar {
@@ -6591,6 +6599,18 @@ img {
   min-height: 38px;
 }
 
+.return-path-prompt > div:last-child {
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 5px;
+}
+
+.return-path-prompt button {
+  min-height: 34px;
+  padding: 0 6px;
+  gap: 4px;
+  font-size: 0.68rem;
+}
+
 .habit-card {
   padding: 7px;
 }
@@ -7353,6 +7373,21 @@ img {
 
   .brand-lockup.personalized .brand-avatar .answer-character.avatar-photo img {
     border-radius: 28px;
+  }
+
+  .return-path-prompt > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .return-path-prompt button {
+    width: auto;
+    min-height: 38px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 0.74rem;
   }
 
   .hero-actions {

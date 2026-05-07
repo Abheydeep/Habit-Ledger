@@ -52,7 +52,9 @@ const checks = [
       component.includes("RETURN_PROMPT_SEEN_DATE_KEY") &&
       component.includes("returnPromptVisible") &&
       component.includes("hideReturnPromptForToday") &&
-      css.includes(".return-path-prompt")
+      css.includes(".return-path-prompt") &&
+      css.includes("grid-template-columns: repeat(auto-fit, minmax(70px, 1fr))") &&
+      css.includes(".return-path-prompt button")
   },
   {
     name: "installed PWA stops showing install actions",
