@@ -2219,17 +2219,8 @@ export function HabitTracker() {
                   <p>{pressureGuard.detail}</p>
                 </div>
                 <div className="pressure-guard-actions">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      hidePressureGuardForToday();
-                      setQuickManagerOpen(true);
-                    }}
-                  >
-                    Lighten list
-                  </button>
                   <button type="button" onClick={hidePressureGuardForToday}>
-                    Not now
+                    Got it
                   </button>
                 </div>
               </div>
@@ -4763,18 +4754,18 @@ function getPressureGuard({
   if (permanentCount >= 9) {
     return {
       tone: "high",
-      label: "Pressure guard",
-      title: "This is a lot for a normal day.",
-      detail: "Core wins can grow, but the daily driver works best when the must-do list stays humane."
+      label: "Hold menu tip",
+      title: "Core wins can become optional.",
+      detail: "Press and hold any core win, then choose Make optional. Your logs stay intact."
     };
   }
 
   if (permanentCount >= 8) {
     return {
       tone: "medium",
-      label: "Pressure guard",
-      title: "Your core list is getting heavy.",
-      detail: "If one win is not truly must-do, make it optional and keep the day finishable."
+      label: "Hold menu tip",
+      title: "You can lighten core wins.",
+      detail: "Press and hold a core win to open the hold menu, then choose Make optional."
     };
   }
 

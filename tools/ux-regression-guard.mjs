@@ -118,11 +118,15 @@ const checks = [
     ok: component.includes("SIMPLE_TODAY_STORAGE_KEY") && component.includes("simple-today-button")
   },
   {
-    name: "core list pressure guard remains visible",
+    name: "core list hint teaches hold menu without pressure copy",
     ok:
       component.includes("missedPerfectDaysInARow") &&
       component.includes('currentDayPart !== "evening"') &&
       component.includes("PRESSURE_GUARD_SEEN_KEY") &&
+      component.includes("Hold menu tip") &&
+      component.includes("Press and hold any core win") &&
+      !component.includes("Lighten list") &&
+      !component.includes('label: "Pressure guard"') &&
       css.includes(".pressure-guard-card")
   },
   {
