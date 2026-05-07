@@ -46,10 +46,12 @@ const checks = [
       !component.includes('title="Make optional"')
   },
   {
-    name: "return path prompt stays close to today",
+    name: "return path prompt is daily gated near today",
     ok:
       component.includes("return-path-prompt") &&
-      component.includes("const shouldShowReturnPrompt = !isInstalledApp || !reminderSettings.enabled;") &&
+      component.includes("RETURN_PROMPT_SEEN_DATE_KEY") &&
+      component.includes("returnPromptVisible") &&
+      component.includes("hideReturnPromptForToday") &&
       css.includes(".return-path-prompt")
   },
   {
@@ -93,8 +95,13 @@ const checks = [
       !css.includes(".today-panel.simple .day-group:not(.optional-routines) .day-group-header {\n  display: none;")
   },
   {
-    name: "auto backup states remain visible",
-    ok: component.includes("Backup pending") && component.includes("Backup now")
+    name: "mobile save status is toast-led and error-only",
+    ok:
+      component.includes("SAVE_TRUST_TOAST_DATE_KEY") &&
+      component.includes("CLOUD_TRUST_TOAST_DATE_KEY") &&
+      component.includes("backup-error-chip") &&
+      !component.includes('className="persistence-strip"') &&
+      css.includes(".backup-error-chip")
   },
   {
     name: "simple today mode remains default and toggleable",
@@ -111,14 +118,20 @@ const checks = [
   {
     name: "dark mode mobile text remains readable",
     ok:
-      css.includes(".tracker-shell.scheme-dark .persistence-strip span") &&
+      css.includes(".tracker-shell.scheme-dark .backup-error-chip") &&
       css.includes(".tracker-shell.scheme-dark .note-box.compact.collapsed") &&
       css.includes(".tracker-shell.scheme-dark .day-group-header small") &&
       css.includes("color: #f3fbf7")
   },
   {
     name: "quick win manager avoids settings friction",
-    ok: component.includes("quick-manager-sheet") && component.includes("Full win settings") && css.includes(".quick-manager-sheet")
+    ok:
+      component.includes("quick-manager-sheet") &&
+      component.includes("Full win settings") &&
+      component.includes("wins-overflow-menu") &&
+      component.includes("MoreHorizontal") &&
+      css.includes(".quick-manager-sheet") &&
+      css.includes(".wins-overflow-menu")
   },
   {
     name: "settings opens as an overview instead of a heavy editor",

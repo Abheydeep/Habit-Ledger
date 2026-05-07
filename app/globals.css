@@ -2533,6 +2533,40 @@ img {
   color: color-mix(in srgb, var(--app-primary), var(--app-ink) 18%);
 }
 
+.backup-error-chip {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 6px 7px 6px 10px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #7c2d12;
+  font-size: 0.72rem;
+  font-weight: 820;
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.08);
+}
+
+.backup-error-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: #7c2d12;
+  color: #fff7ed;
+  font-size: 0.7rem;
+  font-weight: 860;
+}
+
 .return-path-prompt,
 .permanent-list-toolbar,
 .pressure-guard-card {
@@ -2652,10 +2686,50 @@ img {
 }
 
 .permanent-list-actions {
+  position: relative;
   display: inline-flex;
   flex-wrap: wrap;
-  justify-content: stretch;
+  justify-content: flex-end;
   gap: 6px;
+}
+
+.permanent-list-actions .icon-menu-button {
+  flex: 0 0 36px;
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.wins-overflow-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  min-width: 164px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 78%);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--app-primary), transparent 86%);
+}
+
+.wins-overflow-menu button {
+  flex: none;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 18%);
+}
+
+.wins-overflow-menu button:hover,
+.wins-overflow-menu button:focus-visible {
+  background: color-mix(in srgb, var(--app-primary), transparent 90%);
 }
 
 .starter-card {
@@ -5976,6 +6050,8 @@ img {
 .tracker-shell.scheme-dark .heatmap-summary,
 .tracker-shell.scheme-dark .return-path-prompt,
 .tracker-shell.scheme-dark .permanent-list-toolbar,
+.tracker-shell.scheme-dark .backup-error-chip,
+.tracker-shell.scheme-dark .wins-overflow-menu,
 .tracker-shell.scheme-dark .month-grid-wrap,
 .tracker-shell.scheme-dark .habit-sticky,
 .tracker-shell.scheme-dark .settings-section,
@@ -6089,6 +6165,7 @@ img {
 .tracker-shell.scheme-dark .settings-section-title small,
 .tracker-shell.scheme-dark .return-path-prompt span,
 .tracker-shell.scheme-dark .permanent-list-toolbar span,
+.tracker-shell.scheme-dark .backup-error-chip,
 .tracker-shell.scheme-dark .pressure-guard-card span,
 .tracker-shell.scheme-dark .pressure-guard-card p,
 .tracker-shell.scheme-dark .quick-manager-summary span,
@@ -7075,10 +7152,12 @@ img {
 
 .tracker-shell.scheme-dark .persistence-strip span,
 .tracker-shell.scheme-dark .persistence-strip button,
+.tracker-shell.scheme-dark .backup-error-chip,
 .tracker-shell.scheme-dark .note-box.compact.collapsed,
 .tracker-shell.scheme-dark .return-path-prompt,
 .tracker-shell.scheme-dark .permanent-list-toolbar,
 .tracker-shell.scheme-dark .pressure-guard-card,
+.tracker-shell.scheme-dark .wins-overflow-menu,
 .tracker-shell.scheme-dark .requirement-longpress-panel {
   border-color: rgba(255, 255, 255, 0.18);
   background: linear-gradient(135deg, rgba(10, 31, 27, 0.96), rgba(17, 43, 37, 0.9));
@@ -7087,6 +7166,7 @@ img {
 
 .tracker-shell.scheme-dark .persistence-strip span,
 .tracker-shell.scheme-dark .persistence-strip button,
+.tracker-shell.scheme-dark .backup-error-chip,
 .tracker-shell.scheme-dark .note-box.compact.collapsed .note-toggle,
 .tracker-shell.scheme-dark .note-box.compact.collapsed .note-toggle span,
 .tracker-shell.scheme-dark .return-path-prompt strong,
@@ -7107,6 +7187,7 @@ img {
 .tracker-shell.scheme-dark .pressure-guard-card button,
 .tracker-shell.scheme-dark .return-path-prompt button,
 .tracker-shell.scheme-dark .permanent-list-toolbar button,
+.tracker-shell.scheme-dark .wins-overflow-menu button,
 .tracker-shell.scheme-dark .requirement-longpress-panel button,
 .tracker-shell.scheme-dark .installed-status-chip {
   border-color: rgba(189, 247, 238, 0.24);

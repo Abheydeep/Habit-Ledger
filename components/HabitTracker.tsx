@@ -19,6 +19,7 @@ import {
   Home,
   Leaf,
   Moon,
+  MoreHorizontal,
   Plus,
   RotateCcw,
   Settings2,
@@ -99,6 +100,9 @@ const SETTINGS_SECTION_STORAGE_KEY = "the-win-list:settings-section:v1";
 const SIMPLE_TODAY_STORAGE_KEY = "the-win-list:simple-today:v1";
 const PRESSURE_GUARD_SEEN_KEY = "the-win-list:pressure-guard-seen-date:v1";
 const APP_INSTALLED_STORAGE_KEY = "the-win-list:app-installed:v1";
+const RETURN_PROMPT_SEEN_DATE_KEY = "the-win-list:return-prompt-seen-date:v1";
+const SAVE_TRUST_TOAST_DATE_KEY = "the-win-list:save-trust-toast-date:v1";
+const CLOUD_TRUST_TOAST_DATE_KEY = "the-win-list:cloud-trust-toast-date:v1";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
 const copy = {
   brand: "The Win List",
@@ -455,8 +459,11 @@ export function HabitTracker() {
   const [isIosDevice, setIsIosDevice] = useState(false);
   const [simpleToday, setSimpleToday] = useState(true);
   const [quickManagerOpen, setQuickManagerOpen] = useState(false);
+  const [winsMenuOpen, setWinsMenuOpen] = useState(false);
   const [pressureGuardSeenDate, setPressureGuardSeenDate] = useState<string | null>(null);
   const [pressureGuardSessionDate, setPressureGuardSessionDate] = useState<string | null>(null);
+  const [returnPromptSeenDate, setReturnPromptSeenDate] = useState<string | null>(null);
+  const [returnPromptVisible, setReturnPromptVisible] = useState(false);
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [expandedSettingsSections, setExpandedSettingsSections] =
     useState<Record<SettingsSectionKey, boolean>>(collapsedSettingsSections);
@@ -570,6 +577,11 @@ export function HabitTracker() {
     const storedPressureGuardSeenDate = window.localStorage.getItem(PRESSURE_GUARD_SEEN_KEY);
     if (storedPressureGuardSeenDate) {
       setPressureGuardSeenDate(storedPressureGuardSeenDate);
+    }
+
+    const storedReturnPromptSeenDate = window.localStorage.getItem(RETURN_PROMPT_SEEN_DATE_KEY);
+    if (storedReturnPromptSeenDate) {
+      setReturnPromptSeenDate(storedReturnPromptSeenDate);
     }
 
     const today = new Date();
@@ -845,8 +857,8 @@ export function HabitTracker() {
     "--app-ink": isDarkScheme ? "#e4f5ef" : appTheme.ink
   } as CSSProperties;
   const localSaveLabel = formatLocalSaveStatus(tracker.updatedAt);
-  const cloudSaveLabel = getCloudBackupLabel(cloudBackupStatus, cloudOverview, cloudSession, cloudBackupError);
-  const shouldShowReturnPrompt = !isInstalledApp || !reminderSettings.enabled;
+  const returnPromptEligible = clientStateReady && (!isInstalledApp || !reminderSettings.enabled);
+  const shouldShowReturnPrompt = returnPromptEligible && returnPromptVisible;
   const installTitle = isInstalledApp
     ? "Light reminder is off"
     : isIosDevice
@@ -882,6 +894,42 @@ export function HabitTracker() {
     }, 2600);
   }, []);
 
+  const showDailyTrustToast = useCallback(
+    (storageKey: string, message: string, tone: AppToast["tone"] = "success") => {
+      if (window.localStorage.getItem(storageKey) === todayKey) {
+        return;
+      }
+
+      window.localStorage.setItem(storageKey, todayKey);
+      showAppToast(message, tone);
+    },
+    [showAppToast, todayKey]
+  );
+
+  const showLocalTrustToast = useCallback(
+    (message = "Saved locally. Your Win List is safe on this device.") => {
+      showDailyTrustToast(SAVE_TRUST_TOAST_DATE_KEY, message);
+    },
+    [showDailyTrustToast]
+  );
+
+  const showCloudTrustToast = useCallback(
+    (message = "Cloud backup updated.") => {
+      showDailyTrustToast(CLOUD_TRUST_TOAST_DATE_KEY, message);
+    },
+    [showDailyTrustToast]
+  );
+
+  useEffect(() => {
+    if (!returnPromptEligible || returnPromptVisible || returnPromptSeenDate === todayKey) {
+      return;
+    }
+
+    window.localStorage.setItem(RETURN_PROMPT_SEEN_DATE_KEY, todayKey);
+    setReturnPromptSeenDate(todayKey);
+    setReturnPromptVisible(true);
+  }, [returnPromptEligible, returnPromptSeenDate, returnPromptVisible, todayKey]);
+
   const toggleSimpleToday = useCallback(() => {
     setSimpleToday((current) => {
       const next = !current;
@@ -894,6 +942,12 @@ export function HabitTracker() {
     window.localStorage.setItem(PRESSURE_GUARD_SEEN_KEY, todayKey);
     setPressureGuardSeenDate(todayKey);
     setPressureGuardSessionDate(null);
+  }, [todayKey]);
+
+  const hideReturnPromptForToday = useCallback(() => {
+    window.localStorage.setItem(RETURN_PROMPT_SEEN_DATE_KEY, todayKey);
+    setReturnPromptSeenDate(todayKey);
+    setReturnPromptVisible(false);
   }, [todayKey]);
 
   const saveReminderSettings = useCallback((recipe: (current: ReminderSettings) => ReminderSettings) => {
@@ -1267,7 +1321,8 @@ export function HabitTracker() {
 
     setNewHabitName("");
     setNewHabitColor((current) => colorPalette[(colorPalette.indexOf(current) + 1) % colorPalette.length]);
-  }, [commit, newHabitColor, newHabitDayPart, newHabitName, newHabitThumbnail]);
+    showLocalTrustToast("Saved locally. Your win list changed.");
+  }, [commit, newHabitColor, newHabitDayPart, newHabitName, newHabitThumbnail, showLocalTrustToast]);
 
   const updateHabit = useCallback(
     (habitId: string, patch: Partial<Pick<Habit, "name" | "thumbnail" | "color" | "quip" | "dayPart">>) => {
@@ -1275,8 +1330,9 @@ export function HabitTracker() {
         ...current,
         habits: current.habits.map((habit) => (habit.id === habitId ? { ...habit, ...patch } : habit))
       }));
+      showLocalTrustToast("Saved locally. Your win list changed.");
     },
-    [commit]
+    [commit, showLocalTrustToast]
   );
 
   const moveHabit = useCallback(
@@ -1296,8 +1352,9 @@ export function HabitTracker() {
 
         return { ...current, habits };
       });
+      showLocalTrustToast("Saved locally. Your win order changed.");
     },
-    [commit]
+    [commit, showLocalTrustToast]
   );
 
   const makeOptionalHabitPermanent = useCallback(
@@ -1322,10 +1379,10 @@ export function HabitTracker() {
       setExpandedHabitId(null);
       setRequirementMenuHabitId(null);
       if (changedHabitName) {
-        showAppToast(`${changedHabitName} is a core win now. Core wins: ${permanentCount ?? primaryHabits.length + 1}.`);
+        showLocalTrustToast(`${changedHabitName} is a core win now. Core wins: ${permanentCount ?? primaryHabits.length + 1}.`);
       }
     },
-    [commit, primaryHabits.length, showAppToast]
+    [commit, primaryHabits.length, showLocalTrustToast]
   );
 
   const makePermanentHabitOptional = useCallback(
@@ -1350,10 +1407,10 @@ export function HabitTracker() {
       setExpandedHabitId(null);
       setRequirementMenuHabitId(null);
       if (changedHabitName) {
-        showAppToast(`${changedHabitName} is optional now. Core wins: ${permanentCount ?? Math.max(0, primaryHabits.length - 1)}.`);
+        showLocalTrustToast(`${changedHabitName} is optional now. Core wins: ${permanentCount ?? Math.max(0, primaryHabits.length - 1)}.`);
       }
     },
-    [commit, primaryHabits.length, showAppToast]
+    [commit, primaryHabits.length, showLocalTrustToast]
   );
 
   const togglePauseHabit = useCallback(
@@ -1366,8 +1423,9 @@ export function HabitTracker() {
             : habit
         )
       }));
+      showLocalTrustToast("Saved locally. Your win list changed.");
     },
-    [commit]
+    [commit, showLocalTrustToast]
   );
 
   const deleteHabit = useCallback(
@@ -1391,8 +1449,9 @@ export function HabitTracker() {
         };
       });
       setDeleteConfirmId(null);
+      showLocalTrustToast("Saved locally. Your win list changed.");
     },
-    [commit]
+    [commit, showLocalTrustToast]
   );
 
   const exportShareCard = useCallback(async () => {
@@ -1647,13 +1706,15 @@ export function HabitTracker() {
     setPersonalizerStep("about");
     setPersonalizerOpen(false);
     queueCloudBackup();
-  }, [onboarding, queueCloudBackup]);
+    showLocalTrustToast("Saved locally. Your personalized Win List is ready.");
+  }, [onboarding, queueCloudBackup, showLocalTrustToast]);
 
   const selectAppTheme = useCallback((themeKey: AppThemeKey) => {
     setAppThemeKey(themeKey);
     window.localStorage.setItem(THEME_STORAGE_KEY, themeKey);
     queueCloudBackup();
-  }, [queueCloudBackup]);
+    showLocalTrustToast("Saved locally. Your settings changed.");
+  }, [queueCloudBackup, showLocalTrustToast]);
 
   const selectColorScheme = useCallback((scheme: ColorScheme) => {
     setColorScheme(scheme);
@@ -1778,18 +1839,24 @@ export function HabitTracker() {
       } else {
         setCloudBackupStatus("synced");
         setCloudMessage("Backed up. LocalStorage is still the instant offline source.");
+        if (mode === "manual") {
+          showAppToast("Backed up to cloud.");
+        } else {
+          showCloudTrustToast("Backed up to cloud.");
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Could not sync this Win List.";
       setCloudBackupStatus("error");
       setCloudBackupError(message);
       setCloudMessage(message);
+      showAppToast("Cloud backup failed. Retry from Settings.", "error");
     } finally {
       if (mode === "manual") {
         setCloudBusy(false);
       }
     }
-  }, [appThemeKey, cloudSession?.user.id, consents, personalizationSnapshot]);
+  }, [appThemeKey, cloudSession?.user.id, consents, personalizationSnapshot, showAppToast, showCloudTrustToast]);
 
   const handleCloudUpload = useCallback(async () => {
     await uploadCurrentTrackerToCloud("manual");
@@ -2040,15 +2107,14 @@ export function HabitTracker() {
             </div>
           ) : null}
 
-          <div className="persistence-strip" aria-label="Save status">
-            <span>{localSaveLabel}</span>
-            <span>{cloudSaveLabel}</span>
-            {cloudBackupStatus === "error" && cloudSession && consents.sync ? (
+          {cloudBackupStatus === "error" && cloudSession && consents.sync ? (
+            <div className="backup-error-chip" role="status" aria-label="Cloud backup needs attention">
+              <span>Cloud backup paused</span>
               <button type="button" onClick={() => void uploadCurrentTrackerToCloud("manual")}>
                 Retry
               </button>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
           {shouldShowReturnPrompt ? (
             <div className="return-path-prompt" aria-label="Return path">
@@ -2059,17 +2125,33 @@ export function HabitTracker() {
               </div>
               <div>
                 {!isInstalledApp ? (
-                  <button type="button" onClick={handleInstallApp}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hideReturnPromptForToday();
+                      void handleInstallApp();
+                    }}
+                  >
                     {isIosDevice ? <Share2 size={15} aria-hidden="true" /> : <Download size={15} aria-hidden="true" />}
                     {isIosDevice ? "Steps" : "Install"}
                   </button>
                 ) : null}
                 {!reminderSettings.enabled ? (
-                  <button type="button" onClick={() => void requestReminderPermission()}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hideReturnPromptForToday();
+                      void requestReminderPermission();
+                    }}
+                  >
                     <CalendarDays size={15} aria-hidden="true" />
                     Reminder
                   </button>
                 ) : null}
+                <button type="button" onClick={hideReturnPromptForToday}>
+                  <X size={15} aria-hidden="true" />
+                  Not now
+                </button>
               </div>
             </div>
           ) : null}
@@ -2152,14 +2234,41 @@ export function HabitTracker() {
                 <strong>{completedCount}/{primaryHabits.length} today</strong>
               </div>
               <div className="permanent-list-actions">
-                <button type="button" onClick={() => setQuickManagerOpen(true)}>
-                  <Settings2 size={15} aria-hidden="true" />
-                  Manage wins
+                <button
+                  className="icon-menu-button"
+                  type="button"
+                  onClick={() => setWinsMenuOpen((open) => !open)}
+                  aria-expanded={winsMenuOpen}
+                  aria-label="Open win list options"
+                >
+                  <MoreHorizontal size={18} aria-hidden="true" />
                 </button>
-                <button type="button" onClick={openWinsSettings}>
-                  <ArrowUp size={15} aria-hidden="true" />
-                  Order
-                </button>
+                {winsMenuOpen ? (
+                  <div className="wins-overflow-menu" role="menu" aria-label="Win list options">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setWinsMenuOpen(false);
+                        setQuickManagerOpen(true);
+                      }}
+                    >
+                      <Settings2 size={15} aria-hidden="true" />
+                      Manage wins
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setWinsMenuOpen(false);
+                        openWinsSettings();
+                      }}
+                    >
+                      <ArrowUp size={15} aria-hidden="true" />
+                      Order wins
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </div>
 
