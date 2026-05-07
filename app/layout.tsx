@@ -3,6 +3,8 @@ import "./globals.css";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const iconPath = `${basePath}/icon.svg`;
+const icon192Path = `${basePath}/icon-192.png`;
+const appleTouchIconPath = `${basePath}/apple-touch-icon.png`;
 const manifestPath = `${basePath}/manifest.webmanifest`;
 
 export const metadata: Metadata = {
@@ -10,8 +12,11 @@ export const metadata: Metadata = {
   description: "A daily must-do wins app for planning and completing what matters today",
   manifest: manifestPath,
   icons: {
-    icon: iconPath,
-    apple: iconPath
+    icon: [
+      { url: iconPath, type: "image/svg+xml" },
+      { url: icon192Path, sizes: "192x192", type: "image/png" }
+    ],
+    apple: [{ url: appleTouchIconPath, sizes: "180x180", type: "image/png" }]
   },
   appleWebApp: {
     capable: true,

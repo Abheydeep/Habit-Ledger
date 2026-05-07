@@ -1,5 +1,5 @@
-const CACHE_NAME = "the-win-list-shell-v1";
-const APP_SHELL = ["/", "/icon.svg", "/manifest.webmanifest"];
+const CACHE_NAME = "the-win-list-shell-v2";
+const APP_SHELL = ["/", "/icon.svg", "/icon-192.png", "/apple-touch-icon.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

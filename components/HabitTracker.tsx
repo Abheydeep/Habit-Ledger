@@ -22,6 +22,7 @@ import {
   Plus,
   RotateCcw,
   Settings2,
+  Share2,
   ShieldCheck,
   Sparkles,
   Volume2,
@@ -232,12 +233,12 @@ const personalizerFlowSteps: Array<{ key: Exclude<PersonalizerStep, "intro">; la
 const dayPartLabels: Record<DayPartKey, string> = {
   morning: "Morning",
   daytime: "Daytime",
-  evening: "Evening"
+  evening: "Night"
 };
 const dayPartMicrocopy: Record<DayPartKey, string> = {
   morning: "Start clean",
   daytime: "Protect focus",
-  evening: "Close gently"
+  evening: "Wind down"
 };
 const themeByRoutine: Record<OnboardingInput["routineType"], AppThemeKey> = {
   student: "study-lavender",
@@ -451,6 +452,7 @@ export function HabitTracker() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installReady, setInstallReady] = useState(false);
   const [isInstalledApp, setIsInstalledApp] = useState(false);
+  const [isIosDevice, setIsIosDevice] = useState(false);
   const [simpleToday, setSimpleToday] = useState(true);
   const [quickManagerOpen, setQuickManagerOpen] = useState(false);
   const [pressureGuardSeenDate, setPressureGuardSeenDate] = useState<string | null>(null);
@@ -549,6 +551,7 @@ export function HabitTracker() {
       setNotificationPermission(window.Notification.permission);
     }
 
+    setIsIosDevice(isIOSDevice());
     const installedAppMode = isRunningAsInstalledApp();
     setIsInstalledApp(installedAppMode);
     if (installedAppMode) {
@@ -844,6 +847,15 @@ export function HabitTracker() {
   const localSaveLabel = formatLocalSaveStatus(tracker.updatedAt);
   const cloudSaveLabel = getCloudBackupLabel(cloudBackupStatus, cloudOverview, cloudSession, cloudBackupError);
   const shouldShowReturnPrompt = !isInstalledApp || !reminderSettings.enabled;
+  const installTitle = isInstalledApp
+    ? "Light reminder is off"
+    : isIosDevice
+      ? "Add to Home Screen"
+      : "Install the app shell";
+  const installNote =
+    isIosDevice && !isInstalledApp
+      ? "Open in Safari, tap Share, then Add to Home Screen."
+      : null;
 
   const toggleDayPart = useCallback((dayPart: DayPartKey) => {
     setOpenDayParts((current) => ({
@@ -939,6 +951,11 @@ export function HabitTracker() {
       return;
     }
 
+    if (isIosDevice && !installPrompt) {
+      showAppToast("iPhone install: open in Safari, tap Share, then Add to Home Screen.");
+      return;
+    }
+
     if (!installPrompt) {
       showAppToast("Use your browser menu to add The Win List to your home screen.");
       return;
@@ -955,7 +972,7 @@ export function HabitTracker() {
     } else {
       showAppToast("Install skipped. You can add it later from Settings.");
     }
-  }, [installPrompt, installReady, isInstalledApp, showAppToast]);
+  }, [installPrompt, installReady, isInstalledApp, isIosDevice, showAppToast]);
 
   useEffect(() => {
     if (!reminderSettings.enabled || primaryHabits.length === 0) {
@@ -2037,13 +2054,14 @@ export function HabitTracker() {
             <div className="return-path-prompt" aria-label="Return path">
               <div>
                 <span>Return faster</span>
-                <strong>{isInstalledApp ? "Light reminder is off" : "Install the app shell"}</strong>
+                <strong>{installTitle}</strong>
+                {installNote ? <small className="return-path-note">{installNote}</small> : null}
               </div>
               <div>
                 {!isInstalledApp ? (
                   <button type="button" onClick={handleInstallApp}>
-                    <Download size={15} aria-hidden="true" />
-                    Install
+                    {isIosDevice ? <Share2 size={15} aria-hidden="true" /> : <Download size={15} aria-hidden="true" />}
+                    {isIosDevice ? "Steps" : "Install"}
                   </button>
                 ) : null}
                 {!reminderSettings.enabled ? (
@@ -2884,6 +2902,8 @@ export function HabitTracker() {
                     <small>
                       {isInstalledApp
                         ? "The Win List is already running like an app on this device."
+                        : isIosDevice
+                          ? "On iPhone, open this site in Safari, tap Share, then Add to Home Screen."
                         : installReady
                           ? "Your browser is ready to install The Win List."
                           : "Use the browser menu if the install prompt is not available yet."}
@@ -2896,8 +2916,8 @@ export function HabitTracker() {
                     </span>
                   ) : (
                     <button className="backup-button" type="button" onClick={handleInstallApp}>
-                      <Download size={17} aria-hidden="true" />
-                      Install app
+                      {isIosDevice ? <Share2 size={17} aria-hidden="true" /> : <Download size={17} aria-hidden="true" />}
+                      {isIosDevice ? "iPhone steps" : "Install app"}
                     </button>
                   )}
                 </div>
@@ -4948,6 +4968,18 @@ function isRunningAsInstalledApp() {
     window.matchMedia?.("(display-mode: standalone)").matches ||
     (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   );
+}
+
+function isIOSDevice() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const platform = window.navigator.platform;
+  const userAgent = window.navigator.userAgent;
+  const touchMac = platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
+
+  return /iPad|iPhone|iPod/.test(userAgent) || touchMac;
 }
 
 function formatSaveStatus(value: string | null | undefined) {

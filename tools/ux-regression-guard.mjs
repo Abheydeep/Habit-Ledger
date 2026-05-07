@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 
 const component = readFileSync("components/HabitTracker.tsx", "utf8");
 const css = readFileSync("app/globals.css", "utf8");
+const layout = readFileSync("app/layout.tsx", "utf8");
+const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 
 const checks = [
   {
@@ -59,12 +61,36 @@ const checks = [
       css.includes(".installed-status-chip")
   },
   {
+    name: "ios install path is explicit",
+    ok:
+      component.includes("isIOSDevice") &&
+      component.includes("Add to Home Screen") &&
+      component.includes("Share2") &&
+      component.includes("return-path-note") &&
+      css.includes(".return-path-note")
+  },
+  {
+    name: "ios has png touch icons",
+    ok:
+      layout.includes("apple-touch-icon.png") &&
+      layout.includes("icon-192.png") &&
+      manifest.includes("/icon-192.png") &&
+      manifest.includes("/icon-512.png")
+  },
+  {
     name: "mobile today keeps more wins above the fold",
     ok:
       css.includes("Mobile daily-driver polish") &&
       css.includes("calc(92px + env(safe-area-inset-bottom))") &&
       css.includes("grid-template-columns: 46px minmax(0, 1fr)") &&
       css.includes(".brand-media .brand-avatar")
+  },
+  {
+    name: "simple today keeps day part headers visible",
+    ok:
+      component.includes('evening: "Night"') &&
+      css.includes(".today-panel.simple .day-group:not(.optional-routines) .day-group-header small") &&
+      !css.includes(".today-panel.simple .day-group:not(.optional-routines) .day-group-header {\n  display: none;")
   },
   {
     name: "auto backup states remain visible",

@@ -2583,6 +2583,15 @@ img {
   font-weight: 900;
 }
 
+.return-path-note {
+  display: block;
+  margin-top: 4px;
+  color: #52645f;
+  font-size: 0.74rem;
+  font-weight: 660;
+  line-height: 1.3;
+}
+
 .pressure-guard-card {
   margin: 0 0 10px;
   border-color: color-mix(in srgb, var(--app-accent), transparent 62%);
@@ -2838,7 +2847,14 @@ img {
 }
 
 .today-panel.simple .day-group:not(.optional-routines) .day-group-header {
-  display: none;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.today-panel.simple .day-group:not(.optional-routines) .day-group-header small {
+  display: inline;
 }
 
 .habit-card {
@@ -7081,6 +7097,7 @@ img {
 }
 
 .tracker-shell.scheme-dark .return-path-prompt span,
+.tracker-shell.scheme-dark .return-path-note,
 .tracker-shell.scheme-dark .permanent-list-toolbar span,
 .tracker-shell.scheme-dark .pressure-guard-card span,
 .tracker-shell.scheme-dark .pressure-guard-card p {
