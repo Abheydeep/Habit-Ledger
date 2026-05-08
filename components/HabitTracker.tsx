@@ -103,6 +103,8 @@ const APP_INSTALLED_STORAGE_KEY = "the-win-list:app-installed:v1";
 const RETURN_PROMPT_SEEN_DATE_KEY = "the-win-list:return-prompt-seen-date:v1";
 const SAVE_TRUST_TOAST_DATE_KEY = "the-win-list:save-trust-toast-date:v1";
 const CLOUD_TRUST_TOAST_DATE_KEY = "the-win-list:cloud-trust-toast-date:v1";
+const LIGHT_SHELL_THEME_COLOR = "#f5f7f2";
+const DARK_SHELL_THEME_COLOR = "#111c19";
 const emptyDay: DayRecord = { completedHabitIds: [], habitMoods: {} };
 const copy = {
   brand: "The Win List",
@@ -710,6 +712,10 @@ export function HabitTracker() {
   useEffect(() => {
     selectedDateRef.current = selectedDate;
   }, [selectedDate]);
+
+  useEffect(() => {
+    syncShellThemeChrome(colorScheme);
+  }, [colorScheme]);
 
   useEffect(() => {
     const persistLatest = () => {
@@ -2141,7 +2147,16 @@ export function HabitTracker() {
                 <strong>{installTitle}</strong>
                 {installNote ? <small className="return-path-note">{installNote}</small> : null}
               </div>
-              <div>
+              <button
+                className="return-path-dismiss"
+                type="button"
+                onClick={hideReturnPromptForToday}
+                aria-label="Hide return prompt for today"
+                title="Not now"
+              >
+                <X size={15} aria-hidden="true" />
+              </button>
+              <div className="return-path-actions">
                 {!isInstalledApp ? (
                   <button
                     type="button"
@@ -2166,10 +2181,6 @@ export function HabitTracker() {
                     Reminder
                   </button>
                 ) : null}
-                <button type="button" onClick={hideReturnPromptForToday}>
-                  <X size={15} aria-hidden="true" />
-                  Not now
-                </button>
               </div>
             </div>
           ) : null}
@@ -2396,9 +2407,9 @@ export function HabitTracker() {
                                     {moodOption ? (
                                       <img src={assetUrl(moodOption.src)} alt="" />
                                     ) : (
-                                      <CircleDot size={16} aria-hidden="true" />
+                                      <ClipboardCheck size={16} aria-hidden="true" />
                                     )}
-                                    <span>{done || moodOption ? "Edit" : "Status"}</span>
+                                    <span>{moodOption?.shortLabel ?? (done ? "Won" : "Status")}</span>
                                   </button>
                                 </div>
                               </div>
@@ -2540,9 +2551,9 @@ export function HabitTracker() {
                                   {moodOption ? (
                                     <img src={assetUrl(moodOption.src)} alt="" />
                                   ) : (
-                                    <CircleDot size={16} aria-hidden="true" />
+                                    <ClipboardCheck size={16} aria-hidden="true" />
                                   )}
-                                  <span>{done || moodOption ? "Edit" : "Status"}</span>
+                                  <span>{moodOption?.shortLabel ?? (done ? "Won" : "Status")}</span>
                                 </button>
                               </div>
                             </div>
@@ -4719,6 +4730,28 @@ function getCookie(name: string) {
     .map((part) => part.trim())
     .find((part) => part.startsWith(prefix))
     ?.slice(prefix.length);
+}
+
+function syncShellThemeChrome(scheme: ColorScheme) {
+  const color = scheme === "dark" ? DARK_SHELL_THEME_COLOR : LIGHT_SHELL_THEME_COLOR;
+  document.documentElement.dataset.colorScheme = scheme;
+  document.documentElement.style.backgroundColor = color;
+  document.body.style.backgroundColor = color;
+  setMetaContent("theme-color", color);
+  setMetaContent("msapplication-TileColor", color);
+  setMetaContent("apple-mobile-web-app-status-bar-style", scheme === "dark" ? "black-translucent" : "default");
+}
+
+function setMetaContent(name: string, content: string) {
+  let meta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute("name", name);
+    document.head.append(meta);
+  }
+
+  meta.setAttribute("content", content);
 }
 
 function removeHabitMood(moods: DayRecord["habitMoods"], habitId: string) {

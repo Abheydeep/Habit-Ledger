@@ -8,6 +8,12 @@
   color: #142f2b;
 }
 
+:root[data-color-scheme="dark"] {
+  color-scheme: dark;
+  background: #111c19;
+  color: #e4f5ef;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -27,6 +33,11 @@ body {
     linear-gradient(180deg, #f8faf6, #eef5f1);
   color: #142f2b;
   font-family: "Avenir Next", "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+:root[data-color-scheme="dark"] body {
+  background: #111c19;
+  color: #e4f5ef;
 }
 
 button,
@@ -2610,6 +2621,7 @@ img {
 }
 
 .return-path-prompt {
+  padding-right: 42px;
   border-color: color-mix(in srgb, var(--app-primary), transparent 64%);
   background:
     radial-gradient(circle at 100% 0, color-mix(in srgb, var(--app-accent), transparent 82%), transparent 36%),
@@ -2679,7 +2691,8 @@ img {
   gap: 6px;
 }
 
-.return-path-prompt > div:last-child {
+.return-path-prompt > div:last-child,
+.return-path-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   gap: 6px;
@@ -2704,6 +2717,26 @@ img {
   font-size: 0.74rem;
   font-weight: 820;
   white-space: nowrap;
+}
+
+.return-path-prompt .return-path-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #71817d;
+  box-shadow: none;
+}
+
+.return-path-prompt .return-path-dismiss:hover {
+  background: rgba(15, 47, 43, 0.07);
+  color: #183d38;
 }
 
 .permanent-list-toolbar button,
@@ -3271,11 +3304,12 @@ img {
   align-items: center;
   justify-content: center;
   justify-self: end;
-  gap: 8px;
+  gap: 6px;
   max-width: 100%;
-  width: 42px;
+  min-width: 76px;
+  width: auto;
   min-height: 36px;
-  padding: 0;
+  padding: 0 9px;
   border: 1px solid color-mix(in srgb, var(--mood) 30%, white);
   border-radius: 999px;
   background: #ffffff;
@@ -3291,14 +3325,14 @@ img {
 }
 
 .mood-preview img {
-  width: 25px;
+  width: 22px;
   aspect-ratio: 1;
   border-radius: 8px;
   object-fit: cover;
 }
 
 .mood-preview span {
-  display: none;
+  display: inline-block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6647,7 +6681,7 @@ img {
 }
 
 .habit-card-main {
-  grid-template-columns: minmax(0, 1fr) 38px;
+  grid-template-columns: minmax(0, 1fr) minmax(74px, max-content);
   gap: 7px;
   min-height: 58px;
 }
@@ -6669,7 +6703,17 @@ img {
   line-height: 1.15;
 }
 
-.mood-preview,
+.mood-preview {
+  min-width: 74px;
+  min-height: 38px;
+  padding: 0 8px;
+  font-size: 0.7rem;
+}
+
+.mood-preview img {
+  width: 22px;
+}
+
 .requirement-toggle-button {
   width: 38px;
   min-height: 38px;
@@ -7355,6 +7399,17 @@ img {
   border-color: rgba(189, 247, 238, 0.24);
   background: #e9fffa;
   color: #0a2a25;
+}
+
+.tracker-shell.scheme-dark .return-path-prompt .return-path-dismiss {
+  border-color: transparent;
+  background: transparent;
+  color: #cfe4dd;
+}
+
+.tracker-shell.scheme-dark .return-path-prompt .return-path-dismiss:hover {
+  background: rgba(233, 255, 250, 0.1);
+  color: #f6fbf8;
 }
 
 .tracker-shell.scheme-dark .day-group-header,

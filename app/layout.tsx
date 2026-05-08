@@ -21,12 +21,15 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "The Win List",
-    statusBarStyle: "default"
+    statusBarStyle: "black-translucent"
   }
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f5f7f2"
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#111c19" },
+    { media: "(prefers-color-scheme: light)", color: "#f5f7f2" }
+  ]
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

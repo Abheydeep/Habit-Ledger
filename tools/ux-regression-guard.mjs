@@ -53,6 +53,8 @@ const checks = [
       component.includes("record.completedHabitIds.includes(habitId)") &&
       component.includes("isCompletionMood(mood)") &&
       component.includes("mood.description") &&
+      component.includes("ClipboardCheck size={16}") &&
+      css.includes("minmax(74px, max-content)") &&
       css.includes(".mood-sticker em")
   },
   {
@@ -81,9 +83,20 @@ const checks = [
       component.includes("RETURN_PROMPT_SEEN_DATE_KEY") &&
       component.includes("returnPromptVisible") &&
       component.includes("hideReturnPromptForToday") &&
+      component.includes("return-path-dismiss") &&
       css.includes(".return-path-prompt") &&
       css.includes("grid-template-columns: repeat(auto-fit, minmax(70px, 1fr))") &&
       css.includes(".return-path-prompt button")
+  },
+  {
+    name: "installed shell chrome follows dark mode",
+    ok:
+      layout.includes('statusBarStyle: "black-translucent"') &&
+      layout.includes("(prefers-color-scheme: dark)") &&
+      manifest.includes('"theme_color": "#111c19"') &&
+      component.includes("syncShellThemeChrome") &&
+      component.includes('setMetaContent("theme-color", color)') &&
+      css.includes(':root[data-color-scheme="dark"] body')
   },
   {
     name: "installed PWA stops showing install actions",
