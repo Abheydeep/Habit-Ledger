@@ -2486,7 +2486,7 @@ export function HabitTracker() {
                   >
                     <div>
                       <span>Optional routines</span>
-                      <small>Extra credit, never required for 100%</small>
+                      <small>Extra credit. Not required for 100%.</small>
                     </div>
                     <span className="day-group-status">
                       <strong>

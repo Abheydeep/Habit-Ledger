@@ -147,6 +147,14 @@ const checks = [
       !css.includes(".today-panel.simple .day-group:not(.optional-routines) .day-group-header {\n  display: none;")
   },
   {
+    name: "optional routines header stays readable on mobile",
+    ok:
+      component.includes("Extra credit. Not required for 100%.") &&
+      css.includes(".day-group.optional-routines .day-group-header div") &&
+      css.includes(".day-group.optional-routines .day-group-header small") &&
+      css.includes("white-space: normal")
+  },
+  {
     name: "mobile save status is toast-led and error-only",
     ok:
       component.includes("SAVE_TRUST_TOAST_DATE_KEY") &&

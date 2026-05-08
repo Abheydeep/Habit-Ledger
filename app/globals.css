@@ -6885,6 +6885,12 @@ img {
     rgba(255, 255, 255, 0.5);
 }
 
+.day-group.optional-routines .day-group-header div {
+  display: grid;
+  align-items: center;
+  gap: 2px;
+}
+
 .day-group-header > div > span {
   color: color-mix(in srgb, var(--app-primary), var(--app-ink) 26%);
   font-size: 0.72rem;
@@ -6913,6 +6919,13 @@ img {
   font-weight: 580;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.day-group.optional-routines .day-group-header small {
+  overflow: visible;
+  line-height: 1.16;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .day-group-status {
