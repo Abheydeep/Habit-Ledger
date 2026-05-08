@@ -5,6 +5,7 @@ const css = readFileSync("app/globals.css", "utf8");
 const layout = readFileSync("app/layout.tsx", "utf8");
 const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 const personalization = readFileSync("lib/personalization.ts", "utf8");
+const habitData = readFileSync("lib/habitData.ts", "utf8");
 
 const checks = [
   {
@@ -28,9 +29,31 @@ const checks = [
     ok:
       component.includes("setPersonalizerOpen(false);") &&
       component.includes("starter-card") &&
+      component.includes("hasDefaultWinSetup") &&
+      component.includes("Build your Win List") &&
+      !component.includes("!simpleToday && shouldPromptPersonalization") &&
       component.includes('<option value="neutral">Neutral</option>') &&
       !component.includes("Auto from name") &&
       personalization.includes('avatarStyle: "neutral"')
+  },
+  {
+    name: "daily copy keeps returning users awake",
+    ok:
+      component.includes("dailyNotePrompts") &&
+      component.includes("dailyNotePlaceholder") &&
+      component.includes("Third day. The habit is starting to stick.") &&
+      component.includes("One week. That is real.") &&
+      component.includes("Thirty days. That is a serious baseline.")
+  },
+  {
+    name: "mood status path stays unified and explained",
+    ok:
+      habitData.includes("description:") &&
+      component.includes("completedHabitIds = new Set") &&
+      component.includes("record.completedHabitIds.includes(habitId)") &&
+      component.includes("isCompletionMood(mood)") &&
+      component.includes("mood.description") &&
+      css.includes(".mood-sticker em")
   },
   {
     name: "perfect streak wording stays clear",

@@ -244,6 +244,15 @@ const dayPartMicrocopy: Record<DayPartKey, string> = {
   daytime: "Protect focus",
   evening: "Close gently"
 };
+const dailyNotePrompts = [
+  "What made today easier or harder? One line is enough.",
+  "What helped the wins happen today?",
+  "What got in the way today?",
+  "What should tomorrow-you remember?",
+  "Which win felt easiest today?",
+  "Where did the day leak energy?",
+  "What is one tiny adjustment for tomorrow?"
+];
 const themeByRoutine: Record<OnboardingInput["routineType"], AppThemeKey> = {
   student: "study-lavender",
   "working-professional": "fresh-ledger",
@@ -818,6 +827,11 @@ export function HabitTracker() {
   );
   const analyticsInsights = analyticsSummary.insights;
   const streakNudge = getStreakNudge(streak, completedCount, primaryHabits.length);
+  const defaultWinSetup = useMemo(() => hasDefaultWinSetup(tracker), [tracker.habits]);
+  const dailyNotePlaceholder = useMemo(
+    () => dailyNotePrompts[dateFromKey(selectedDate).getDay() % dailyNotePrompts.length],
+    [selectedDate]
+  );
   const holdMenuHintCandidate = getHoldMenuHint({
     permanentCount: primaryHabits.length,
     currentDayPart
@@ -828,7 +842,7 @@ export function HabitTracker() {
     (holdMenuHintSeenDate !== todayKey || holdMenuHintSessionDate === todayKey)
       ? holdMenuHintCandidate
       : null;
-  const shouldPromptPersonalization = clientStateReady && !personalizationSnapshot;
+  const shouldPromptPersonalization = clientStateReady && !personalizationSnapshot && defaultWinSetup;
   const companionNudge = useMemo(
     () =>
       getCompanionNudge({
@@ -1174,23 +1188,25 @@ export function HabitTracker() {
       commit((current) => {
         const record = current.days[selectedDate] ?? emptyDay;
         const habitMoods = { ...(record.habitMoods ?? {}) };
-        let completedHabitIds = record.completedHabitIds;
+        const completedHabitIds = new Set(record.completedHabitIds);
 
         if (habitMoods[habitId] === mood) {
           delete habitMoods[habitId];
-          completedHabitIds = record.completedHabitIds.filter((id) => id !== habitId);
+          completedHabitIds.delete(habitId);
         } else {
           habitMoods[habitId] = mood;
-          completedHabitIds = record.completedHabitIds.includes(habitId)
-            ? record.completedHabitIds
-            : [...record.completedHabitIds, habitId];
+          if (isCompletionMood(mood)) {
+            completedHabitIds.add(habitId);
+          } else {
+            completedHabitIds.delete(habitId);
+          }
         }
 
         return {
           ...current,
           days: {
             ...current.days,
-            [selectedDate]: { ...record, completedHabitIds, habitMoods }
+            [selectedDate]: { ...record, completedHabitIds: Array.from(completedHabitIds), habitMoods }
           }
         };
       });
@@ -1202,9 +1218,12 @@ export function HabitTracker() {
     (habitId: string, mood: MoodKey) => {
       commit((current) => {
         const record = current.days[selectedDate] ?? emptyDay;
-        const completedHabitIds = record.completedHabitIds.includes(habitId)
-          ? record.completedHabitIds
-          : [...record.completedHabitIds, habitId];
+        const completedHabitIds = new Set(record.completedHabitIds);
+        if (isCompletionMood(mood)) {
+          completedHabitIds.add(habitId);
+        } else {
+          completedHabitIds.delete(habitId);
+        }
 
         return {
           ...current,
@@ -1212,7 +1231,7 @@ export function HabitTracker() {
             ...current.days,
             [selectedDate]: {
               ...record,
-              completedHabitIds,
+              completedHabitIds: Array.from(completedHabitIds),
               habitMoods: { ...(record.habitMoods ?? {}), [habitId]: mood }
             }
           }
@@ -1247,10 +1266,9 @@ export function HabitTracker() {
   const toggleHabitWin = useCallback(
     (habit: Habit) => {
       const record = trackerRef.current.days[selectedDate] ?? emptyDay;
-      const currentMood = record.habitMoods?.[habit.id];
 
       setRequirementMenuHabitId(null);
-      if (currentMood && isCompletionMood(currentMood)) {
+      if (isHabitComplete(record, habit.id)) {
         triggerCompletionFeedback(habit.color, "tap", feedbackSettings);
         clearHabitMood(habit.id);
         return;
@@ -2156,12 +2174,12 @@ export function HabitTracker() {
             </div>
           ) : null}
 
-          {!simpleToday && shouldPromptPersonalization ? (
+          {shouldPromptPersonalization ? (
             <div className="starter-card" aria-label="Personalize The Win List">
               <div>
-                <span>Make it yours</span>
-                <strong>Ready now. Personalize later.</strong>
-                <p>Your default 5 core wins already work. Personalizing tunes the list when you have a minute.</p>
+                <span>Personalize</span>
+                <strong>Build your Win List</strong>
+                <p>Keep the starter wins or answer a few things to make them fit your day.</p>
               </div>
               <button
                 className="starter-card-button"
@@ -2399,17 +2417,17 @@ export function HabitTracker() {
                                 <div className="activity-mood-panel" aria-label={`Win status choices for ${habit.name}`}>
                                   {moodOptions.map((mood) => (
                                     <button
-                                    className={`mood-sticker${habitMood === mood.key ? " selected" : ""}`}
-                                    key={mood.key}
-                                    style={{ "--mood": mood.tone } as CSSProperties}
-                                    type="button"
-                                    onPointerDown={primeCompletionFeedback}
-                                    onTouchStart={primeCompletionFeedback}
-                                    onClick={() => {
-                                      const shouldCelebrate = habitMood !== mood.key && isCompletionMood(mood.key);
-                  if (shouldCelebrate) {
-                    maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
-                  }
+                                      className={`mood-sticker${habitMood === mood.key ? " selected" : ""}`}
+                                      key={mood.key}
+                                      style={{ "--mood": mood.tone } as CSSProperties}
+                                      type="button"
+                                      onPointerDown={primeCompletionFeedback}
+                                      onTouchStart={primeCompletionFeedback}
+                                      onClick={() => {
+                                        const shouldCelebrate = habitMood !== mood.key && isCompletionMood(mood.key);
+                                        if (shouldCelebrate) {
+                                          maybeTriggerPerfectDay(habit.id, mood.key, mood.tone);
+                                        }
                                         updateHabitMood(habit.id, mood.key);
                                         if (shouldCelebrate) {
                                           triggerCompletionCelebration(habit, mood);
@@ -2417,9 +2435,13 @@ export function HabitTracker() {
                                         setExpandedHabitId(null);
                                       }}
                                       aria-label={`${mood.label} status for ${habit.name}`}
+                                      title={`${mood.label}: ${mood.description}`}
                                     >
                                       <img src={assetUrl(mood.src)} alt="" />
-                                      <small>{mood.label}</small>
+                                      <span>
+                                        <small>{mood.label}</small>
+                                        <em>{mood.description}</em>
+                                      </span>
                                     </button>
                                   ))}
                                 </div>
@@ -2543,9 +2565,13 @@ export function HabitTracker() {
                                       setExpandedHabitId(null);
                                     }}
                                     aria-label={`${mood.label} status for optional ${habit.name}`}
+                                    title={`${mood.label}: ${mood.description}`}
                                   >
                                     <img src={assetUrl(mood.src)} alt="" />
-                                    <small>{mood.label}</small>
+                                    <span>
+                                      <small>{mood.label}</small>
+                                      <em>{mood.description}</em>
+                                    </span>
                                   </button>
                                 ))}
                               </div>
@@ -2587,7 +2613,7 @@ export function HabitTracker() {
                   ref={noteRef}
                   value={selectedRecord.note ?? ""}
                   onChange={(event) => updateSelectedNote(event.target.value)}
-                  placeholder="What made today easier or harder? One line is enough."
+                  placeholder={dailyNotePlaceholder}
                 />
               ) : null}
             </section>
@@ -4703,11 +4729,35 @@ function removeHabitMood(moods: DayRecord["habitMoods"], habitId: string) {
 
 function isHabitComplete(record: DayRecord, habitId: string) {
   const status = record.habitMoods?.[habitId];
-  return Boolean(status && isCompletionMood(status));
+  if (status) {
+    return isCompletionMood(status);
+  }
+
+  return record.completedHabitIds.includes(habitId);
 }
 
 function isCompletionMood(status: MoodKey) {
   return status !== "skipped" && status !== "rest";
+}
+
+function hasDefaultWinSetup(tracker: TrackerState) {
+  const defaults = createDefaultState("default").habits.map(winSetupSignature);
+  const current = [...tracker.habits].sort((a, b) => a.order - b.order).map(winSetupSignature);
+  return defaults.length === current.length && defaults.every((signature, index) => signature === current[index]);
+}
+
+function winSetupSignature(habit: Habit) {
+  return [
+    habit.id,
+    habit.name,
+    habit.order,
+    habit.color,
+    habit.thumbnail,
+    habit.quip,
+    habit.dayPart ?? "",
+    habit.requirement ?? "",
+    habit.pausedAt ? "paused" : "active"
+  ].join("|");
 }
 
 function getStreakNudge(streak: number, completedCount: number, totalCount: number) {
@@ -4725,6 +4775,24 @@ function getStreakNudge(streak: number, completedCount: number, totalCount: numb
 
   if (streak === 1) {
     return "Day one of the perfect streak is alive. Protect it with the remaining wins.";
+  }
+
+  const milestoneNudges: Record<number, string> = {
+    2: "Two days. Keep it boring and repeatable.",
+    3: "Third day. The habit is starting to stick.",
+    5: "Five days. You are building real evidence.",
+    7: "One week. That is real.",
+    14: "Two weeks. The chain has weight now.",
+    21: "Three weeks. This is becoming part of your day.",
+    30: "Thirty days. That is a serious baseline."
+  };
+
+  if (milestoneNudges[streak]) {
+    return milestoneNudges[streak];
+  }
+
+  if (streak > 30 && streak % 10 === 0) {
+    return `${streak} days. Strong chain, simple next move: protect today.`;
   }
 
   return `${streak} perfect days in motion. Keep the chain warm.`;

@@ -3399,6 +3399,24 @@ img {
   white-space: nowrap;
 }
 
+.mood-sticker span {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.mood-sticker em {
+  max-width: 100%;
+  overflow: hidden;
+  color: #64736f;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 620;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .habit-card.expanded .mood-sticker {
   grid-template-rows: 1fr;
 }
@@ -3407,7 +3425,7 @@ img {
   width: 36px;
 }
 
-.habit-card.expanded .mood-sticker small {
+.habit-card.expanded .mood-sticker em {
   display: none;
 }
 
@@ -5982,14 +6000,23 @@ img {
   .mood-sticker {
     min-height: 54px;
     grid-template-columns: 1fr;
-    grid-template-rows: 31px auto;
+    grid-template-rows: 31px auto auto;
     justify-items: center;
     padding: 4px 3px;
     font-size: 0.64rem;
+    text-align: center;
   }
 
   .mood-sticker img {
     width: 31px;
+  }
+
+  .mood-sticker span {
+    justify-items: center;
+  }
+
+  .mood-sticker em {
+    display: none;
   }
 
   .habit-card.expanded .mood-sticker img {
@@ -6304,6 +6331,10 @@ img {
 .tracker-shell.scheme-dark .app-toast.error {
   border-color: rgba(248, 113, 113, 0.28);
   color: #fecaca;
+}
+
+.tracker-shell.scheme-dark .mood-sticker em {
+  color: #b9cbc5;
 }
 
 .tracker-shell.scheme-dark .inline-warning-card {

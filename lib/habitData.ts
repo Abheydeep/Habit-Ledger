@@ -50,14 +50,15 @@ export const moodOptions: Array<{
   key: MoodKey;
   label: string;
   shortLabel: string;
+  description: string;
   tone: string;
   src: string;
 }> = [
-  { key: "done", label: "Won", shortLabel: "Won", tone: "#0f766e", src: "status:done" },
-  { key: "strong", label: "Strong", shortLabel: "Strong", tone: "#2563eb", src: "status:strong" },
-  { key: "partial", label: "Partial", shortLabel: "Half", tone: "#f59e0b", src: "status:partial" },
-  { key: "skipped", label: "Skipped", shortLabel: "Skip", tone: "#dc2626", src: "status:skipped" },
-  { key: "rest", label: "Rest day", shortLabel: "Rest", tone: "#64748b", src: "status:rest" }
+  { key: "done", label: "Won", shortLabel: "Won", description: "Finished it", tone: "#0f766e", src: "status:done" },
+  { key: "strong", label: "Strong", shortLabel: "Strong", description: "Crushed it", tone: "#2563eb", src: "status:strong" },
+  { key: "partial", label: "Partial", shortLabel: "Half", description: "Some counts", tone: "#f59e0b", src: "status:partial" },
+  { key: "skipped", label: "Skipped", shortLabel: "Skip", description: "Missed today", tone: "#dc2626", src: "status:skipped" },
+  { key: "rest", label: "Rest day", shortLabel: "Rest", description: "Intentional off", tone: "#64748b", src: "status:rest" }
 ];
 
 export const thumbnailOptions: ThumbnailOption[] = [
