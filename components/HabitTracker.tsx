@@ -947,13 +947,20 @@ export function HabitTracker() {
     "--app-ink": isDarkScheme ? "#e4f5ef" : appTheme.ink
   } as CSSProperties;
   const localSaveLabel = formatLocalSaveStatus(tracker.updatedAt);
+  const earlyWinSetupWindow =
+    experienceState === "first_run_empty" ||
+    experienceState === "starter_active_no_history" ||
+    (!personalizationSnapshot && activitySummary.activeDayCount < 5);
   const returnPromptEligible = clientStateReady && (!isInstalledApp || !reminderSettings.enabled);
-  const shouldShowReturnPrompt = returnPromptEligible && returnPromptVisible && !firstRunFocus;
+  const shouldShowReturnPrompt = returnPromptEligible && returnPromptVisible;
+  const showInstallInReturnPrompt = !isInstalledApp;
+  const showReminderInReturnPrompt = isInstalledApp && !reminderSettings.enabled;
+  const showEditWinsInReturnPrompt = earlyWinSetupWindow && !personalizationSnapshot && !firstRunFocus;
   const installTitle = isInstalledApp
-    ? "Light reminder is off"
+    ? "Set a daily reminder"
     : isIosDevice
       ? "Add to Home Screen"
-      : "Install the app shell";
+      : "Install The Win List";
   const installNote =
     isIosDevice && !isInstalledApp
       ? "Open in Safari, tap Share, then Add to Home Screen."
@@ -2155,16 +2162,14 @@ export function HabitTracker() {
                 Use starter list
               </button>
               <button
-                className={`icon-text-button setup-settings-button${settingsOpen ? " hot" : ""}`}
+                className="icon-text-button setup-edit-button"
                 type="button"
-                aria-pressed={settingsOpen}
                 onClick={() => {
-                  setExpandedSettingsSections(collapsedSettingsSections);
-                  setSettingsOpen(true);
+                  setQuickManagerOpen(true);
                 }}
               >
                 <Settings2 size={18} aria-hidden="true" />
-                Settings
+                Edit wins
               </button>
             </div>
           ) : null}
@@ -2331,7 +2336,7 @@ export function HabitTracker() {
                 <X size={15} aria-hidden="true" />
               </button>
               <div className="return-path-actions">
-                {!isInstalledApp ? (
+                {showInstallInReturnPrompt ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -2343,7 +2348,7 @@ export function HabitTracker() {
                     {isIosDevice ? "Steps" : "Install"}
                   </button>
                 ) : null}
-                {!reminderSettings.enabled ? (
+                {showReminderInReturnPrompt ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -2353,6 +2358,17 @@ export function HabitTracker() {
                   >
                     <CalendarDays size={15} aria-hidden="true" />
                     Reminder
+                  </button>
+                ) : null}
+                {showEditWinsInReturnPrompt ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuickManagerOpen(true);
+                    }}
+                  >
+                    <Settings2 size={15} aria-hidden="true" />
+                    Edit wins
                   </button>
                 ) : null}
               </div>
@@ -2605,6 +2621,15 @@ export function HabitTracker() {
                                   <span>Hold menu</span>
                                   <button type="button" onClick={() => makePermanentHabitOptional(habit.id)}>
                                     Make optional
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setRequirementMenuHabitId(null);
+                                      setQuickManagerOpen(true);
+                                    }}
+                                  >
+                                    Edit wins
                                   </button>
                                   <button type="button" onClick={() => setRequirementMenuHabitId(null)}>
                                     Keep core
@@ -3077,7 +3102,9 @@ export function HabitTracker() {
             <div className="quick-manager-summary">
               <strong>{primaryHabits.length} core wins</strong>
               <span>
-                {primaryHabits.length > DEFAULT_PRIMARY_WIN_COUNT
+                {earlyWinSetupWindow
+                  ? "Edit names here. Long-press a Today card for core or optional options."
+                  : primaryHabits.length > DEFAULT_PRIMARY_WIN_COUNT
                   ? "Keep this list honest for a normal tired day."
                   : "This is a light daily target."}
               </span>
@@ -3090,7 +3117,14 @@ export function HabitTracker() {
                   <article className={`quick-win-row${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
                     <img src={assetUrl(habit.thumbnail)} alt="" />
                     <div>
-                      <strong>{habit.name}</strong>
+                      <label className="quick-win-name-field">
+                        <span>Win name</span>
+                        <input
+                          value={habit.name}
+                          onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
+                          aria-label={`Edit win name for ${habit.name}`}
+                        />
+                      </label>
                       <span>{isPermanent ? "Core win" : "Optional routine"}</span>
                     </div>
                     <div className="quick-win-actions">

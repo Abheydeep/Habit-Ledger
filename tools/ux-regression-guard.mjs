@@ -93,6 +93,8 @@ const checks = [
       component.includes("return-path-prompt") &&
       component.includes("RETURN_PROMPT_SEEN_DATE_KEY") &&
       component.includes("returnPromptVisible") &&
+      component.includes("showInstallInReturnPrompt") &&
+      component.includes("showReminderInReturnPrompt") &&
       component.includes("hideReturnPromptForToday") &&
       component.includes("return-path-dismiss") &&
       css.includes(".return-path-prompt") &&
@@ -119,7 +121,7 @@ const checks = [
     ok:
       component.includes("APP_INSTALLED_STORAGE_KEY") &&
       component.includes("installed-status-chip") &&
-      component.includes("!isInstalledApp ? (") &&
+      component.includes("showInstallInReturnPrompt = !isInstalledApp") &&
       css.includes(".installed-status-chip")
   },
   {
@@ -211,10 +213,14 @@ const checks = [
       component.includes('dayOpen ? "Today\'s sections"') &&
       component.includes("Starter workday list") &&
       component.includes("Default wins to get moving. Build around your own day in 30 seconds.") &&
-      component.includes("returnPromptVisible && !firstRunFocus") &&
+      component.includes("setup-edit-button") &&
+      component.includes("Edit wins") &&
+      component.includes("shouldShowReturnPrompt = returnPromptEligible && returnPromptVisible") &&
       component.includes("experience-${experienceState}") &&
       component.includes("analyticsStage") &&
       css.includes(".mobile-activation-actions") &&
+      css.includes(".setup-edit-button") &&
+      !css.includes("repeat(3, minmax(0, 0.88fr))") &&
       css.includes(".tracker-shell.first-run-focus .month-panel") &&
       css.includes(".tracker-shell.setup-pending .starter-card p") &&
       css.includes(":where(button, a, input, select, textarea):focus-visible")
@@ -359,6 +365,7 @@ const checks = [
       component.includes("HOLD_MENU_HINT_SEEN_KEY") &&
       component.includes("Hold menu tip") &&
       component.includes("Press and hold any core win") &&
+      component.includes("setQuickManagerOpen(true);") &&
       !component.includes("missedPerfectDaysInARow") &&
       !component.includes("PRESSURE_GUARD_SEEN_KEY") &&
       !component.includes("Lighten list") &&
@@ -377,10 +384,13 @@ const checks = [
     name: "quick win manager avoids settings friction",
     ok:
       component.includes("quick-manager-sheet") &&
+      component.includes("quick-win-name-field") &&
+      component.includes("Edit names here.") &&
       component.includes("Full win settings") &&
       component.includes("wins-overflow-menu") &&
       component.includes("MoreHorizontal") &&
       css.includes(".quick-manager-sheet") &&
+      css.includes(".quick-win-name-field input") &&
       css.includes(".wins-overflow-menu")
   },
   {
