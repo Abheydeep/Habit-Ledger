@@ -156,6 +156,7 @@ const checks = [
     name: "dark footer edit icon stays visible",
     ok:
       css.includes(".tracker-shell.scheme-dark .hero-actions .setup-edit-button svg") &&
+      css.includes(".tracker-shell.scheme-dark .hero-actions .setup-build-button.hot svg") &&
       css.includes("stroke-width: 2.4")
   },
   {
