@@ -14,7 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1
     },
     {
-      url: `${siteUrl}/launch`,
+      url: `${siteUrl}/launch/`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.7

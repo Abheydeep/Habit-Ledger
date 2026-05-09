@@ -6,5 +6,9 @@ services:
     branch: release/daily-driver-v1
     buildCommand: npm install && npm run verify:release
     staticPublishPath: ./out
+    routes:
+      - type: redirect
+        source: /launch
+        destination: /launch/
     domains:
       - www.mywinlist.com

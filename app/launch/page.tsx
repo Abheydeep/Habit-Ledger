@@ -6,12 +6,12 @@ export const metadata: Metadata = {
   description:
     "A shareable launch poster for The Win List, the daily wins tracker that helps you start with one small win.",
   alternates: {
-    canonical: "/launch"
+    canonical: "/launch/"
   },
   openGraph: {
     title: "The Win List launch poster",
     description: "Track daily wins, not daily failures. Free, no login, and works offline.",
-    url: "https://www.mywinlist.com/launch",
+    url: "https://www.mywinlist.com/launch/",
     siteName: "The Win List",
     type: "website"
   },

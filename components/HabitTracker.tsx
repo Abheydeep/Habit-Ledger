@@ -3203,7 +3203,7 @@ export function HabitTracker() {
                   <Download size={17} aria-hidden="true" />
                   Share today
                 </button>
-                <a className="backup-button" href={`${APP_BASE_PATH}/launch`} target="_blank" rel="noreferrer">
+                <a className="backup-button" href={`${APP_BASE_PATH}/launch/`} target="_blank" rel="noreferrer">
                   <Share2 size={17} aria-hidden="true" />
                   Launch poster
                 </a>
