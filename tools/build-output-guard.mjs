@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 const outDir = "out";
 const indexPath = join(outDir, "index.html");
+const launchPath = join(outDir, "launch", "index.html");
 
 if (!existsSync(indexPath)) {
   console.error("Build output guard failed: out/index.html is missing. Run `npm run build` first.");
@@ -28,6 +29,7 @@ function readMatchingAssets(extension) {
 }
 
 const html = readFileSync(indexPath, "utf8");
+const launchHtml = existsSync(launchPath) ? readFileSync(launchPath, "utf8") : "";
 const css = readMatchingAssets(".css");
 const js = readMatchingAssets(".js");
 const builtText = `${html}\n${css}\n${js}`;
@@ -40,6 +42,17 @@ const checks = [
       html.includes('rel="manifest"') &&
       html.includes("https://www.mywinlist.com/") &&
       html.includes('"@type":"WebApplication"')
+  },
+  {
+    name: "launch poster static page ships",
+    ok:
+      launchHtml.includes("Track daily wins, not daily failures.") &&
+      launchHtml.includes("Core wins first") &&
+      launchHtml.includes("Optional routines") &&
+      launchHtml.includes("Mood, not guilt") &&
+      launchHtml.includes("Your 5-day pattern") &&
+      launchHtml.includes("mywinlist.com") &&
+      builtText.includes("Launch poster")
   },
   {
     name: "dark theme prepaint guard ships",

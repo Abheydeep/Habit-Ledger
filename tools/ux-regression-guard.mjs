@@ -6,6 +6,8 @@ const layout = readFileSync("app/layout.tsx", "utf8");
 const page = readFileSync("app/page.tsx", "utf8");
 const robots = readFileSync("app/robots.ts", "utf8");
 const sitemap = readFileSync("app/sitemap.ts", "utf8");
+const launchPage = readFileSync("app/launch/page.tsx", "utf8");
+const launchCss = readFileSync("app/launch/LaunchPoster.module.css", "utf8");
 const ogImage = readFileSync("public/og-image.svg", "utf8");
 const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 const personalization = readFileSync("lib/personalization.ts", "utf8");
@@ -161,6 +163,21 @@ const checks = [
       manifest.includes('"categories": ["productivity", "health", "lifestyle"]') &&
       ogImage.includes("mywinlist.com") &&
       ogImage.includes("Free. No signup. Works offline.")
+  },
+  {
+    name: "launch poster is a polished shareable website route",
+    ok:
+      launchPage.includes("Track daily wins, not daily failures.") &&
+      launchPage.includes("Core wins first") &&
+      launchPage.includes("Optional routines") &&
+      launchPage.includes("Mood, not guilt") &&
+      launchPage.includes("Your 5-day pattern") &&
+      launchPage.includes("mywinlist.com") &&
+      launchCss.includes(".poster") &&
+      launchCss.includes("@media print") &&
+      sitemap.includes("`${siteUrl}/launch`") &&
+      component.includes('href={`${APP_BASE_PATH}/launch`}') &&
+      component.includes("Launch poster")
   },
   {
     name: "mobile today keeps more wins above the fold",
