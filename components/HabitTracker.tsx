@@ -112,6 +112,7 @@ const REMINDER_STORAGE_KEY = "the-win-list:reminders:v1";
 const ANONYMOUS_ID_KEY = "the-win-list:anonymous-id:v1";
 const SETTINGS_SECTION_STORAGE_KEY = "the-win-list:settings-section:v1";
 const SIMPLE_TODAY_STORAGE_KEY = "the-win-list:simple-today:v1";
+const STARTER_LIST_ACCEPTED_KEY = "the-win-list:starter-list-accepted:v1";
 const HOLD_MENU_HINT_SEEN_KEY = "the-win-list:hold-menu-hint-seen-date:v1";
 const APP_INSTALLED_STORAGE_KEY = "the-win-list:app-installed:v1";
 const RETURN_PROMPT_SEEN_DATE_KEY = "the-win-list:return-prompt-seen-date:v1";
@@ -490,6 +491,7 @@ export function HabitTracker() {
   const [isInstalledApp, setIsInstalledApp] = useState(false);
   const [isIosDevice, setIsIosDevice] = useState(false);
   const [simpleToday, setSimpleToday] = useState(true);
+  const [starterListAccepted, setStarterListAccepted] = useState(false);
   const [quickManagerOpen, setQuickManagerOpen] = useState(false);
   const [winsMenuOpen, setWinsMenuOpen] = useState(false);
   const [holdMenuHintSeenDate, setHoldMenuHintSeenDate] = useState<string | null>(null);
@@ -606,6 +608,8 @@ export function HabitTracker() {
     if (storedSimpleToday === "full") {
       setSimpleToday(false);
     }
+    setStarterListAccepted(window.localStorage.getItem(STARTER_LIST_ACCEPTED_KEY) === "true");
+
     const storedHoldMenuHintSeenDate = window.localStorage.getItem(HOLD_MENU_HINT_SEEN_KEY);
     if (storedHoldMenuHintSeenDate) {
       setHoldMenuHintSeenDate(storedHoldMenuHintSeenDate);
@@ -898,10 +902,11 @@ export function HabitTracker() {
       ? holdMenuHintCandidate
       : null;
   const shouldPromptPersonalization =
+    !starterListAccepted &&
     !personalizationSnapshot &&
     defaultWinSetup &&
     (experienceState === "first_run_empty" || experienceState === "starter_active_no_history");
-  const firstRunFocus = experienceState === "first_run_empty";
+  const firstRunFocus = experienceState === "first_run_empty" && !starterListAccepted;
   const firstWinAhaVisible = experienceState === "first_run_started" && selectedDate === todayKey && completedCount > 0;
   const firstWinAhaText =
     completedCount === 1 ? "Momentum started. First win logged." : `${completedCount} wins today — momentum is moving.`;
@@ -1730,6 +1735,8 @@ export function HabitTracker() {
     trackerRef.current = next;
     setTracker(next);
     saveTrackerState(next);
+    window.localStorage.removeItem(STARTER_LIST_ACCEPTED_KEY);
+    setStarterListAccepted(false);
     queueCloudBackup();
     setResetConfirmOpen(false);
     showAppToast("Win List reset.", "success");
@@ -1752,6 +1759,13 @@ export function HabitTracker() {
       document.getElementById("today-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }, [selectToday]);
+
+  const useStarterList = useCallback(() => {
+    window.localStorage.setItem(STARTER_LIST_ACCEPTED_KEY, "true");
+    setStarterListAccepted(true);
+    openTodayView();
+    showAppToast("Starter list is ready. Mark one win to begin.");
+  }, [openTodayView, showAppToast]);
 
   const openMonthView = useCallback(() => {
     setMonthOpen(true);
@@ -2135,7 +2149,7 @@ export function HabitTracker() {
                 <Wand2 size={18} aria-hidden="true" />
                 Build in 30 sec
               </button>
-              <button className="icon-text-button setup-starter-button" type="button" onClick={openTodayView}>
+              <button className="icon-text-button setup-starter-button" type="button" onClick={useStarterList}>
                 <CalendarDays size={18} aria-hidden="true" />
                 Use starter list
               </button>
@@ -2386,7 +2400,7 @@ export function HabitTracker() {
           <div className="mobile-collapse-row">
             <div className="mobile-collapse-summary">
               <span>Day plan</span>
-              <strong>{completedCount}/{primaryHabits.length} core</strong>
+              <strong>{dayOpen ? "Today's sections" : `${completedCount}/${primaryHabits.length} core`}</strong>
             </div>
             <button
               className="section-collapse-button mobile"

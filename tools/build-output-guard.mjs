@@ -75,6 +75,9 @@ const checks = [
     ok:
       builtText.includes("Build in 30 sec") &&
       builtText.includes("Use starter list") &&
+      builtText.includes("Starter list is ready. Mark one win to begin.") &&
+      builtText.includes("the-win-list:starter-list-accepted:v1") &&
+      builtText.includes("Today's sections") &&
       builtText.includes("Starter workday list") &&
       builtText.includes("first-run-focus") &&
       builtText.includes("setup-pending") &&

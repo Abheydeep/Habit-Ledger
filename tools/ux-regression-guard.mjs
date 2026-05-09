@@ -178,6 +178,10 @@ const checks = [
       component.includes("first-run-focus") &&
       component.includes("Build in 30 sec") &&
       component.includes("Use starter list") &&
+      component.includes("useStarterList") &&
+      component.includes("STARTER_LIST_ACCEPTED_KEY") &&
+      component.includes("Starter list is ready. Mark one win to begin.") &&
+      component.includes('dayOpen ? "Today\'s sections"') &&
       component.includes("Starter workday list") &&
       component.includes("Default wins to get moving. Build around your own day in 30 seconds.") &&
       component.includes("returnPromptVisible && !firstRunFocus") &&
