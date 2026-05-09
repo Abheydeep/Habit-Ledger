@@ -37,6 +37,23 @@ export default function HabitTrackerPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd).replace(/</g, "\\u003c") }}
       />
+      <noscript>
+        <main>
+          <h1>The Win List</h1>
+          <p>
+            The Win List is a free daily wins tracker at mywinlist.com for core habits, optional routines, mood
+            status, streaks, reminders, and offline-first progress.
+          </p>
+          <p>
+            Track the few wins that make today count, keep optional routines separate, and build momentum one day at a
+            time.
+          </p>
+          <p>
+            Visit <a href="https://www.mywinlist.com/">https://www.mywinlist.com/</a> with JavaScript enabled to use the
+            app.
+          </p>
+        </main>
+      </noscript>
       <HabitTracker />
     </>
   );

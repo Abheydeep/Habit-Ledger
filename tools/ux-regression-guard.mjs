@@ -137,6 +137,8 @@ const checks = [
       layout.includes("twitter") &&
       layout.includes("/og-image.svg") &&
       page.includes('type="application/ld+json"') &&
+      page.includes("<noscript>") &&
+      page.includes("free daily wins tracker at mywinlist.com") &&
       page.includes('"@type": "WebApplication"') &&
       page.includes("mywinlist.com") &&
       robots.includes("sitemap.xml") &&
