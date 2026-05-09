@@ -11,6 +11,12 @@
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+.shell *,
+.shell *::before,
+.shell *::after {
+  box-sizing: border-box;
+}
+
 .nav {
   width: min(1080px, 100%);
   margin: 0 auto 18px;
@@ -32,6 +38,16 @@
   color: inherit;
   font-weight: 800;
   text-decoration: none;
+}
+
+.brandLink,
+.heroCopy,
+.phone,
+.featureCard,
+.storyBand,
+.patternCard,
+.cta {
+  min-width: 0;
 }
 
 .brandLink img {
@@ -93,6 +109,7 @@
   font-size: clamp(4.2rem, 7.4vw, 7.3rem);
   line-height: 0.92;
   letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .hero p {
@@ -426,6 +443,7 @@
   color: #fffaf0;
   font-size: clamp(2.4rem, 5vw, 5.2rem);
   line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 .cta a {
@@ -484,6 +502,267 @@
 
   .cta a {
     width: 100%;
+  }
+}
+
+/* Mobile launch poster polish */
+@media (max-width: 640px) {
+  .shell {
+    padding: 8px;
+    background-size: 28px 28px;
+  }
+
+  .nav {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .brandLink {
+    gap: 8px;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .brandLink img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .navButton {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 0.88rem;
+  }
+
+  .poster {
+    border-radius: 8px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.26);
+  }
+
+  .hero {
+    gap: 22px;
+    padding: 22px 14px 18px;
+  }
+
+  .badge,
+  .featureCard span {
+    max-width: 100%;
+    min-height: 26px;
+    padding: 0 9px;
+    font-size: 0.66rem;
+    line-height: 1.1;
+    white-space: normal;
+  }
+
+  .hero h1 {
+    margin: 14px 0 12px;
+    font-size: clamp(2.45rem, 14vw, 3.65rem);
+    line-height: 0.95;
+  }
+
+  .hero p {
+    font-size: 1rem;
+    line-height: 1.42;
+  }
+
+  .heroActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    max-width: none;
+    margin-top: 18px;
+  }
+
+  .heroActions span {
+    min-height: 40px;
+    padding: 0 6px;
+    font-size: 0.88rem;
+    text-align: center;
+  }
+
+  .phone {
+    padding: 12px;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.28);
+  }
+
+  .phoneHeader {
+    min-height: 58px;
+    padding: 12px;
+  }
+
+  .phoneHeader span {
+    width: 52px;
+    height: 52px;
+    border-width: 6px;
+    font-size: 0.95rem;
+  }
+
+  .phoneHeader small,
+  .dayHeader small,
+  .optionalBar small,
+  .starterCard small {
+    font-size: 0.66rem;
+  }
+
+  .phoneHeader strong,
+  .dayHeader strong,
+  .optionalBar strong,
+  .starterCard strong,
+  .winCard strong,
+  .patternCard strong {
+    font-size: 0.98rem;
+  }
+
+  .setupRow {
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .setupRow span {
+    min-height: 44px;
+    padding: 0 6px;
+    font-size: 0.83rem;
+    line-height: 1.08;
+  }
+
+  .starterCard,
+  .dayHeader,
+  .sectionLine,
+  .optionalBar {
+    margin-top: 10px;
+    padding: 12px;
+  }
+
+  .starterCard p,
+  .winCard p {
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+
+  .winList {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .winCard {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .winIcon {
+    width: 42px;
+    height: 42px;
+    font-size: 1.1rem;
+  }
+
+  .winActions {
+    grid-column: 1 / -1;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .winActions span {
+    min-height: 28px;
+    padding: 0 9px;
+    font-size: 0.72rem;
+  }
+
+  .featureGrid {
+    gap: 10px;
+    padding: 0 14px 22px;
+  }
+
+  .featureCard {
+    padding: 14px;
+  }
+
+  .featureCard h2 {
+    margin: 12px 0 8px;
+    font-size: 1.25rem;
+  }
+
+  .featureCard p,
+  .storyBand p,
+  .patternCard p {
+    font-size: 0.94rem;
+  }
+
+  .storyBand {
+    gap: 18px;
+    padding: 24px 14px;
+  }
+
+  .storyBand h2 {
+    margin: 12px 0 10px;
+    font-size: clamp(2rem, 12vw, 3.2rem);
+  }
+
+  .patternCard {
+    padding: 14px;
+  }
+
+  .patternStats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 12px 0;
+  }
+
+  .patternStats span {
+    min-height: 70px;
+    padding: 8px 5px;
+    text-align: center;
+  }
+
+  .patternStats b {
+    font-size: 0.84rem;
+    overflow-wrap: anywhere;
+  }
+
+  .patternStats small {
+    font-size: 0.68rem;
+    line-height: 1.1;
+  }
+
+  .cta {
+    min-height: 0;
+    gap: 16px;
+    padding: 24px 14px;
+  }
+
+  .cta span {
+    font-size: 1rem;
+  }
+
+  .cta strong {
+    font-size: clamp(2rem, 13vw, 3.2rem);
+  }
+}
+
+@media (max-width: 380px) {
+  .navButton {
+    padding: 0 10px;
+  }
+
+  .brandLink {
+    font-size: 0.88rem;
+  }
+
+  .phone {
+    padding: 10px;
+  }
+
+  .heroActions span,
+  .setupRow span {
+    font-size: 0.78rem;
+  }
+
+  .phoneHeader,
+  .starterCard,
+  .dayHeader,
+  .sectionLine,
+  .optionalBar,
+  .winCard {
+    padding: 10px;
   }
 }
 

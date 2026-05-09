@@ -175,6 +175,9 @@ const checks = [
       launchPage.includes("mywinlist.com") &&
       launchCss.includes(".poster") &&
       launchCss.includes("@media print") &&
+      launchCss.includes("Mobile launch poster polish") &&
+      launchCss.includes("@media (max-width: 640px)") &&
+      launchCss.includes("overflow-wrap: anywhere") &&
       sitemap.includes("`${siteUrl}/launch/`") &&
       component.includes('href={`${APP_BASE_PATH}/launch/`}') &&
       renderConfig.includes("source: /launch") &&
