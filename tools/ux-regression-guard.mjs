@@ -6,7 +6,7 @@ const layout = readFileSync("app/layout.tsx", "utf8");
 const page = readFileSync("app/page.tsx", "utf8");
 const robots = readFileSync("app/robots.ts", "utf8");
 const sitemap = readFileSync("app/sitemap.ts", "utf8");
-const ogImage = readFileSync("app/opengraph-image.tsx", "utf8");
+const ogImage = readFileSync("public/og-image.svg", "utf8");
 const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 const personalization = readFileSync("lib/personalization.ts", "utf8");
 const habitData = readFileSync("lib/habitData.ts", "utf8");
@@ -135,12 +135,15 @@ const checks = [
       layout.includes("daily wins tracker") &&
       layout.includes("openGraph") &&
       layout.includes("twitter") &&
+      layout.includes("/og-image.svg") &&
       page.includes('type="application/ld+json"') &&
       page.includes('"@type": "WebApplication"') &&
       page.includes("mywinlist.com") &&
       robots.includes("sitemap.xml") &&
+      robots.includes('export const dynamic = "force-static"') &&
       robots.includes('disallow: ["/admin"]') &&
       sitemap.includes("https://www.mywinlist.com") &&
+      sitemap.includes('export const dynamic = "force-static"') &&
       sitemap.includes('changeFrequency: "daily"') &&
       manifest.includes('"id": "/"') &&
       manifest.includes('"categories": ["productivity", "health", "lifestyle"]') &&

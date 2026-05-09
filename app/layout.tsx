@@ -65,9 +65,10 @@ export const metadata: Metadata = {
     description: siteDescription,
     images: [
       {
-        url: "/opengraph-image",
+        url: "/og-image.svg",
         width: 1200,
         height: 630,
+        type: "image/svg+xml",
         alt: "The Win List daily wins tracker"
       }
     ],
@@ -77,7 +78,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The Win List | Daily Wins Tracker",
     description: siteDescription,
-    images: ["/opengraph-image"]
+    images: ["/og-image.svg"]
   },
   appleWebApp: {
     capable: true,
