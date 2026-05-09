@@ -7468,6 +7468,13 @@ img {
   color: var(--app-ink);
 }
 
+.five-day-pattern-card {
+  border-color: color-mix(in srgb, var(--app-primary), transparent 72%);
+  background:
+    radial-gradient(circle at 92% 0, color-mix(in srgb, var(--app-secondary), transparent 82%), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--app-primary), #ffffff 88%), #ffffff);
+}
+
 .analytics-stage-card span,
 .analytics-lock-copy span {
   color: color-mix(in srgb, var(--app-primary), var(--app-ink) 24%);

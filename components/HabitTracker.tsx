@@ -859,6 +859,8 @@ export function HabitTracker() {
     [monthDays, primaryHabits, tracker, todayKey, streak]
   );
   const analyticsInsights = analyticsSummary.insights;
+  const bestWinInsight = analyticsInsights.find((insight) => insight.label === "Best win");
+  const mostMissedInsight = analyticsInsights.find((insight) => insight.label === "Most missed");
   const streakNudge = getStreakNudge(streak, completedCount, primaryHabits.length);
   const defaultWinSetup = useMemo(() => hasDefaultWinSetup(tracker), [tracker.habits]);
   const activitySummary = useMemo(() => summarizeTrackerActivity(tracker.days, todayKey), [tracker.days, todayKey]);
@@ -875,6 +877,12 @@ export function HabitTracker() {
   const analyticsUnlocked = analyticsStage !== "locked";
   const monthlyReviewUnlocked = canShowMonthlyReview(analyticsStage);
   const patternAnalyticsUnlocked = canShowPatternAnalytics(analyticsStage);
+  const fiveDayReflectionVisible = patternAnalyticsUnlocked && activitySummary.activeDayCount >= 5;
+  const fiveDayReflectionNextMove = analyticsSummary.action.title.replace(/^Tomorrow:\s*/, "");
+  const fiveDayFragileWin =
+    mostMissedInsight?.value && mostMissedInsight.value !== "Nothing missed"
+      ? mostMissedInsight.value
+      : "nothing fragile yet";
   const dailyNotePlaceholder = useMemo(
     () => dailyNotePrompts[dateFromKey(selectedDate).getDay() % dailyNotePrompts.length],
     [selectedDate]
@@ -896,7 +904,7 @@ export function HabitTracker() {
   const firstRunFocus = experienceState === "first_run_empty";
   const firstWinAhaVisible = experienceState === "first_run_started" && selectedDate === todayKey && completedCount > 0;
   const firstWinAhaText =
-    completedCount === 1 ? "1 win today — momentum started." : `${completedCount} wins today — momentum is moving.`;
+    completedCount === 1 ? "Momentum started. First win logged." : `${completedCount} wins today — momentum is moving.`;
   const lapsedReturnVisible = experienceState === "returning_lapsed" && selectedDate === todayKey;
   const endOfDayRecapVisible =
     !firstRunFocus && !firstWinAhaVisible && selectedDate === todayKey && currentDayPart === "evening" && completedCount > 0;
@@ -2845,6 +2853,20 @@ export function HabitTracker() {
                       : "Review unlocks after 2 active days or 3 wins."}
                   </p>
                 </div>
+
+                {fiveDayReflectionVisible ? (
+                  <div className="analytics-stage-card five-day-pattern-card" role="status" aria-label="Your 5-day pattern">
+                    <span>Your 5-day pattern</span>
+                    <strong>
+                      You showed up on {activitySummary.activeDayCount} active day
+                      {activitySummary.activeDayCount === 1 ? "" : "s"}.
+                    </strong>
+                    <p>
+                      Strongest win: {bestWinInsight?.value ?? "still learning"}. Most fragile win:{" "}
+                      {fiveDayFragileWin}. Next best move: {fiveDayReflectionNextMove}.
+                    </p>
+                  </div>
+                ) : null}
 
                 {monthlyReviewUnlocked ? (
                   <section className={`analytics-collapse${analyticsSections.review ? " open" : " collapsed"}`}>

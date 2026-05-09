@@ -100,6 +100,8 @@ const checks = [
       builtText.includes("first-win-aha-card") &&
       builtText.includes("Momentum started. First win logged.") &&
       builtText.includes("momentum started") &&
+      builtText.includes("Your 5-day pattern") &&
+      builtText.includes("five-day-pattern-card") &&
       builtText.includes("Momentum summary") &&
       builtText.includes("Review unlocks after 2 active days or 3 wins.") &&
       builtText.includes("Heat map unlocks after 5 active days.")

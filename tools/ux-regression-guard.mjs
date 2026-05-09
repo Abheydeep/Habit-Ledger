@@ -281,11 +281,15 @@ const checks = [
       component.includes("firstWinAhaVisible") &&
       component.includes("first-win-aha-card") &&
       component.includes("Momentum started. First win logged.") &&
+      component.includes("fiveDayReflectionVisible") &&
+      component.includes("Your 5-day pattern") &&
+      component.includes("Next best move") &&
       component.includes("analyticsUnlocked ? (") &&
       component.includes("summarizeTrackerActivity") &&
       component.includes("getProductExperienceState") &&
       component.includes("getAnalyticsUnlockStage") &&
-      css.includes(".first-win-aha-card")
+      css.includes(".first-win-aha-card") &&
+      css.includes(".five-day-pattern-card")
   },
   {
     name: "experience state and staged analytics are explicit",
