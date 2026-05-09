@@ -80,6 +80,8 @@ const checks = [
       html.includes("Build in 30 sec") &&
       html.includes("Use starter list") &&
       html.includes("Starter workday list") &&
+      html.includes("experience-first_run_empty") &&
+      html.includes("analytics-locked") &&
       html.includes("Mark done") &&
       html.includes("Mood") &&
       !html.includes("Tap to win") &&
@@ -92,7 +94,16 @@ const checks = [
       builtText.includes("first-win-aha-card") &&
       builtText.includes("Momentum started. First win logged.") &&
       builtText.includes("momentum started") &&
-      builtText.includes("analyticsUnlocked")
+      builtText.includes("Momentum summary") &&
+      builtText.includes("Review unlocks after 2 active days or 3 wins.") &&
+      builtText.includes("Heat map unlocks after 5 active days.")
+  },
+  {
+    name: "supportive returning states ship",
+    ok:
+      builtText.includes("No reset drama") &&
+      builtText.includes("Evening recap") &&
+      builtText.includes("today-support-card")
   },
   {
     name: "accessibility focus and touch states ship",

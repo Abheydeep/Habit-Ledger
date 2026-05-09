@@ -80,6 +80,14 @@ import {
   normalizeOnboardingInput,
   type PersonalizationSnapshot
 } from "../lib/personalization";
+import {
+  canShowMonthlyReview,
+  canShowPatternAnalytics,
+  getAnalyticsUnlockStage,
+  getProductExperienceState,
+  hasActivityInDay,
+  summarizeTrackerActivity
+} from "../lib/experienceState";
 import type { OnboardingInput } from "../lib/personalizationTestCases";
 import {
   defaultConsentState,
@@ -853,8 +861,20 @@ export function HabitTracker() {
   const analyticsInsights = analyticsSummary.insights;
   const streakNudge = getStreakNudge(streak, completedCount, primaryHabits.length);
   const defaultWinSetup = useMemo(() => hasDefaultWinSetup(tracker), [tracker.habits]);
-  const hasTrackedActivity = useMemo(() => Object.values(tracker.days).some(hasDayActivity), [tracker.days]);
-  const analyticsUnlocked = hasTrackedActivity;
+  const activitySummary = useMemo(() => summarizeTrackerActivity(tracker.days, todayKey), [tracker.days, todayKey]);
+  const experienceState = useMemo(
+    () =>
+      getProductExperienceState({
+        hasPersonalization: Boolean(personalizationSnapshot),
+        defaultWinSetup,
+        activity: activitySummary
+      }),
+    [activitySummary, defaultWinSetup, personalizationSnapshot]
+  );
+  const analyticsStage = useMemo(() => getAnalyticsUnlockStage(activitySummary), [activitySummary]);
+  const analyticsUnlocked = analyticsStage !== "locked";
+  const monthlyReviewUnlocked = canShowMonthlyReview(analyticsStage);
+  const patternAnalyticsUnlocked = canShowPatternAnalytics(analyticsStage);
   const dailyNotePlaceholder = useMemo(
     () => dailyNotePrompts[dateFromKey(selectedDate).getDay() % dailyNotePrompts.length],
     [selectedDate]
@@ -869,11 +889,23 @@ export function HabitTracker() {
     (holdMenuHintSeenDate !== todayKey || holdMenuHintSessionDate === todayKey)
       ? holdMenuHintCandidate
       : null;
-  const shouldPromptPersonalization = !personalizationSnapshot && defaultWinSetup && !hasTrackedActivity;
-  const firstRunFocus = shouldPromptPersonalization && !analyticsUnlocked;
-  const firstWinAhaVisible = !firstRunFocus && completedCount > 0 && monthProgress.completed <= completedCount;
+  const shouldPromptPersonalization =
+    !personalizationSnapshot &&
+    defaultWinSetup &&
+    (experienceState === "first_run_empty" || experienceState === "starter_active_no_history");
+  const firstRunFocus = experienceState === "first_run_empty";
+  const firstWinAhaVisible = experienceState === "first_run_started" && selectedDate === todayKey && completedCount > 0;
   const firstWinAhaText =
     completedCount === 1 ? "1 win today — momentum started." : `${completedCount} wins today — momentum is moving.`;
+  const lapsedReturnVisible = experienceState === "returning_lapsed" && selectedDate === todayKey;
+  const endOfDayRecapVisible =
+    !firstRunFocus && !firstWinAhaVisible && selectedDate === todayKey && currentDayPart === "evening" && completedCount > 0;
+  const analyticsRecapText =
+    activitySummary.totalLoggedWins === 1
+      ? "1 win logged so far."
+      : `${activitySummary.totalLoggedWins} wins logged across ${activitySummary.activeDayCount} active day${
+          activitySummary.activeDayCount === 1 ? "" : "s"
+        }.`;
   const companionNudge = useMemo(
     () =>
       getCompanionNudge({
@@ -2032,7 +2064,7 @@ export function HabitTracker() {
     <main
       className={`tracker-shell theme-${appThemeKey} scheme-${colorScheme}${shouldPromptPersonalization ? " setup-pending" : ""}${
         firstRunFocus ? " first-run-focus" : ""
-      }`}
+      } experience-${experienceState} analytics-${analyticsStage}`}
       style={appStyle}
     >
       <section className="tracker-hero" aria-labelledby="tracker-title">
@@ -2095,12 +2127,12 @@ export function HabitTracker() {
                 <Wand2 size={18} aria-hidden="true" />
                 Build in 30 sec
               </button>
-              <button className="icon-text-button" type="button" onClick={openTodayView}>
+              <button className="icon-text-button setup-starter-button" type="button" onClick={openTodayView}>
                 <CalendarDays size={18} aria-hidden="true" />
                 Use starter list
               </button>
               <button
-                className={`icon-text-button${settingsOpen ? " hot" : ""}`}
+                className={`icon-text-button setup-settings-button${settingsOpen ? " hot" : ""}`}
                 type="button"
                 aria-pressed={settingsOpen}
                 onClick={() => {
@@ -2309,6 +2341,24 @@ export function HabitTracker() {
               <span>Today is moving</span>
               <strong>{firstWinAhaText}</strong>
               <p>{remainingCoreWins === 0 ? "Core wins are complete." : `${remainingCoreWins} core win${remainingCoreWins === 1 ? "" : "s"} left.`}</p>
+            </div>
+          ) : null}
+
+          {lapsedReturnVisible ? (
+            <div className="today-support-card lapsed-return-card" role="status">
+              <span>Restart gently</span>
+              <strong>No reset drama — restart with one win.</strong>
+              <p>Your streak can start moving again from the next small action.</p>
+            </div>
+          ) : null}
+
+          {endOfDayRecapVisible ? (
+            <div className="today-support-card day-recap-card" role="status">
+              <span>Evening recap</span>
+              <strong>
+                {completedCount}/{primaryHabits.length} core wins logged today.
+              </strong>
+              <p>{remainingCoreWins === 0 ? "Today is closed cleanly." : `${remainingCoreWins} left if you want to close the day.`}</p>
             </div>
           ) : null}
 
@@ -2786,145 +2836,175 @@ export function HabitTracker() {
 
             <div className="month-panel-content">
               <div className="analytics-sections">
-                <section className={`analytics-collapse${analyticsSections.review ? " open" : " collapsed"}`}>
-                  <button
-                    className="analytics-collapse-header"
-                    type="button"
-                    onClick={() => toggleAnalyticsSection("review")}
-                    aria-expanded={analyticsSections.review}
-                  >
-                    <span>
-                      <small className="section-kicker">Monthly Review</small>
-                      <strong>What this month is saying</strong>
-                      <em>{analyticsSummary.action.title}</em>
-                    </span>
-                    <ChevronDown size={18} aria-hidden="true" />
-                  </button>
-                  {analyticsSections.review ? (
-                    <div className="analytics-collapse-body">
-                      <p className="analytics-narrative">{analyticsSummary.sentence}</p>
-                      <div className="analytics-action-card" aria-label="Recommended next action">
-                        <span>Next best move</span>
-                        <strong>{analyticsSummary.action.title}</strong>
-                        <p>{analyticsSummary.action.detail}</p>
-                      </div>
-                      <div className="analytics-insights" aria-label="Monthly insights">
-                        {analyticsInsights.map((insight) => (
-                          <article className="insight-card" key={insight.label}>
-                            <span>{insight.label}</span>
-                            <strong>{insight.value}</strong>
-                            <p>{insight.detail}</p>
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                </section>
+                <div className="analytics-stage-card" role="status">
+                  <span>Momentum summary</span>
+                  <strong>{analyticsRecapText}</strong>
+                  <p>
+                    {monthlyReviewUnlocked
+                      ? "Monthly review is ready."
+                      : "Review unlocks after 2 active days or 3 wins."}
+                  </p>
+                </div>
 
-                <section className={`analytics-collapse${analyticsSections.matrix ? " open" : " collapsed"}`}>
-                  <button
-                    className="analytics-collapse-header"
-                    type="button"
-                    onClick={() => toggleAnalyticsSection("matrix")}
-                    aria-expanded={analyticsSections.matrix}
-                  >
-                    <span>
-                      <small className="section-kicker">Monthly Matrix</small>
-                      <strong>Win heat map</strong>
-                      <em>{monthProgress.completed}/{monthProgress.total} core wins so far</em>
-                    </span>
-                    <ChevronDown size={18} aria-hidden="true" />
-                  </button>
-                  {analyticsSections.matrix ? (
-                    <div className="analytics-collapse-body">
-                      <div className="heatmap-summary">
-                        <div>
-                          <span className="section-kicker">Matrix</span>
-                          <strong>Habit heat map</strong>
+                {monthlyReviewUnlocked ? (
+                  <section className={`analytics-collapse${analyticsSections.review ? " open" : " collapsed"}`}>
+                    <button
+                      className="analytics-collapse-header"
+                      type="button"
+                      onClick={() => toggleAnalyticsSection("review")}
+                      aria-expanded={analyticsSections.review}
+                    >
+                      <span>
+                        <small className="section-kicker">Monthly Review</small>
+                        <strong>What this month is saying</strong>
+                        <em>{analyticsSummary.action.title}</em>
+                      </span>
+                      <ChevronDown size={18} aria-hidden="true" />
+                    </button>
+                    {analyticsSections.review ? (
+                      <div className="analytics-collapse-body">
+                        <p className="analytics-narrative">{analyticsSummary.sentence}</p>
+                        <div className="analytics-action-card" aria-label="Recommended next action">
+                          <span>Next best move</span>
+                          <strong>{analyticsSummary.action.title}</strong>
+                          <p>{analyticsSummary.action.detail}</p>
                         </div>
-                        <p>{monthProgress.completed}/{monthProgress.total} core wins so far. Optional routines stay loggable outside the score.</p>
+                        <div className="analytics-insights" aria-label="Monthly insights">
+                          {analyticsInsights.map((insight) => (
+                            <article className="insight-card" key={insight.label}>
+                              <span>{insight.label}</span>
+                              <strong>{insight.value}</strong>
+                              <p>{insight.detail}</p>
+                            </article>
+                          ))}
+                        </div>
                       </div>
-                      <div className="heatmap-legend" aria-label="Heat map legend">
-                        <span><i className="heat-empty" /> Empty</span>
-                        <span><i className="heat-partial" /> Partial</span>
-                        <span><i className="heat-done" /> Won</span>
-                        <span><i className="heat-strong" /> Strong</span>
-                        <span><i className="heat-rest" /> Rest/skip</span>
-                      </div>
-                      <div className="month-grid-wrap" role="region" aria-label="Monthly win grid" tabIndex={0}>
-                        <div
-                          className="month-grid"
-                          style={{ "--day-count": monthDays.length } as CSSProperties}
-                        >
-                          <div className="grid-row header-row">
-                            <div className="habit-sticky header-habit">Habit</div>
-                            {monthDays.map((day) => {
-                              const dayKey = localDateKey(day);
-                              return (
-                                <button
-                                  className={`day-header${selectedDate === dayKey ? " selected" : ""}`}
-                                  key={dayKey}
-                                  type="button"
-                                  onClick={() => selectDay(dayKey)}
-                                >
-                                  <span>{day.getDate()}</span>
-                                  <small>{weekdayLetter(day)}</small>
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                        {primaryHabits.map((habit) => (
-                          <div className="grid-row habit-row" key={habit.id}>
-                            <div className="habit-sticky grid-habit-label">
-                              <img src={assetUrl(habit.thumbnail)} alt="" />
-                              <span>{habit.name}</span>
-                            </div>
-                            {monthDays.map((day) => {
-                              const dayKey = localDateKey(day);
-                              const record = tracker.days[dayKey];
-                              const done = record ? isHabitComplete(record, habit.id) : false;
-                              const habitMood = record?.habitMoods?.[habit.id];
-                              const moodOption = moodOptions.find((item) => item.key === habitMood);
-                              const heatClass = getHeatClass(habitMood, done);
-                              return (
-                                <button
-                                  className={`grid-cell ${heatClass}${done ? " done" : ""}${moodOption ? " mooded" : ""}${
-                                    selectedDate === dayKey ? " selected" : ""
-                                  }`}
-                                  key={`${habit.id}-${dayKey}`}
-                                  style={
-                                    {
-                                      "--habit": habit.color,
-                                      "--mood": moodOption?.tone ?? habit.color
-                                    } as CSSProperties
-                                  }
-                                  type="button"
-                                  onClick={() => {
-                                    selectDay(dayKey, habit.id);
-                                  }}
-                                  aria-label={
-                                    moodOption
-                                      ? `Edit ${habit.name} win on ${dayKey}, currently ${moodOption.label}`
-                                      : `Mark ${habit.name} as won on ${dayKey}`
-                                  }
-                                >
-                                  {moodOption ? (
-                                    <img className="grid-mood-img" src={assetUrl(moodOption.src)} alt="" />
-                                  ) : null}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
+                    ) : null}
+                  </section>
+                ) : (
+                  <section className="analytics-collapse analytics-locked-card" aria-label="Monthly review locked">
+                    <div className="analytics-lock-copy">
+                      <span>Next unlock</span>
+                      <strong>Review needs a little more signal.</strong>
+                      <p>Log 3 wins or come back for a second active day.</p>
                     </div>
-                  </div>
-                ) : null}
-              </section>
+                  </section>
+                )}
+
+                {patternAnalyticsUnlocked ? (
+                  <section className={`analytics-collapse${analyticsSections.matrix ? " open" : " collapsed"}`}>
+                    <button
+                      className="analytics-collapse-header"
+                      type="button"
+                      onClick={() => toggleAnalyticsSection("matrix")}
+                      aria-expanded={analyticsSections.matrix}
+                    >
+                      <span>
+                        <small className="section-kicker">Monthly Matrix</small>
+                        <strong>Win heat map</strong>
+                        <em>{monthProgress.completed}/{monthProgress.total} core wins so far</em>
+                      </span>
+                      <ChevronDown size={18} aria-hidden="true" />
+                    </button>
+                    {analyticsSections.matrix ? (
+                      <div className="analytics-collapse-body">
+                        <div className="heatmap-summary">
+                          <div>
+                            <span className="section-kicker">Matrix</span>
+                            <strong>Habit heat map</strong>
+                          </div>
+                          <p>{monthProgress.completed}/{monthProgress.total} core wins so far. Optional routines stay loggable outside the score.</p>
+                        </div>
+                        <div className="heatmap-legend" aria-label="Heat map legend">
+                          <span><i className="heat-empty" /> Empty</span>
+                          <span><i className="heat-partial" /> Partial</span>
+                          <span><i className="heat-done" /> Won</span>
+                          <span><i className="heat-strong" /> Strong</span>
+                          <span><i className="heat-rest" /> Rest/skip</span>
+                        </div>
+                        <div className="month-grid-wrap" role="region" aria-label="Monthly win grid" tabIndex={0}>
+                          <div
+                            className="month-grid"
+                            style={{ "--day-count": monthDays.length } as CSSProperties}
+                          >
+                            <div className="grid-row header-row">
+                              <div className="habit-sticky header-habit">Habit</div>
+                              {monthDays.map((day) => {
+                                const dayKey = localDateKey(day);
+                                return (
+                                  <button
+                                    className={`day-header${selectedDate === dayKey ? " selected" : ""}`}
+                                    key={dayKey}
+                                    type="button"
+                                    onClick={() => selectDay(dayKey)}
+                                  >
+                                    <span>{day.getDate()}</span>
+                                    <small>{weekdayLetter(day)}</small>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {primaryHabits.map((habit) => (
+                              <div className="grid-row habit-row" key={habit.id}>
+                                <div className="habit-sticky grid-habit-label">
+                                  <img src={assetUrl(habit.thumbnail)} alt="" />
+                                  <span>{habit.name}</span>
+                                </div>
+                                {monthDays.map((day) => {
+                                  const dayKey = localDateKey(day);
+                                  const record = tracker.days[dayKey];
+                                  const done = record ? isHabitComplete(record, habit.id) : false;
+                                  const habitMood = record?.habitMoods?.[habit.id];
+                                  const moodOption = moodOptions.find((item) => item.key === habitMood);
+                                  const heatClass = getHeatClass(habitMood, done);
+                                  return (
+                                    <button
+                                      className={`grid-cell ${heatClass}${done ? " done" : ""}${moodOption ? " mooded" : ""}${
+                                        selectedDate === dayKey ? " selected" : ""
+                                      }`}
+                                      key={`${habit.id}-${dayKey}`}
+                                      style={
+                                        {
+                                          "--habit": habit.color,
+                                          "--mood": moodOption?.tone ?? habit.color
+                                        } as CSSProperties
+                                      }
+                                      type="button"
+                                      onClick={() => {
+                                        selectDay(dayKey, habit.id);
+                                      }}
+                                      aria-label={
+                                        moodOption
+                                          ? `Edit ${habit.name} win on ${dayKey}, currently ${moodOption.label}`
+                                          : `Mark ${habit.name} as won on ${dayKey}`
+                                      }
+                                    >
+                                      {moodOption ? (
+                                        <img className="grid-mood-img" src={assetUrl(moodOption.src)} alt="" />
+                                      ) : null}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </section>
+                ) : (
+                  <section className="analytics-collapse analytics-locked-card" aria-label="Pattern view locked">
+                    <div className="analytics-lock-copy">
+                      <span>Pattern view</span>
+                      <strong>Heat map unlocks after 5 active days.</strong>
+                      <p>For now, keep Today simple and let the pattern build.</p>
+                    </div>
+                  </section>
+                )}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
         ) : null}
       </section>
 
@@ -4845,9 +4925,7 @@ function maybeRefreshPersonalizedHabits(current: TrackerState, input: Onboarding
     return null;
   }
 
-  const hasTrackedDays = Object.values(current.days).some(
-    (record) => record.completedHabitIds.length > 0 || Object.keys(record.habitMoods ?? {}).length > 0 || record.note
-  );
+  const hasTrackedDays = Object.values(current.days).some(hasActivityInDay);
 
   if (hasTrackedDays || !isGeneratedHabitList(current.habits)) {
     return null;
@@ -4858,10 +4936,6 @@ function maybeRefreshPersonalizedHabits(current: TrackerState, input: Onboarding
     habits: expectedHabits,
     updatedAt: now
   };
-}
-
-function hasDayActivity(record: DayRecord) {
-  return record.completedHabitIds.length > 0 || Object.keys(record.habitMoods ?? {}).length > 0 || Boolean(record.note);
 }
 
 function isGeneratedHabitList(habits: Habit[]) {

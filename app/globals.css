@@ -441,6 +441,21 @@ img {
   color: #ffffff;
 }
 
+.hero-actions-row.setup .setup-starter-button {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--app-surface), #ffffff 82%), color-mix(in srgb, var(--app-soft), #ffffff 54%));
+  color: color-mix(in srgb, var(--app-ink), var(--app-primary) 12%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--app-primary), transparent 78%),
+    0 6px 12px color-mix(in srgb, var(--app-primary), transparent 94%);
+}
+
+.hero-actions-row.setup .setup-settings-button:not(.hot) {
+  background: color-mix(in srgb, var(--app-surface), transparent 4%);
+  color: color-mix(in srgb, var(--app-ink), #64748b 36%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-primary), transparent 88%);
+}
+
 .icon-text-button.full,
 .backup-button {
   width: 100%;
@@ -2955,6 +2970,48 @@ img {
   font-size: 0.78rem;
   font-weight: 620;
   line-height: 1.3;
+}
+
+.today-support-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 3px;
+  margin-top: 10px;
+  padding: 10px 11px;
+  border: 1px solid color-mix(in srgb, var(--app-accent), transparent 76%);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--app-accent), transparent 82%), transparent 34%),
+    linear-gradient(135deg, #ffffff, color-mix(in srgb, var(--app-soft), #ffffff 54%));
+  color: var(--app-ink);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--app-primary), transparent 94%);
+}
+
+.today-support-card span {
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 24%);
+  font-size: 0.68rem;
+  font-weight: 720;
+  text-transform: uppercase;
+}
+
+.today-support-card strong {
+  color: var(--app-ink);
+  font-size: 0.9rem;
+  font-weight: 820;
+  line-height: 1.2;
+}
+
+.today-support-card p {
+  margin: 0;
+  color: #60716d;
+  font-size: 0.78rem;
+  font-weight: 620;
+  line-height: 1.3;
+}
+
+.lapsed-return-card {
+  border-color: color-mix(in srgb, var(--app-primary), transparent 78%);
 }
 
 .starter-card-button {
@@ -6493,6 +6550,10 @@ img {
 .tracker-shell.scheme-dark .permanent-list-toolbar,
 .tracker-shell.scheme-dark .desktop-orientation-strip,
 .tracker-shell.scheme-dark .first-win-aha-card,
+.tracker-shell.scheme-dark .today-support-card,
+.tracker-shell.scheme-dark .analytics-stage-card,
+.tracker-shell.scheme-dark .analytics-lock-copy,
+.tracker-shell.scheme-dark .analytics-locked-card,
 .tracker-shell.scheme-dark .backup-error-chip,
 .tracker-shell.scheme-dark .wins-overflow-menu,
 .tracker-shell.scheme-dark .month-grid-wrap,
@@ -6612,6 +6673,12 @@ img {
 .tracker-shell.scheme-dark .desktop-orientation-strip small,
 .tracker-shell.scheme-dark .first-win-aha-card span,
 .tracker-shell.scheme-dark .first-win-aha-card p,
+.tracker-shell.scheme-dark .today-support-card span,
+.tracker-shell.scheme-dark .today-support-card p,
+.tracker-shell.scheme-dark .analytics-stage-card span,
+.tracker-shell.scheme-dark .analytics-stage-card p,
+.tracker-shell.scheme-dark .analytics-lock-copy span,
+.tracker-shell.scheme-dark .analytics-lock-copy p,
 .tracker-shell.scheme-dark .backup-error-chip,
 .tracker-shell.scheme-dark .mobile-collapse-summary span,
 .tracker-shell.scheme-dark .permanent-list-count-row small,
@@ -6715,6 +6782,9 @@ img {
 .tracker-shell.scheme-dark .permanent-list-toolbar strong,
 .tracker-shell.scheme-dark .desktop-orientation-strip strong,
 .tracker-shell.scheme-dark .first-win-aha-card strong,
+.tracker-shell.scheme-dark .today-support-card strong,
+.tracker-shell.scheme-dark .analytics-stage-card strong,
+.tracker-shell.scheme-dark .analytics-lock-copy strong,
 .tracker-shell.scheme-dark .pressure-guard-card strong,
 .tracker-shell.scheme-dark .quick-manager-header h2,
 .tracker-shell.scheme-dark .quick-manager-summary strong,
@@ -7383,6 +7453,51 @@ img {
   line-height: 1.35;
 }
 
+.analytics-stage-card,
+.analytics-lock-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 82%);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--app-accent), transparent 84%), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--app-primary), #ffffff 92%), #ffffff);
+  color: var(--app-ink);
+}
+
+.analytics-stage-card span,
+.analytics-lock-copy span {
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 24%);
+  font-size: 0.7rem;
+  font-weight: 720;
+  text-transform: uppercase;
+}
+
+.analytics-stage-card strong,
+.analytics-lock-copy strong {
+  color: var(--app-ink);
+  font-size: 0.94rem;
+  font-weight: 800;
+  line-height: 1.18;
+}
+
+.analytics-stage-card p,
+.analytics-lock-copy p {
+  margin: 0;
+  color: #60716d;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.analytics-locked-card {
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+}
+
 .analytics-sections {
   position: relative;
   z-index: 1;
@@ -7535,10 +7650,14 @@ img {
 .tracker-shell.scheme-dark .starter-card,
 .tracker-shell.scheme-dark .companion-nudge,
 .tracker-shell.scheme-dark .first-win-aha-card,
+.tracker-shell.scheme-dark .today-support-card,
 .tracker-shell.scheme-dark .habit-card,
 .tracker-shell.scheme-dark .stat-card,
 .tracker-shell.scheme-dark .insight-card,
 .tracker-shell.scheme-dark .analytics-action-card,
+.tracker-shell.scheme-dark .analytics-stage-card,
+.tracker-shell.scheme-dark .analytics-lock-copy,
+.tracker-shell.scheme-dark .analytics-locked-card,
 .tracker-shell.scheme-dark .analytics-narrative,
 .tracker-shell.scheme-dark .heatmap-summary,
 .tracker-shell.scheme-dark .month-grid-wrap,
@@ -7610,6 +7729,9 @@ img {
 .tracker-shell.scheme-dark .starter-card p,
 .tracker-shell.scheme-dark .companion-nudge small,
 .tracker-shell.scheme-dark .first-win-aha-card p,
+.tracker-shell.scheme-dark .today-support-card p,
+.tracker-shell.scheme-dark .analytics-stage-card p,
+.tracker-shell.scheme-dark .analytics-lock-copy p,
 .tracker-shell.scheme-dark .feedback-note,
 .tracker-shell.scheme-dark .preference-toggle small {
   color: #bfd0ca;
@@ -7621,7 +7743,10 @@ img {
 .tracker-shell.scheme-dark .day-group-header strong,
 .tracker-shell.scheme-dark .starter-card span,
 .tracker-shell.scheme-dark .companion-nudge span,
-.tracker-shell.scheme-dark .first-win-aha-card span {
+.tracker-shell.scheme-dark .first-win-aha-card span,
+.tracker-shell.scheme-dark .today-support-card span,
+.tracker-shell.scheme-dark .analytics-stage-card span,
+.tracker-shell.scheme-dark .analytics-lock-copy span {
   color: #8ee0d2;
 }
 
@@ -7630,6 +7755,9 @@ img {
 .tracker-shell.scheme-dark .starter-card strong,
 .tracker-shell.scheme-dark .companion-nudge p,
 .tracker-shell.scheme-dark .first-win-aha-card strong,
+.tracker-shell.scheme-dark .today-support-card strong,
+.tracker-shell.scheme-dark .analytics-stage-card strong,
+.tracker-shell.scheme-dark .analytics-lock-copy strong,
 .tracker-shell.scheme-dark .preference-toggle strong {
   color: #f3fbf7;
 }

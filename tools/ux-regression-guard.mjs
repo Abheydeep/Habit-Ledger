@@ -10,6 +10,7 @@ const ogImage = readFileSync("public/og-image.svg", "utf8");
 const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 const personalization = readFileSync("lib/personalization.ts", "utf8");
 const habitData = readFileSync("lib/habitData.ts", "utf8");
+const experienceState = readFileSync("lib/experienceState.ts", "utf8");
 const packageJson = readFileSync("package.json", "utf8");
 const renderConfig = readFileSync("render.yaml", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release-verification.yml", "utf8");
@@ -180,7 +181,8 @@ const checks = [
       component.includes("Starter workday list") &&
       component.includes("Default wins to get moving. Build around your own day in 30 seconds.") &&
       component.includes("returnPromptVisible && !firstRunFocus") &&
-      component.includes("analyticsUnlocked") &&
+      component.includes("experience-${experienceState}") &&
+      component.includes("analyticsStage") &&
       css.includes(".mobile-activation-actions") &&
       css.includes(".tracker-shell.first-run-focus .month-panel") &&
       css.includes(".tracker-shell.setup-pending .starter-card p") &&
@@ -260,8 +262,38 @@ const checks = [
       component.includes("first-win-aha-card") &&
       component.includes("Momentum started. First win logged.") &&
       component.includes("analyticsUnlocked ? (") &&
-      component.includes("hasDayActivity") &&
+      component.includes("summarizeTrackerActivity") &&
+      component.includes("getProductExperienceState") &&
+      component.includes("getAnalyticsUnlockStage") &&
       css.includes(".first-win-aha-card")
+  },
+  {
+    name: "experience state and staged analytics are explicit",
+    ok:
+      experienceState.includes('type ProductExperienceState') &&
+      experienceState.includes('"first_run_empty"') &&
+      experienceState.includes('"first_run_started"') &&
+      experienceState.includes('"starter_active_no_history"') &&
+      experienceState.includes('"returning_lapsed"') &&
+      experienceState.includes('type AnalyticsUnlockStage = "locked" | "recap" | "review" | "patterns"') &&
+      experienceState.includes("getProductExperienceState") &&
+      experienceState.includes("getAnalyticsUnlockStage") &&
+      component.includes("Momentum summary") &&
+      component.includes("Review unlocks after 2 active days or 3 wins.") &&
+      component.includes("Heat map unlocks after 5 active days.") &&
+      component.includes("monthlyReviewUnlocked") &&
+      component.includes("patternAnalyticsUnlocked") &&
+      css.includes(".analytics-stage-card") &&
+      css.includes(".analytics-lock-copy")
+  },
+  {
+    name: "lapsed and evening recap states stay supportive",
+    ok:
+      component.includes("No reset drama — restart with one win.") &&
+      component.includes("Evening recap") &&
+      component.includes("today-support-card") &&
+      css.includes(".today-support-card") &&
+      css.includes(".lapsed-return-card")
   },
   {
     name: "core list hint teaches hold menu without pressure copy",

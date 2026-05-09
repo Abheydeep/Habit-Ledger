@@ -16,6 +16,13 @@ import {
   makeHabitOptional,
   makeHabitPermanent
 } from "../lib/primaryWins.ts";
+import {
+  canShowMonthlyReview,
+  canShowPatternAnalytics,
+  getAnalyticsUnlockStage,
+  getProductExperienceState,
+  summarizeTrackerActivity
+} from "../lib/experienceState.ts";
 
 function activeHabits(habits) {
   return [...habits].sort((a, b) => a.order - b.order).filter((habit) => !habit.pausedAt);
@@ -147,4 +154,135 @@ test("sample habit library covers notebook categories without changing default p
   assert.ok(defaultCategories.has("morning-routine"));
   assert.ok(defaultCategories.has("health"));
   assert.equal(createDefaultState("2026-05-06T00:00:00.000Z").habits.length, 10);
+});
+
+test("experience state starts focused and then moves through started, lapsed, and active states", () => {
+  const emptyActivity = summarizeTrackerActivity({}, "2026-05-09");
+  assert.equal(
+    getProductExperienceState({
+      hasPersonalization: false,
+      defaultWinSetup: true,
+      activity: emptyActivity
+    }),
+    "first_run_empty"
+  );
+
+  const startedActivity = summarizeTrackerActivity(
+    {
+      "2026-05-09": {
+        completedHabitIds: ["wake-early"],
+        habitMoods: { "wake-early": "done" }
+      }
+    },
+    "2026-05-09"
+  );
+  assert.equal(
+    getProductExperienceState({
+      hasPersonalization: false,
+      defaultWinSetup: true,
+      activity: startedActivity
+    }),
+    "first_run_started"
+  );
+
+  const starterActiveActivity = summarizeTrackerActivity(
+    {
+      "2026-05-08": {
+        completedHabitIds: ["wake-early"],
+        habitMoods: { "wake-early": "done" }
+      }
+    },
+    "2026-05-09"
+  );
+  assert.equal(
+    getProductExperienceState({
+      hasPersonalization: false,
+      defaultWinSetup: true,
+      activity: starterActiveActivity
+    }),
+    "starter_active_no_history"
+  );
+
+  const lapsedActivity = summarizeTrackerActivity(
+    {
+      "2026-05-06": {
+        completedHabitIds: ["wake-early"],
+        habitMoods: { "wake-early": "done" }
+      }
+    },
+    "2026-05-09"
+  );
+  assert.equal(
+    getProductExperienceState({
+      hasPersonalization: false,
+      defaultWinSetup: true,
+      activity: lapsedActivity
+    }),
+    "returning_lapsed"
+  );
+
+  const activeActivity = summarizeTrackerActivity(
+    {
+      "2026-05-08": {
+        completedHabitIds: ["wake-early", "water"],
+        habitMoods: { "wake-early": "done", water: "partial" }
+      },
+      "2026-05-09": {
+        completedHabitIds: ["wake-early"],
+        habitMoods: { "wake-early": "done" }
+      }
+    },
+    "2026-05-09"
+  );
+  assert.equal(
+    getProductExperienceState({
+      hasPersonalization: true,
+      defaultWinSetup: false,
+      activity: activeActivity
+    }),
+    "active_with_history"
+  );
+});
+
+test("analytics unlocks recap, review, and pattern views in stages", () => {
+  const emptyActivity = summarizeTrackerActivity({}, "2026-05-09");
+  assert.equal(getAnalyticsUnlockStage(emptyActivity), "locked");
+  assert.equal(canShowMonthlyReview(getAnalyticsUnlockStage(emptyActivity)), false);
+
+  const recapActivity = summarizeTrackerActivity(
+    {
+      "2026-05-09": {
+        completedHabitIds: ["wake-early"],
+        habitMoods: { "wake-early": "done" }
+      }
+    },
+    "2026-05-09"
+  );
+  assert.equal(getAnalyticsUnlockStage(recapActivity), "recap");
+
+  const reviewByWinsActivity = summarizeTrackerActivity(
+    {
+      "2026-05-09": {
+        completedHabitIds: ["wake-early", "water", "steps"],
+        habitMoods: { "wake-early": "done", water: "strong", steps: "partial" }
+      }
+    },
+    "2026-05-09"
+  );
+  assert.equal(getAnalyticsUnlockStage(reviewByWinsActivity), "review");
+  assert.equal(canShowMonthlyReview(getAnalyticsUnlockStage(reviewByWinsActivity)), true);
+  assert.equal(canShowPatternAnalytics(getAnalyticsUnlockStage(reviewByWinsActivity)), false);
+
+  const patternActivity = summarizeTrackerActivity(
+    {
+      "2026-05-05": { completedHabitIds: ["wake-early"], habitMoods: { "wake-early": "done" } },
+      "2026-05-06": { completedHabitIds: ["wake-early"], habitMoods: { "wake-early": "done" } },
+      "2026-05-07": { completedHabitIds: ["wake-early"], habitMoods: { "wake-early": "done" } },
+      "2026-05-08": { completedHabitIds: ["wake-early"], habitMoods: { "wake-early": "done" } },
+      "2026-05-09": { completedHabitIds: ["wake-early"], habitMoods: { "wake-early": "done" } }
+    },
+    "2026-05-09"
+  );
+  assert.equal(getAnalyticsUnlockStage(patternActivity), "patterns");
+  assert.equal(canShowPatternAnalytics(getAnalyticsUnlockStage(patternActivity)), true);
 });
