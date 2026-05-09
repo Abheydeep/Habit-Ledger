@@ -166,6 +166,22 @@ const checks = [
       css.includes(".permanent-list-progress")
   },
   {
+    name: "mobile first run focuses build and first win before analytics",
+    ok:
+      component.includes("firstRunFocus") &&
+      component.includes("setup-pending") &&
+      component.includes("first-run-focus") &&
+      component.includes("Build in 30 sec") &&
+      component.includes("Start today") &&
+      component.includes("returnPromptVisible && !firstRunFocus") &&
+      component.includes("deferred-on-mobile") &&
+      css.includes(".mobile-activation-actions") &&
+      css.includes(".hero-actions-row.primary.deferred-on-mobile") &&
+      css.includes(".tracker-shell.first-run-focus .month-panel") &&
+      css.includes(".tracker-shell.setup-pending .starter-card p") &&
+      css.includes(":where(button, a, input, select, textarea):focus-visible")
+  },
+  {
     name: "simple today keeps day part headers visible",
     ok:
       component.includes('evening: "Evening"') &&

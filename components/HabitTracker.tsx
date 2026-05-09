@@ -868,6 +868,7 @@ export function HabitTracker() {
       ? holdMenuHintCandidate
       : null;
   const shouldPromptPersonalization = clientStateReady && !personalizationSnapshot && defaultWinSetup;
+  const firstRunFocus = shouldPromptPersonalization && monthProgress.completed === 0;
   const companionNudge = useMemo(
     () =>
       getCompanionNudge({
@@ -897,7 +898,7 @@ export function HabitTracker() {
   } as CSSProperties;
   const localSaveLabel = formatLocalSaveStatus(tracker.updatedAt);
   const returnPromptEligible = clientStateReady && (!isInstalledApp || !reminderSettings.enabled);
-  const shouldShowReturnPrompt = returnPromptEligible && returnPromptVisible;
+  const shouldShowReturnPrompt = returnPromptEligible && returnPromptVisible && !firstRunFocus;
   const installTitle = isInstalledApp
     ? "Light reminder is off"
     : isIosDevice
@@ -2009,7 +2010,12 @@ export function HabitTracker() {
   }, [clientStateReady, dayOpen, holdMenuHintCandidate, holdMenuHintSeenDate, holdMenuHintSessionDate, todayKey]);
 
   return (
-    <main className={`tracker-shell theme-${appThemeKey} scheme-${colorScheme}`} style={appStyle}>
+    <main
+      className={`tracker-shell theme-${appThemeKey} scheme-${colorScheme}${shouldPromptPersonalization ? " setup-pending" : ""}${
+        firstRunFocus ? " first-run-focus" : ""
+      }`}
+      style={appStyle}
+    >
       <section className="tracker-hero" aria-labelledby="tracker-title">
         <div className="sparkle-field" aria-hidden="true">
           <span />
@@ -2057,7 +2063,38 @@ export function HabitTracker() {
         </div>
 
         <div className="hero-actions" aria-label="Win List actions">
-          <div className="hero-actions-row primary">
+          {firstRunFocus ? (
+            <div className="hero-actions-row setup mobile-activation-actions" aria-label="First run actions">
+              <button
+                className="icon-text-button hot setup-build-button"
+                type="button"
+                onClick={() => {
+                  setPersonalizerStep("intro");
+                  setPersonalizerOpen(true);
+                }}
+              >
+                <Wand2 size={18} aria-hidden="true" />
+                Build in 30 sec
+              </button>
+              <button className="icon-text-button" type="button" onClick={openTodayView}>
+                <CalendarDays size={18} aria-hidden="true" />
+                Start today
+              </button>
+              <button
+                className={`icon-text-button${settingsOpen ? " hot" : ""}`}
+                type="button"
+                aria-pressed={settingsOpen}
+                onClick={() => {
+                  setExpandedSettingsSections(collapsedSettingsSections);
+                  setSettingsOpen(true);
+                }}
+              >
+                <Settings2 size={18} aria-hidden="true" />
+                Settings
+              </button>
+            </div>
+          ) : null}
+          <div className={`hero-actions-row primary${firstRunFocus ? " deferred-on-mobile" : ""}`}>
             <button className="icon-text-button" type="button" onClick={openTodayView}>
               <CalendarDays size={18} aria-hidden="true" />
               Today
@@ -2169,6 +2206,27 @@ export function HabitTracker() {
             </div>
           ) : null}
 
+          {shouldPromptPersonalization ? (
+            <div className="starter-card" aria-label="Personalize The Win List">
+              <div>
+                <span>Personalize</span>
+                <strong>Build your Win List</strong>
+                <p>This is a starter workday list. Build one around your real routine in 30 seconds.</p>
+              </div>
+              <button
+                className="starter-card-button"
+                type="button"
+                onClick={() => {
+                  setPersonalizerStep("intro");
+                  setPersonalizerOpen(true);
+                }}
+              >
+                <Wand2 size={16} aria-hidden="true" />
+                Build
+              </button>
+            </div>
+          ) : null}
+
           {cloudBackupStatus === "error" && cloudSession && consents.sync ? (
             <div className="backup-error-chip" role="status" aria-label="Cloud backup needs attention">
               <span>Cloud backup paused</span>
@@ -2220,27 +2278,6 @@ export function HabitTracker() {
                   </button>
                 ) : null}
               </div>
-            </div>
-          ) : null}
-
-          {shouldPromptPersonalization ? (
-            <div className="starter-card" aria-label="Personalize The Win List">
-              <div>
-                <span>Personalize</span>
-                <strong>Build your Win List</strong>
-                <p>This is a starter workday list. Build one around your real routine in 30 seconds.</p>
-              </div>
-              <button
-                className="starter-card-button"
-                type="button"
-                onClick={() => {
-                  setPersonalizerStep("intro");
-                  setPersonalizerOpen(true);
-                }}
-              >
-                <Wand2 size={16} aria-hidden="true" />
-                Build
-              </button>
             </div>
           ) : null}
 

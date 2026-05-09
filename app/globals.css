@@ -340,6 +340,18 @@ img {
   padding-top: 0;
 }
 
+.mobile-activation-actions {
+  grid-template-columns: minmax(0, 1.55fr) repeat(2, minmax(0, 0.82fr));
+}
+
+.hero-actions-row.primary.deferred-on-mobile {
+  display: none;
+}
+
+.setup-build-button {
+  letter-spacing: 0;
+}
+
 .icon-text-button,
 .backup-button,
 .round-button,
@@ -436,6 +448,15 @@ img {
 .icon-text-button.full,
 .backup-button {
   width: 100%;
+}
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--app-primary, #0f766e), #ffffff 36%);
+  outline-offset: 3px;
+}
+
+:where(button, a) {
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--app-primary, #0f766e), transparent 78%);
 }
 
 .backup-button {
@@ -2894,6 +2915,12 @@ img {
   font-size: 0.78rem;
   font-weight: 600;
   line-height: 1.35;
+}
+
+.tracker-shell.setup-pending .starter-card p {
+  display: block;
+  font-size: 0.72rem;
+  line-height: 1.25;
 }
 
 .starter-card-button {
@@ -6030,8 +6057,20 @@ img {
     gap: 8px;
   }
 
+  .mobile-activation-actions {
+    display: none;
+  }
+
+  .hero-actions-row.primary.deferred-on-mobile {
+    display: grid;
+  }
+
   .hero-actions-row.setup {
     grid-template-columns: 1.35fr repeat(3, minmax(0, 0.88fr));
+  }
+
+  .tracker-shell.first-run-focus .month-panel {
+    display: block;
   }
 
   .hero-actions .icon-text-button {
@@ -6801,6 +6840,10 @@ img {
   padding: 6px 6px calc(92px + env(safe-area-inset-bottom));
 }
 
+.tracker-shell.first-run-focus .month-panel {
+  display: none;
+}
+
 .tracker-hero {
   min-height: 48px;
   margin-bottom: 8px;
@@ -6938,6 +6981,16 @@ img {
   font-size: 0.68rem;
 }
 
+.tracker-shell.setup-pending .starter-card {
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px;
+}
+
+.tracker-shell.setup-pending .starter-card strong {
+  font-size: 0.88rem;
+}
+
 .habit-card {
   padding: 7px;
 }
@@ -6974,6 +7027,16 @@ img {
 
 .mood-preview img {
   width: 22px;
+}
+
+@media (hover: none) {
+  .habit-win-button:active,
+  .mood-preview:active,
+  .icon-text-button:active,
+  .day-group-header:active,
+  .note-toggle:active {
+    transform: scale(0.985);
+  }
 }
 
 .requirement-toggle-button {
@@ -7749,6 +7812,18 @@ img {
     padding: 0 10px;
     gap: 6px;
     font-size: 0.74rem;
+  }
+
+  .mobile-activation-actions {
+    display: none;
+  }
+
+  .hero-actions-row.primary.deferred-on-mobile {
+    display: grid;
+  }
+
+  .tracker-shell.first-run-focus .month-panel {
+    display: block;
   }
 
   .hero-actions {
