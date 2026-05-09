@@ -176,11 +176,12 @@ const checks = [
       component.includes("setup-pending") &&
       component.includes("first-run-focus") &&
       component.includes("Build in 30 sec") &&
-      component.includes("Start today") &&
+      component.includes("Use starter list") &&
+      component.includes("Starter workday list") &&
+      component.includes("Default wins to get moving. Build around your own day in 30 seconds.") &&
       component.includes("returnPromptVisible && !firstRunFocus") &&
-      component.includes("deferred-on-mobile") &&
+      component.includes("analyticsUnlocked") &&
       css.includes(".mobile-activation-actions") &&
-      css.includes(".hero-actions-row.primary.deferred-on-mobile") &&
       css.includes(".tracker-shell.first-run-focus .month-panel") &&
       css.includes(".tracker-shell.setup-pending .starter-card p") &&
       css.includes(":where(button, a, input, select, textarea):focus-visible")
@@ -246,10 +247,21 @@ const checks = [
   {
     name: "starter personalization copy is desktop-readable",
     ok:
-      component.includes("This is a starter workday list. Build one around your real routine in 30 seconds.") &&
+      component.includes("Starter workday list") &&
+      component.includes("Default wins to get moving. Build around your own day in 30 seconds.") &&
       component.includes("starter-card-button") &&
       css.includes(".starter-card p") &&
       css.includes("display: block")
+  },
+  {
+    name: "first-win aha and staged analytics stay contracted",
+    ok:
+      component.includes("firstWinAhaVisible") &&
+      component.includes("first-win-aha-card") &&
+      component.includes("Momentum started. First win logged.") &&
+      component.includes("analyticsUnlocked ? (") &&
+      component.includes("hasDayActivity") &&
+      css.includes(".first-win-aha-card")
   },
   {
     name: "core list hint teaches hold menu without pressure copy",

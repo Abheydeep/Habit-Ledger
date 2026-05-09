@@ -68,12 +68,31 @@ const checks = [
     name: "mobile first-run activation ships",
     ok:
       builtText.includes("Build in 30 sec") &&
-      builtText.includes("Start today") &&
+      builtText.includes("Use starter list") &&
+      builtText.includes("Starter workday list") &&
       builtText.includes("first-run-focus") &&
       builtText.includes("setup-pending") &&
-      builtText.includes("deferred-on-mobile") &&
-      css.includes(".tracker-shell.first-run-focus .month-panel{display:none}") &&
-      css.includes(".hero-actions-row.primary.deferred-on-mobile{display:none}")
+      css.includes(".tracker-shell.first-run-focus .month-panel{display:none}")
+  },
+  {
+    name: "static fallback mirrors first-run activation contract",
+    ok:
+      html.includes("Build in 30 sec") &&
+      html.includes("Use starter list") &&
+      html.includes("Starter workday list") &&
+      html.includes("Mark done") &&
+      html.includes("Mood") &&
+      !html.includes("Tap to win") &&
+      !html.includes("Monthly Review") &&
+      !html.includes("Win heat map")
+  },
+  {
+    name: "first-win aha and analytics staging ship",
+    ok:
+      builtText.includes("first-win-aha-card") &&
+      builtText.includes("Momentum started. First win logged.") &&
+      builtText.includes("momentum started") &&
+      builtText.includes("analyticsUnlocked")
   },
   {
     name: "accessibility focus and touch states ship",
