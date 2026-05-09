@@ -60,6 +60,7 @@ const checks = [
       html.includes("the-win-list:color-scheme:v1") &&
       /root\.dataset\.colorScheme\s*=\s*scheme/.test(html) &&
       html.includes("prefers-color-scheme: dark") &&
+      /:root:not\(\[data-color-scheme="?light"?\]\) body/.test(css) &&
       /:root\[data-color-scheme="?dark"?\]\s*\.tracker-shell:not\(\.scheme-dark\)/.test(css) &&
       js.includes("the-win-list:color-scheme:v1")
   },
@@ -69,7 +70,7 @@ const checks = [
       css.includes("@media (min-width:1081px)") &&
       /dashboard-grid\{grid-template-columns:minmax\(0,1\.15fr\) minmax\(330px,\.?85fr\)/.test(css) &&
       css.includes(".tracker-shell.analytics-locked .dashboard-grid{grid-template-columns:minmax(0,1fr)") &&
-      css.includes(".tracker-shell.first-run-focus .tracker-hero,.tracker-shell.first-run-focus .dashboard-grid{max-width:1240px") &&
+      /\.tracker-shell\.first-run-focus \.(?:tracker-hero|dashboard-grid),\.tracker-shell\.first-run-focus \.(?:dashboard-grid|tracker-hero)\{max-width:1240px/.test(css) &&
       css.includes(".tracker-shell.first-run-focus .hero-actions{width:min(500px,100%)") &&
       css.includes(".tracker-shell.first-run-focus .starter-card") &&
       css.includes("max-width:1040px") &&
@@ -96,9 +97,10 @@ const checks = [
     name: "mobile first-run activation ships",
     ok:
       builtText.includes("Build in 30 sec") &&
-      builtText.includes("Use starter list") &&
-      builtText.includes("Starter list is ready. Mark one win to begin.") &&
-      builtText.includes("the-win-list:starter-list-accepted:v1") &&
+      !builtText.includes("Use starter list") &&
+      builtText.includes("mobile-return-chip") &&
+      builtText.includes("Change these wins anytime.") &&
+      builtText.includes("long-press a win") &&
       builtText.includes("Today's sections") &&
       builtText.includes("Starter workday list") &&
       builtText.includes("first-run-focus") &&
@@ -109,8 +111,9 @@ const checks = [
     name: "static fallback mirrors first-run activation contract",
     ok:
       html.includes("Build in 30 sec") &&
-      html.includes("Use starter list") &&
+      !html.includes("Use starter list") &&
       html.includes("Starter workday list") &&
+      html.includes("Change these wins anytime.") &&
       html.includes("experience-first_run_empty") &&
       html.includes("analytics-locked") &&
       html.includes("Mark done") &&
@@ -124,7 +127,6 @@ const checks = [
     ok:
       builtText.includes("first-win-aha-card") &&
       builtText.includes("Momentum started. First win logged.") &&
-      builtText.includes("momentum started") &&
       builtText.includes("Your 5-day pattern") &&
       builtText.includes("five-day-pattern-card") &&
       builtText.includes("Momentum summary") &&

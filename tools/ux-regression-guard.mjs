@@ -41,7 +41,7 @@ const checks = [
       component.includes("setPersonalizerOpen(false);") &&
       component.includes("starter-card") &&
       component.includes("hasDefaultWinSetup") &&
-      component.includes("Build your Win List") &&
+      component.includes("Change these wins anytime.") &&
       !component.includes("!simpleToday && shouldPromptPersonalization") &&
       component.includes('<option value="neutral">Neutral</option>') &&
       !component.includes("Auto from name") &&
@@ -88,18 +88,20 @@ const checks = [
       !component.includes('title="Make optional"')
   },
   {
-    name: "return path prompt is daily gated near today",
+    name: "return path stays compact in the mobile date header",
     ok:
-      component.includes("return-path-prompt") &&
-      component.includes("RETURN_PROMPT_SEEN_DATE_KEY") &&
-      component.includes("returnPromptVisible") &&
-      component.includes("showInstallInReturnPrompt") &&
-      component.includes("showReminderInReturnPrompt") &&
-      component.includes("hideReturnPromptForToday") &&
-      component.includes("return-path-dismiss") &&
-      css.includes(".return-path-prompt") &&
-      css.includes("grid-template-columns: repeat(auto-fit, minmax(70px, 1fr))") &&
-      css.includes(".return-path-prompt button")
+      component.includes("headerReturnAction") &&
+      component.includes("headerReturnLabel") &&
+      component.includes("handleHeaderReturnAction") &&
+      component.includes("mobile-return-chip") &&
+      component.includes('clientStateReady && !isInstalledApp') &&
+      component.includes('headerReturnAction === "install"') &&
+      component.includes('headerReturnAction === "reminder"') &&
+      !component.includes("returnPromptVisible") &&
+      !component.includes("RETURN_PROMPT_SEEN_DATE_KEY") &&
+      !component.includes("return-path-prompt") &&
+      css.includes(".mobile-return-chip") &&
+      !css.includes(".mobile-activation-actions{grid-template-columns:minmax(0,1.55fr) repeat(2")
   },
   {
     name: "installed shell chrome follows dark mode",
@@ -109,10 +111,12 @@ const checks = [
       layout.includes("the-win-list:color-scheme:v1") &&
       layout.includes("root.dataset.colorScheme = scheme") &&
       layout.includes("(prefers-color-scheme: dark)") &&
+      layout.includes("<head>") &&
       manifest.includes('"theme_color": "#111c19"') &&
       component.includes("syncShellThemeChrome") &&
       component.includes("getInitialColorScheme") &&
       component.includes('setMetaContent("theme-color", color)') &&
+      css.includes(':root:not([data-color-scheme="light"]) body') &&
       css.includes(':root[data-color-scheme="dark"] body') &&
       css.includes(':root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark)')
   },
@@ -121,7 +125,8 @@ const checks = [
     ok:
       component.includes("APP_INSTALLED_STORAGE_KEY") &&
       component.includes("installed-status-chip") &&
-      component.includes("showInstallInReturnPrompt = !isInstalledApp") &&
+      component.includes("clientStateReady && !isInstalledApp") &&
+      component.includes("headerReturnAction") &&
       css.includes(".installed-status-chip")
   },
   {
@@ -130,8 +135,8 @@ const checks = [
       component.includes("isIOSDevice") &&
       component.includes("Add to Home Screen") &&
       component.includes("Share2") &&
-      component.includes("return-path-note") &&
-      css.includes(".return-path-note")
+      component.includes("mobile-return-chip") &&
+      css.includes(".mobile-return-chip")
   },
   {
     name: "ios has png touch icons",
@@ -206,21 +211,21 @@ const checks = [
       component.includes("setup-pending") &&
       component.includes("first-run-focus") &&
       component.includes("Build in 30 sec") &&
-      component.includes("Use starter list") &&
-      component.includes("useStarterList") &&
-      component.includes("STARTER_LIST_ACCEPTED_KEY") &&
-      component.includes("Starter list is ready. Mark one win to begin.") &&
+      !component.includes("Use starter list") &&
+      !component.includes("useStarterList") &&
       component.includes('dayOpen ? "Today\'s sections"') &&
       component.includes("Starter workday list") &&
-      component.includes("Default wins to get moving. Build around your own day in 30 seconds.") &&
+      component.includes("Change these wins anytime.") &&
+      component.includes("long-press a win") &&
       component.includes("setup-edit-button") &&
       component.includes("Edit wins") &&
-      component.includes("shouldShowReturnPrompt = returnPromptEligible && returnPromptVisible") &&
+      component.includes("mobile-return-chip") &&
       component.includes("experience-${experienceState}") &&
       component.includes("analyticsStage") &&
       css.includes(".mobile-activation-actions") &&
       css.includes(".setup-edit-button") &&
       !css.includes("repeat(3, minmax(0, 0.88fr))") &&
+      css.includes(".tracker-shell.first-run-focus .hero-actions") &&
       css.includes(".tracker-shell.first-run-focus .month-panel") &&
       css.includes(".tracker-shell.setup-pending .starter-card p") &&
       css.includes(":where(button, a, input, select, textarea):focus-visible")
@@ -307,7 +312,8 @@ const checks = [
     name: "starter personalization copy is desktop-readable",
     ok:
       component.includes("Starter workday list") &&
-      component.includes("Default wins to get moving. Build around your own day in 30 seconds.") &&
+      component.includes("Change these wins anytime.") &&
+      component.includes("Edit here, or long-press a win to make it core or optional.") &&
       component.includes("starter-card-button") &&
       css.includes(".starter-card p") &&
       css.includes("display: block")
@@ -386,11 +392,17 @@ const checks = [
       component.includes("quick-manager-sheet") &&
       component.includes("quick-win-name-field") &&
       component.includes("Edit names here.") &&
+      component.includes("quickOptionalOpen") &&
+      component.includes("quickOptionalHabits") &&
+      component.includes("quick-optional-toggle") &&
+      component.includes("Optional wins") &&
+      component.includes("Expand when you want to edit them.") &&
       component.includes("Full win settings") &&
       component.includes("wins-overflow-menu") &&
       component.includes("MoreHorizontal") &&
       css.includes(".quick-manager-sheet") &&
       css.includes(".quick-win-name-field input") &&
+      css.includes(".quick-optional-toggle") &&
       css.includes(".wins-overflow-menu")
   },
   {

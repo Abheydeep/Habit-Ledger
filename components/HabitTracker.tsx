@@ -115,7 +115,6 @@ const SIMPLE_TODAY_STORAGE_KEY = "the-win-list:simple-today:v1";
 const STARTER_LIST_ACCEPTED_KEY = "the-win-list:starter-list-accepted:v1";
 const HOLD_MENU_HINT_SEEN_KEY = "the-win-list:hold-menu-hint-seen-date:v1";
 const APP_INSTALLED_STORAGE_KEY = "the-win-list:app-installed:v1";
-const RETURN_PROMPT_SEEN_DATE_KEY = "the-win-list:return-prompt-seen-date:v1";
 const SAVE_TRUST_TOAST_DATE_KEY = "the-win-list:save-trust-toast-date:v1";
 const CLOUD_TRUST_TOAST_DATE_KEY = "the-win-list:cloud-trust-toast-date:v1";
 const LIGHT_SHELL_THEME_COLOR = "#f5f7f2";
@@ -493,11 +492,10 @@ export function HabitTracker() {
   const [simpleToday, setSimpleToday] = useState(true);
   const [starterListAccepted, setStarterListAccepted] = useState(false);
   const [quickManagerOpen, setQuickManagerOpen] = useState(false);
+  const [quickOptionalOpen, setQuickOptionalOpen] = useState(false);
   const [winsMenuOpen, setWinsMenuOpen] = useState(false);
   const [holdMenuHintSeenDate, setHoldMenuHintSeenDate] = useState<string | null>(null);
   const [holdMenuHintSessionDate, setHoldMenuHintSessionDate] = useState<string | null>(null);
-  const [returnPromptSeenDate, setReturnPromptSeenDate] = useState<string | null>(null);
-  const [returnPromptVisible, setReturnPromptVisible] = useState(false);
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [expandedSettingsSections, setExpandedSettingsSections] =
     useState<Record<SettingsSectionKey, boolean>>(collapsedSettingsSections);
@@ -615,11 +613,6 @@ export function HabitTracker() {
       setHoldMenuHintSeenDate(storedHoldMenuHintSeenDate);
     }
 
-    const storedReturnPromptSeenDate = window.localStorage.getItem(RETURN_PROMPT_SEEN_DATE_KEY);
-    if (storedReturnPromptSeenDate) {
-      setReturnPromptSeenDate(storedReturnPromptSeenDate);
-    }
-
     const today = new Date();
     const todayKey = localDateKey(today);
     selectedDateRef.current = todayKey;
@@ -637,6 +630,12 @@ export function HabitTracker() {
       // PWA support is a return-path bonus; the app remains fully local-first without it.
     });
   }, []);
+
+  useEffect(() => {
+    if (!quickManagerOpen) {
+      setQuickOptionalOpen(false);
+    }
+  }, [quickManagerOpen]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
@@ -820,6 +819,14 @@ export function HabitTracker() {
       ),
     [sortedHabits]
   );
+  const quickCoreHabits = useMemo(
+    () => sortedHabits.filter((habit) => permanentRequirementIds.has(habit.id)),
+    [permanentRequirementIds, sortedHabits]
+  );
+  const quickOptionalHabits = useMemo(
+    () => sortedHabits.filter((habit) => !permanentRequirementIds.has(habit.id)),
+    [permanentRequirementIds, sortedHabits]
+  );
   const dayPartGroups = useMemo(() => groupHabitsByDayPart(primaryHabits), [primaryHabits]);
   const monthDays = useMemo(() => getMonthDays(visibleMonth), [visibleMonth]);
   const selectedRecord = tracker.days[selectedDate] ?? emptyDay;
@@ -951,20 +958,22 @@ export function HabitTracker() {
     experienceState === "first_run_empty" ||
     experienceState === "starter_active_no_history" ||
     (!personalizationSnapshot && activitySummary.activeDayCount < 5);
-  const returnPromptEligible = clientStateReady && (!isInstalledApp || !reminderSettings.enabled);
-  const shouldShowReturnPrompt = returnPromptEligible && returnPromptVisible;
-  const showInstallInReturnPrompt = !isInstalledApp;
-  const showReminderInReturnPrompt = isInstalledApp && !reminderSettings.enabled;
-  const showEditWinsInReturnPrompt = earlyWinSetupWindow && !personalizationSnapshot && !firstRunFocus;
-  const installTitle = isInstalledApp
-    ? "Set a daily reminder"
-    : isIosDevice
-      ? "Add to Home Screen"
-      : "Install The Win List";
-  const installNote =
-    isIosDevice && !isInstalledApp
-      ? "Open in Safari, tap Share, then Add to Home Screen."
-      : null;
+  const headerReturnAction =
+    clientStateReady && !isInstalledApp
+      ? "install"
+      : clientStateReady && isInstalledApp && !reminderSettings.enabled && earlyWinSetupWindow
+        ? "reminder"
+        : null;
+  const headerReturnLabel =
+    headerReturnAction === "install" ? (isIosDevice ? "Add app" : "Install") : headerReturnAction === "reminder" ? "Remind" : null;
+  const headerReturnTitle =
+    headerReturnAction === "install"
+      ? isIosDevice
+        ? "Add to Home Screen"
+        : "Install The Win List"
+      : headerReturnAction === "reminder"
+        ? "Turn on reminders"
+        : undefined;
 
   const toggleDayPart = useCallback((dayPart: DayPartKey) => {
     setOpenDayParts((current) => ({
@@ -1017,16 +1026,6 @@ export function HabitTracker() {
     [showDailyTrustToast]
   );
 
-  useEffect(() => {
-    if (!returnPromptEligible || returnPromptVisible || returnPromptSeenDate === todayKey) {
-      return;
-    }
-
-    window.localStorage.setItem(RETURN_PROMPT_SEEN_DATE_KEY, todayKey);
-    setReturnPromptSeenDate(todayKey);
-    setReturnPromptVisible(true);
-  }, [returnPromptEligible, returnPromptSeenDate, returnPromptVisible, todayKey]);
-
   const toggleSimpleToday = useCallback(() => {
     setSimpleToday((current) => {
       const next = !current;
@@ -1039,12 +1038,6 @@ export function HabitTracker() {
     window.localStorage.setItem(HOLD_MENU_HINT_SEEN_KEY, todayKey);
     setHoldMenuHintSeenDate(todayKey);
     setHoldMenuHintSessionDate(null);
-  }, [todayKey]);
-
-  const hideReturnPromptForToday = useCallback(() => {
-    window.localStorage.setItem(RETURN_PROMPT_SEEN_DATE_KEY, todayKey);
-    setReturnPromptSeenDate(todayKey);
-    setReturnPromptVisible(false);
   }, [todayKey]);
 
   const saveReminderSettings = useCallback((recipe: (current: ReminderSettings) => ReminderSettings) => {
@@ -1124,6 +1117,17 @@ export function HabitTracker() {
       showAppToast("Install skipped. You can add it later from Settings.");
     }
   }, [installPrompt, installReady, isInstalledApp, isIosDevice, showAppToast]);
+
+  const handleHeaderReturnAction = useCallback(() => {
+    if (headerReturnAction === "install") {
+      void handleInstallApp();
+      return;
+    }
+
+    if (headerReturnAction === "reminder") {
+      void requestReminderPermission();
+    }
+  }, [handleInstallApp, headerReturnAction, requestReminderPermission]);
 
   useEffect(() => {
     if (!reminderSettings.enabled || primaryHabits.length === 0) {
@@ -1767,13 +1771,6 @@ export function HabitTracker() {
     });
   }, [selectToday]);
 
-  const useStarterList = useCallback(() => {
-    window.localStorage.setItem(STARTER_LIST_ACCEPTED_KEY, "true");
-    setStarterListAccepted(true);
-    openTodayView();
-    showAppToast("Starter list is ready. Mark one win to begin.");
-  }, [openTodayView, showAppToast]);
-
   const openMonthView = useCallback(() => {
     setMonthOpen(true);
     setExpandedHabitId(null);
@@ -2138,7 +2135,29 @@ export function HabitTracker() {
             <p>{copy.tagline}</p>
           </div>
           <div className="mobile-hero-status" aria-label={`${formatPrettyDate(selectedDate)} progress ${completionPercent}%`}>
-            <span>{formatPrettyDate(selectedDate)}</span>
+            <div className="mobile-hero-meta">
+              <span>{formatPrettyDate(selectedDate)}</span>
+              {headerReturnAction ? (
+                <button
+                  className="mobile-return-chip"
+                  type="button"
+                  onClick={handleHeaderReturnAction}
+                  title={headerReturnTitle}
+                  aria-label={headerReturnTitle}
+                >
+                  {headerReturnAction === "install" ? (
+                    isIosDevice ? (
+                      <Share2 size={13} aria-hidden="true" />
+                    ) : (
+                      <Download size={13} aria-hidden="true" />
+                    )
+                  ) : (
+                    <CalendarDays size={13} aria-hidden="true" />
+                  )}
+                  {headerReturnLabel}
+                </button>
+              ) : null}
+            </div>
             <strong>{completionPercent}%</strong>
           </div>
         </div>
@@ -2156,10 +2175,6 @@ export function HabitTracker() {
               >
                 <Wand2 size={18} aria-hidden="true" />
                 Build in 30 sec
-              </button>
-              <button className="icon-text-button setup-starter-button" type="button" onClick={useStarterList}>
-                <CalendarDays size={18} aria-hidden="true" />
-                Use starter list
               </button>
               <button
                 className="icon-text-button setup-edit-button"
@@ -2293,8 +2308,8 @@ export function HabitTracker() {
             <div className="starter-card" aria-label="Personalize The Win List">
               <div>
                 <span>Starter workday list</span>
-                <strong>Build your Win List</strong>
-                <p>Default wins to get moving. Build around your own day in 30 seconds.</p>
+                <strong>Change these wins anytime.</strong>
+                <p>Edit here, or long-press a win to make it core or optional.</p>
               </div>
               <button
                 className="starter-card-button"
@@ -2316,62 +2331,6 @@ export function HabitTracker() {
               <button type="button" onClick={() => void uploadCurrentTrackerToCloud("manual")}>
                 Retry
               </button>
-            </div>
-          ) : null}
-
-          {shouldShowReturnPrompt ? (
-            <div className="return-path-prompt" aria-label="Return path">
-              <div>
-                <span>Return faster</span>
-                <strong>{installTitle}</strong>
-                {installNote ? <small className="return-path-note">{installNote}</small> : null}
-              </div>
-              <button
-                className="return-path-dismiss"
-                type="button"
-                onClick={hideReturnPromptForToday}
-                aria-label="Hide return prompt for today"
-                title="Not now"
-              >
-                <X size={15} aria-hidden="true" />
-              </button>
-              <div className="return-path-actions">
-                {showInstallInReturnPrompt ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      hideReturnPromptForToday();
-                      void handleInstallApp();
-                    }}
-                  >
-                    {isIosDevice ? <Share2 size={15} aria-hidden="true" /> : <Download size={15} aria-hidden="true" />}
-                    {isIosDevice ? "Steps" : "Install"}
-                  </button>
-                ) : null}
-                {showReminderInReturnPrompt ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      hideReturnPromptForToday();
-                      void requestReminderPermission();
-                    }}
-                  >
-                    <CalendarDays size={15} aria-hidden="true" />
-                    Reminder
-                  </button>
-                ) : null}
-                {showEditWinsInReturnPrompt ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuickManagerOpen(true);
-                    }}
-                  >
-                    <Settings2 size={15} aria-hidden="true" />
-                    Edit wins
-                  </button>
-                ) : null}
-              </div>
             </div>
           ) : null}
 
@@ -3111,8 +3070,9 @@ export function HabitTracker() {
             </div>
 
             <div className="quick-win-list">
-              {sortedHabits.map((habit, index) => {
+              {quickCoreHabits.map((habit) => {
                 const isPermanent = permanentRequirementIds.has(habit.id);
+                const index = habitOrderIndexById.get(habit.id) ?? 0;
                 return (
                   <article className={`quick-win-row${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
                     <img src={assetUrl(habit.thumbnail)} alt="" />
@@ -3163,6 +3123,80 @@ export function HabitTracker() {
                 );
               })}
             </div>
+
+            {quickOptionalHabits.length > 0 ? (
+              <section className={`quick-optional-section${quickOptionalOpen ? " open" : ""}`}>
+                <button
+                  className="quick-optional-toggle"
+                  type="button"
+                  onClick={() => setQuickOptionalOpen((open) => !open)}
+                  aria-expanded={quickOptionalOpen}
+                >
+                  <span>
+                    <strong>Optional wins</strong>
+                    <small>{quickOptionalHabits.length} extra wins. Expand when you want to edit them.</small>
+                  </span>
+                  <ChevronDown size={18} aria-hidden="true" />
+                </button>
+
+                {quickOptionalOpen ? (
+                  <div className="quick-win-list optional">
+                    {quickOptionalHabits.map((habit) => {
+                      const isPermanent = permanentRequirementIds.has(habit.id);
+                      const index = habitOrderIndexById.get(habit.id) ?? 0;
+                      return (
+                        <article className={`quick-win-row${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
+                          <img src={assetUrl(habit.thumbnail)} alt="" />
+                          <div>
+                            <label className="quick-win-name-field">
+                              <span>Win name</span>
+                              <input
+                                value={habit.name}
+                                onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
+                                aria-label={`Edit win name for ${habit.name}`}
+                              />
+                            </label>
+                            <span>{isPermanent ? "Core win" : "Optional routine"}</span>
+                          </div>
+                          <div className="quick-win-actions">
+                            <button
+                              className="round-button small"
+                              type="button"
+                              onClick={() => moveHabit(habit.id, -1)}
+                              disabled={index === 0}
+                              aria-label={`Move ${habit.name} up`}
+                            >
+                              <ArrowUp size={15} aria-hidden="true" />
+                            </button>
+                            <button
+                              className="round-button small"
+                              type="button"
+                              onClick={() => moveHabit(habit.id, 1)}
+                              disabled={index === sortedHabits.length - 1}
+                              aria-label={`Move ${habit.name} down`}
+                            >
+                              <ArrowDown size={15} aria-hidden="true" />
+                            </button>
+                            <button
+                              className="tiny-text-button"
+                              type="button"
+                              onClick={() =>
+                                isPermanent ? makePermanentHabitOptional(habit.id) : makeOptionalHabitPermanent(habit.id)
+                              }
+                            >
+                              {isPermanent ? "Make optional" : "Make core"}
+                            </button>
+                            <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
+                              {habit.pausedAt ? "Resume" : "Pause"}
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
 
             <button
               className="backup-button quick-manager-full-settings"
