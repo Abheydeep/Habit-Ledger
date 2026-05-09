@@ -10,6 +10,34 @@ const iconPath = `${basePath}/icon.svg`;
 const icon192Path = `${basePath}/icon-192.png`;
 const appleTouchIconPath = `${basePath}/apple-touch-icon.png`;
 const manifestPath = `${basePath}/manifest.webmanifest`;
+const themeInitScript = `
+(() => {
+  try {
+    const storageKey = "the-win-list:color-scheme:v1";
+    const stored = window.localStorage.getItem(storageKey);
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const scheme = stored === "dark" || stored === "light" ? stored : prefersDark ? "dark" : "light";
+    const color = scheme === "dark" ? "#111c19" : "#f5f7f2";
+    const root = document.documentElement;
+    root.dataset.colorScheme = scheme;
+    root.style.backgroundColor = color;
+    const setMeta = (name, content) => {
+      let meta = document.querySelector('meta[name="' + name + '"]');
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", name);
+        document.head.append(meta);
+      }
+      meta.setAttribute("content", content);
+    };
+    setMeta("theme-color", color);
+    setMeta("msapplication-TileColor", color);
+    setMeta("apple-mobile-web-app-status-bar-style", scheme === "dark" ? "black-translucent" : "default");
+  } catch {
+    document.documentElement.style.backgroundColor = "#f5f7f2";
+  }
+})();
+`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -96,8 +124,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {children}
+      </body>
     </html>
   );
 }

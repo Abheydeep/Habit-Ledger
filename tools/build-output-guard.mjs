@@ -42,6 +42,15 @@ const checks = [
       html.includes('"@type":"WebApplication"')
   },
   {
+    name: "dark theme prepaint guard ships",
+    ok:
+      html.includes("the-win-list:color-scheme:v1") &&
+      /root\.dataset\.colorScheme\s*=\s*scheme/.test(html) &&
+      html.includes("prefers-color-scheme: dark") &&
+      /:root\[data-color-scheme="?dark"?\]\s*\.tracker-shell:not\(\.scheme-dark\)/.test(css) &&
+      js.includes("the-win-list:color-scheme:v1")
+  },
+  {
     name: "desktop Today-first grid ships in CSS",
     ok:
       css.includes("@media (min-width:1081px)") &&

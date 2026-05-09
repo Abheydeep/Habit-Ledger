@@ -101,11 +101,16 @@ const checks = [
     name: "installed shell chrome follows dark mode",
     ok:
       layout.includes('statusBarStyle: "black-translucent"') &&
+      layout.includes("themeInitScript") &&
+      layout.includes("the-win-list:color-scheme:v1") &&
+      layout.includes("root.dataset.colorScheme = scheme") &&
       layout.includes("(prefers-color-scheme: dark)") &&
       manifest.includes('"theme_color": "#111c19"') &&
       component.includes("syncShellThemeChrome") &&
+      component.includes("getInitialColorScheme") &&
       component.includes('setMetaContent("theme-color", color)') &&
-      css.includes(':root[data-color-scheme="dark"] body')
+      css.includes(':root[data-color-scheme="dark"] body') &&
+      css.includes(':root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark)')
   },
   {
     name: "installed PWA stops showing install actions",

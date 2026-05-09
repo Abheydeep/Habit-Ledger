@@ -482,7 +482,7 @@ export function HabitTracker() {
   const [onboarding, setOnboarding] = useState<OnboardingInput>(defaultOnboardingInput);
   const [personalizationSnapshot, setPersonalizationSnapshot] = useState<PersonalizationSnapshot | null>(null);
   const [appThemeKey, setAppThemeKey] = useState<AppThemeKey>("fresh-ledger");
-  const [colorScheme, setColorScheme] = useState<ColorScheme>("light");
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(() => getInitialColorScheme());
   const [feedbackSettings, setFeedbackSettings] = useState<FeedbackSettings>(defaultFeedbackSettings);
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>(defaultReminderSettings);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
@@ -2084,6 +2084,7 @@ export function HabitTracker() {
 
   return (
     <main
+      suppressHydrationWarning
       className={`tracker-shell theme-${appThemeKey} scheme-${colorScheme}${shouldPromptPersonalization ? " setup-pending" : ""}${
         firstRunFocus ? " first-run-focus" : ""
       } experience-${experienceState} analytics-${analyticsStage}`}
@@ -5054,6 +5055,19 @@ function syncShellThemeChrome(scheme: ColorScheme) {
   setMetaContent("theme-color", color);
   setMetaContent("msapplication-TileColor", color);
   setMetaContent("apple-mobile-web-app-status-bar-style", scheme === "dark" ? "black-translucent" : "default");
+}
+
+function getInitialColorScheme(): ColorScheme {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  const storedColorScheme = window.localStorage.getItem(COLOR_SCHEME_STORAGE_KEY);
+  if (storedColorScheme === "light" || storedColorScheme === "dark") {
+    return storedColorScheme;
+  }
+
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function setMetaContent(name: string, content: string) {

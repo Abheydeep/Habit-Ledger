@@ -7940,6 +7940,47 @@ img {
   color: #cfe4dd;
 }
 
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) {
+  --app-bg: #111c19 !important;
+  --app-surface: #1a2925 !important;
+  --app-soft: #263d36 !important;
+  --app-ink: #e4f5ef !important;
+  color-scheme: dark;
+  background:
+    radial-gradient(circle at 10% 8%, rgba(45, 212, 191, 0.12) 0 14%, transparent 36%),
+    radial-gradient(circle at 92% 20%, rgba(251, 191, 36, 0.1) 0 10%, transparent 32%),
+    radial-gradient(circle at 82% 80%, rgba(96, 165, 250, 0.1) 0 12%, transparent 34%),
+    linear-gradient(180deg, #18231f, #202d27) !important;
+  color: #f3fbf7;
+}
+
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .tracker-hero,
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .today-panel,
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .starter-card,
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .permanent-list-toolbar,
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .habit-card,
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .day-group-header,
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .note-box.compact.collapsed,
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .hero-actions {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, #22332d, #1b2924);
+  color: #f3fbf7;
+}
+
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .hero-actions .icon-text-button:not(.hot) {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(135deg, #f8fbf7, #eef7f3);
+  color: #4a162b;
+}
+
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .mobile-hero-status strong,
+:root[data-color-scheme="dark"] .tracker-shell:not(.scheme-dark) .progress-ring {
+  background:
+    radial-gradient(circle at center, #1d2a26 57%, transparent 59%),
+    conic-gradient(var(--app-primary) var(--progress, 0), #344740 0);
+  color: #f3fbf7;
+}
+
 @media (min-width: 721px) {
   .tracker-shell {
     padding-bottom: 16px;
