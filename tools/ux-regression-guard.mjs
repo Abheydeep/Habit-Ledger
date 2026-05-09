@@ -230,6 +230,22 @@ const checks = [
       css.includes(".wins-overflow-menu")
   },
   {
+    name: "wins settings stay categorized and sample-led",
+    ok:
+      habitData.includes("habitCategoryMeta") &&
+      habitData.includes("Drink jeera water") &&
+      habitData.includes("First hour no screen") &&
+      habitData.includes("Plan tomorrow") &&
+      habitData.includes("getHabitCategory") &&
+      component.includes("sample-habit-library") &&
+      component.includes("editor-category-toggle") &&
+      component.includes("groupHabitsByCategory") &&
+      component.includes("expandedWinCategories") &&
+      css.includes(".sample-habit-library") &&
+      css.includes(".editor-category") &&
+      css.includes(".category-count-chip")
+  },
+  {
     name: "settings opens as an overview instead of a heavy editor",
     ok: component.includes("setExpandedSettingsSections(collapsedSettingsSections);")
   },

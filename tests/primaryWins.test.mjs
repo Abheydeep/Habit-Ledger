@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createDefaultState, normalizeImportedState } from "../lib/habitData.ts";
+import {
+  createDefaultState,
+  getHabitCategory,
+  habitCategoryOrder,
+  habitSamples,
+  normalizeImportedState
+} from "../lib/habitData.ts";
 import {
   getOptionalHabits,
   getPermanentHabits,
@@ -126,4 +132,19 @@ test("legacy saved data normalizes missing requirements", () => {
   assert.equal(getPermanentHabits(activeHabits(normalized.habits)).length, 6);
   assert.equal(normalized.habits.every((habit) => habit.requirement === "permanent" || habit.requirement === "optional"), true);
   assert.equal("permanentAt" in normalized.habits[5], false);
+});
+
+test("sample habit library covers notebook categories without changing default pressure", () => {
+  const names = new Set(habitSamples.map((sample) => sample.name));
+  const categories = new Set(habitSamples.map((sample) => sample.category));
+  const defaultCategories = new Set(createDefaultState("2026-05-06T00:00:00.000Z").habits.map(getHabitCategory));
+
+  assert.ok(names.has("Drink jeera water"));
+  assert.ok(names.has("Breathing exercise"));
+  assert.ok(names.has("First hour no screen"));
+  assert.ok(names.has("Plan tomorrow"));
+  assert.ok(habitCategoryOrder.every((category) => categories.has(category)));
+  assert.ok(defaultCategories.has("morning-routine"));
+  assert.ok(defaultCategories.has("health"));
+  assert.equal(createDefaultState("2026-05-06T00:00:00.000Z").habits.length, 10);
 });

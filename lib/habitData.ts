@@ -4,6 +4,13 @@ export const APP_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 export type MoodKey = "done" | "strong" | "partial" | "skipped" | "rest";
 export type DayPartKey = "morning" | "daytime" | "evening";
 export type HabitRequirement = "permanent" | "optional";
+export type HabitCategoryKey =
+  | "morning-routine"
+  | "health"
+  | "digital-detox"
+  | "focus-learning"
+  | "evening-routine"
+  | "life-admin";
 
 export type Habit = {
   id: string;
@@ -16,6 +23,11 @@ export type Habit = {
   dayPart?: DayPartKey;
   pausedAt?: string;
   requirement?: HabitRequirement;
+};
+
+export type HabitSample = Pick<Habit, "name" | "color" | "thumbnail" | "quip" | "dayPart"> & {
+  id: string;
+  category: HabitCategoryKey;
 };
 
 export type DayRecord = {
@@ -36,6 +48,42 @@ export type ThumbnailOption = {
   slug: string;
   label: string;
   src: string;
+};
+
+export const habitCategoryOrder: HabitCategoryKey[] = [
+  "morning-routine",
+  "health",
+  "digital-detox",
+  "focus-learning",
+  "evening-routine",
+  "life-admin"
+];
+
+export const habitCategoryMeta: Record<HabitCategoryKey, { label: string; description: string }> = {
+  "morning-routine": {
+    label: "Morning routine",
+    description: "Wake-up, hydration, breathing, reading, affirmations."
+  },
+  health: {
+    label: "Health",
+    description: "Movement, water, food, meditation, skin and hair care."
+  },
+  "digital-detox": {
+    label: "Digital detox",
+    description: "No-scroll blocks and phone boundaries."
+  },
+  "focus-learning": {
+    label: "Focus and learning",
+    description: "Deep work, study, reading, and skill building."
+  },
+  "evening-routine": {
+    label: "Evening routine",
+    description: "Planning tomorrow, winding down, and sleep."
+  },
+  "life-admin": {
+    label: "Life admin",
+    description: "Money, home, family, and small reset tasks."
+  }
 };
 
 export function isDayPartKey(value: unknown): value is DayPartKey {
@@ -70,6 +118,12 @@ export const thumbnailOptions: ThumbnailOption[] = [
   { slug: "deep-work", label: "Deep Work", src: "icon:deep-work" },
   { slug: "skill-learning", label: "Skill Learning", src: "icon:skill-learning" },
   { slug: "read-news", label: "Reading", src: "icon:read-news" },
+  { slug: "breathing", label: "Breathing", src: "icon:breathing" },
+  { slug: "affirmations", label: "Affirmations", src: "icon:affirmations" },
+  { slug: "meditation", label: "Meditation", src: "icon:meditation" },
+  { slug: "skincare", label: "Skincare", src: "icon:skincare" },
+  { slug: "haircare", label: "Haircare", src: "icon:haircare" },
+  { slug: "plan-day", label: "Plan Day", src: "icon:plan-day" },
   { slug: "budget", label: "Expense Log", src: "icon:budget" },
   { slug: "family", label: "Family Check-in", src: "icon:family" },
   { slug: "home-reset", label: "Home Reset", src: "icon:home-reset" },
@@ -160,6 +214,229 @@ const habitSeeds: Array<Omit<Habit, "createdAt">> = [
     quip: "Tomorrow gets easier when tonight behaves."
   }
 ];
+
+export const habitSamples: HabitSample[] = [
+  {
+    id: "sample-wake-6",
+    name: "Wake up at 6:00",
+    color: "#0f766e",
+    thumbnail: "icon:wake-early",
+    quip: "A clean start before the day gets noisy.",
+    dayPart: "morning",
+    category: "morning-routine"
+  },
+  {
+    id: "sample-jeera-water",
+    name: "Drink jeera water",
+    color: "#0284c7",
+    thumbnail: "icon:water",
+    quip: "A small morning ritual before coffee or chai.",
+    dayPart: "morning",
+    category: "morning-routine"
+  },
+  {
+    id: "sample-breathing",
+    name: "Breathing exercise",
+    color: "#0891b2",
+    thumbnail: "icon:breathing",
+    quip: "Two calm minutes before the day speeds up.",
+    dayPart: "morning",
+    category: "morning-routine"
+  },
+  {
+    id: "sample-read-10-pages",
+    name: "Read 10 pages",
+    color: "#9333ea",
+    thumbnail: "icon:read-news",
+    quip: "Ten pages is enough to keep the reader alive.",
+    dayPart: "morning",
+    category: "morning-routine"
+  },
+  {
+    id: "sample-affirmations",
+    name: "Write affirmations",
+    color: "#db2777",
+    thumbnail: "icon:affirmations",
+    quip: "Tell your brain what kind of day this is.",
+    dayPart: "morning",
+    category: "morning-routine"
+  },
+  {
+    id: "sample-10k-steps",
+    name: "10k steps",
+    color: "#16a34a",
+    thumbnail: "icon:steps",
+    quip: "Walk it out before the day fully closes.",
+    dayPart: "evening",
+    category: "health"
+  },
+  {
+    id: "sample-3l-water",
+    name: "Drink 3L water",
+    color: "#0284c7",
+    thumbnail: "icon:water",
+    quip: "A full bottle plan beats random sipping.",
+    dayPart: "daytime",
+    category: "health"
+  },
+  {
+    id: "sample-no-sugar",
+    name: "No sugar",
+    color: "#ea580c",
+    thumbnail: "icon:less-sugar",
+    quip: "Skip the automatic sweet today.",
+    dayPart: "daytime",
+    category: "health"
+  },
+  {
+    id: "sample-no-junk",
+    name: "No junk food",
+    color: "#f59e0b",
+    thumbnail: "icon:healthy-meal",
+    quip: "Keep snacks intentional, not accidental.",
+    dayPart: "daytime",
+    category: "health"
+  },
+  {
+    id: "sample-skincare",
+    name: "Skincare",
+    color: "#db2777",
+    thumbnail: "icon:skincare",
+    quip: "Tiny care, visible consistency.",
+    dayPart: "evening",
+    category: "health"
+  },
+  {
+    id: "sample-haircare",
+    name: "Haircare",
+    color: "#9333ea",
+    thumbnail: "icon:haircare",
+    quip: "A little grooming before it becomes a rescue mission.",
+    dayPart: "evening",
+    category: "health"
+  },
+  {
+    id: "sample-meditation",
+    name: "Meditation",
+    color: "#0f766e",
+    thumbnail: "icon:meditation",
+    quip: "Sit still long enough to hear yourself again.",
+    dayPart: "evening",
+    category: "health"
+  },
+  {
+    id: "sample-first-hour-no-screen",
+    name: "First hour no screen",
+    color: "#dc2626",
+    thumbnail: "icon:screen-time",
+    quip: "Win the morning before the phone does.",
+    dayPart: "morning",
+    category: "digital-detox"
+  },
+  {
+    id: "sample-no-scrolling",
+    name: "No scrolling",
+    color: "#dc2626",
+    thumbnail: "icon:screen-time",
+    quip: "Use the phone. Do not fall into it.",
+    dayPart: "evening",
+    category: "digital-detox"
+  },
+  {
+    id: "sample-no-reels-after-dinner",
+    name: "No reels after dinner",
+    color: "#db2777",
+    thumbnail: "icon:screen-time",
+    quip: "Let the evening land without a feed.",
+    dayPart: "evening",
+    category: "digital-detox"
+  },
+  {
+    id: "sample-focus-block",
+    name: "90 min focus block",
+    color: "#2563eb",
+    thumbnail: "icon:deep-work",
+    quip: "One clean block. Phone away.",
+    dayPart: "daytime",
+    category: "focus-learning"
+  },
+  {
+    id: "sample-learn-skill",
+    name: "Learn a skill",
+    color: "#0891b2",
+    thumbnail: "icon:skill-learning",
+    quip: "Something small that compounds.",
+    dayPart: "daytime",
+    category: "focus-learning"
+  },
+  {
+    id: "sample-plan-tomorrow",
+    name: "Plan tomorrow",
+    color: "#4f46e5",
+    thumbnail: "icon:plan-day",
+    quip: "Tomorrow starts calmer when tonight decides.",
+    dayPart: "evening",
+    category: "evening-routine"
+  },
+  {
+    id: "sample-lay-out-clothes",
+    name: "Lay out clothes or bag",
+    color: "#475569",
+    thumbnail: "icon:home-reset",
+    quip: "Remove one morning decision.",
+    dayPart: "evening",
+    category: "evening-routine"
+  },
+  {
+    id: "sample-track-expenses",
+    name: "Track expenses",
+    color: "#ca8a04",
+    thumbnail: "icon:budget",
+    quip: "UPI adds up quietly. Catch it early.",
+    dayPart: "evening",
+    category: "life-admin"
+  }
+];
+
+export function getHabitCategory(
+  habit: Pick<Habit, "id" | "name" | "thumbnail" | "quip" | "dayPart">
+): HabitCategoryKey {
+  const text = `${habit.id} ${habit.name} ${habit.thumbnail} ${habit.quip}`.toLowerCase();
+
+  if (/screen|scroll|reel|short|detox/.test(text)) {
+    return "digital-detox";
+  }
+
+  if (/sleep|night|evening|plan tomorrow|plan next|advance|wind down|lay out/.test(text)) {
+    return "evening-routine";
+  }
+
+  if (/jeera|breath|affirmation|wake|sunrise|first hour|read 10 pages/.test(text)) {
+    return "morning-routine";
+  }
+
+  if (/steps|water|workout|yoga|meal|sugar|junk|skin|hair|meditat|health|stretch/.test(text)) {
+    return "health";
+  }
+
+  if (/focus|skill|learn|read|page|study|course|work/.test(text)) {
+    return "focus-learning";
+  }
+
+  if (/budget|expense|spend|family|home|clean|reset|bag|clothes/.test(text)) {
+    return "life-admin";
+  }
+
+  if (habit.dayPart === "morning") {
+    return "morning-routine";
+  }
+
+  if (habit.dayPart === "evening") {
+    return "evening-routine";
+  }
+
+  return "focus-learning";
+}
 
 export function createDefaultState(now = new Date().toISOString()): TrackerState {
   return {
@@ -329,6 +606,42 @@ function habitIcon(slug: string) {
       tone: "#9333ea",
       accent: "#0f766e",
       body: '<rect x="23" y="24" width="50" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="7"/><path d="M34 39h28M34 51h19M34 63h25" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><circle cx="64" cy="66" r="8" fill="var(--accent)"/>'
+    },
+    breathing: {
+      bg: "#ecfeff",
+      tone: "#0891b2",
+      accent: "#0f766e",
+      body: '<path d="M25 39c8-8 18-8 26 0s18 8 26 0M25 56c8-8 18-8 26 0s18 8 26 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/><circle cx="48" cy="48" r="23" fill="none" stroke="var(--accent)" stroke-width="5" stroke-dasharray="6 8"/>'
+    },
+    affirmations: {
+      bg: "#fdf2f8",
+      tone: "#db2777",
+      accent: "#f59e0b",
+      body: '<rect x="24" y="23" width="48" height="54" rx="9" fill="none" stroke="currentColor" stroke-width="7"/><path d="M36 43h24M36 58h15" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M48 75c-11-8-18-14-18-23 0-6 5-10 10-10 4 0 7 2 8 5 1-3 4-5 8-5 5 0 10 4 10 10 0 9-7 15-18 23Z" fill="var(--accent)" opacity=".9"/>'
+    },
+    meditation: {
+      bg: "#eefcf7",
+      tone: "#0f766e",
+      accent: "#f59e0b",
+      body: '<circle cx="48" cy="25" r="8" fill="currentColor"/><path d="M48 37v18M31 73c9-12 25-12 34 0M28 58c10 0 14-5 20-20 6 15 10 20 20 20" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M25 82h46" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>'
+    },
+    skincare: {
+      bg: "#fff1f2",
+      tone: "#db2777",
+      accent: "#0f766e",
+      body: '<path d="M48 19c10 13 16 22 16 33 0 12-7 20-16 20s-16-8-16-20c0-11 6-20 16-33Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/><path d="m67 25 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="var(--accent)"/><path d="M38 77h20" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>'
+    },
+    haircare: {
+      bg: "#f5f3ff",
+      tone: "#7c3aed",
+      accent: "#f59e0b",
+      body: '<path d="M27 74V45c0-16 10-27 21-27s21 11 21 27v29" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/><path d="M35 45c5-9 13-14 26-15M37 60c8 4 14 4 22 0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/><circle cx="41" cy="47" r="3" fill="currentColor"/><circle cx="55" cy="47" r="3" fill="currentColor"/>'
+    },
+    "plan-day": {
+      bg: "#eef2ff",
+      tone: "#4f46e5",
+      accent: "#0f766e",
+      body: '<rect x="24" y="25" width="48" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="7"/><path d="M34 20v12M62 20v12M34 45h28M34 58h14" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="m50 64 7 7 14-17" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'
     },
     budget: {
       bg: "#fffbeb",
