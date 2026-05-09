@@ -5414,10 +5414,10 @@ function createCategoryOpenState(openCategories: HabitCategoryKey[] = []): Recor
 }
 
 function groupHabitsByCategory(habits: Habit[]) {
-  const grouped = Object.fromEntries(habitCategoryOrder.map((category) => [category, []])) as Record<
-    HabitCategoryKey,
-    Habit[]
-  >;
+  const grouped = {} as Record<HabitCategoryKey, Habit[]>;
+  habitCategoryOrder.forEach((category) => {
+    grouped[category] = [];
+  });
 
   habits.forEach((habit) => {
     grouped[getHabitCategory(habit)].push(habit);
@@ -5429,10 +5429,10 @@ function groupHabitsByCategory(habits: Habit[]) {
 }
 
 function groupHabitSamplesByCategory(samples: HabitSample[]) {
-  const grouped = Object.fromEntries(habitCategoryOrder.map((category) => [category, []])) as Record<
-    HabitCategoryKey,
-    HabitSample[]
-  >;
+  const grouped = {} as Record<HabitCategoryKey, HabitSample[]>;
+  habitCategoryOrder.forEach((category) => {
+    grouped[category] = [];
+  });
 
   samples.forEach((sample) => {
     grouped[sample.category].push(sample);
