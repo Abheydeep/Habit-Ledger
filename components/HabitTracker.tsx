@@ -487,6 +487,7 @@ export function HabitTracker() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installReady, setInstallReady] = useState(false);
+  const [installFallbackReady, setInstallFallbackReady] = useState(false);
   const [isInstalledApp, setIsInstalledApp] = useState(false);
   const [isIosDevice, setIsIosDevice] = useState(false);
   const [simpleToday, setSimpleToday] = useState(true);
@@ -642,10 +643,12 @@ export function HabitTracker() {
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
       setInstallReady(true);
+      setInstallFallbackReady(false);
     };
     const handleInstalled = () => {
       window.localStorage.setItem(APP_INSTALLED_STORAGE_KEY, "true");
       setInstallReady(false);
+      setInstallFallbackReady(false);
       setInstallPrompt(null);
       setIsInstalledApp(true);
     };
@@ -657,6 +660,19 @@ export function HabitTracker() {
       window.removeEventListener("appinstalled", handleInstalled);
     };
   }, []);
+
+  useEffect(() => {
+    if (!clientStateReady || isInstalledApp || isIosDevice || installReady) {
+      setInstallFallbackReady(false);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setInstallFallbackReady(true);
+    }, 1800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [clientStateReady, installReady, isInstalledApp, isIosDevice]);
 
   useEffect(() => {
     setConsents(readStoredConsents());
@@ -959,18 +975,30 @@ export function HabitTracker() {
     experienceState === "starter_active_no_history" ||
     (!personalizationSnapshot && activitySummary.activeDayCount < 5);
   const headerReturnAction =
-    !isInstalledApp
+    clientStateReady && !isInstalledApp
       ? "install"
       : clientStateReady && isInstalledApp && !reminderSettings.enabled && earlyWinSetupWindow
         ? "reminder"
         : null;
+  const installActionWaiting =
+    headerReturnAction === "install" && !isIosDevice && !installReady && !installFallbackReady;
   const headerReturnLabel =
-    headerReturnAction === "install" ? (isIosDevice ? "Add app" : "Install") : headerReturnAction === "reminder" ? "Remind" : null;
+    headerReturnAction === "install"
+      ? installActionWaiting
+        ? "Wait"
+        : isIosDevice
+          ? "Add app"
+          : "Install"
+      : headerReturnAction === "reminder"
+        ? "Remind"
+        : null;
   const headerReturnTitle =
     headerReturnAction === "install"
-      ? isIosDevice
-        ? "Add to Home Screen"
-        : "Install The Win List"
+      ? installActionWaiting
+        ? "Install prompt is getting ready"
+        : isIosDevice
+          ? "Add to Home Screen"
+          : "Install The Win List"
       : headerReturnAction === "reminder"
         ? "Turn on reminders"
         : undefined;
@@ -1095,8 +1123,17 @@ export function HabitTracker() {
       return;
     }
 
+    if (!clientStateReady) {
+      return;
+    }
+
     if (isIosDevice && !installPrompt) {
       showAppToast("iPhone install: open in Safari, tap Share, then Add to Home Screen.");
+      return;
+    }
+
+    if (!isIosDevice && !installPrompt && !installFallbackReady) {
+      showAppToast("Install is getting ready. Try again in a moment.");
       return;
     }
 
@@ -1116,7 +1153,7 @@ export function HabitTracker() {
     } else {
       showAppToast("Install skipped. You can add it later from Settings.");
     }
-  }, [installPrompt, installReady, isInstalledApp, isIosDevice, showAppToast]);
+  }, [clientStateReady, installFallbackReady, installPrompt, isInstalledApp, isIosDevice, showAppToast]);
 
   const handleHeaderReturnAction = useCallback(() => {
     if (headerReturnAction === "install") {
@@ -2086,6 +2123,26 @@ export function HabitTracker() {
     setHoldMenuHintSessionDate(todayKey);
   }, [clientStateReady, dayOpen, holdMenuHintCandidate, holdMenuHintSeenDate, holdMenuHintSessionDate, todayKey]);
 
+  if (!clientStateReady) {
+    return (
+      <main
+        suppressHydrationWarning
+        className={`tracker-shell booting theme-${appThemeKey} scheme-${colorScheme}`}
+        style={appStyle}
+        aria-busy="true"
+      >
+        <section className="tracker-boot-card" aria-label="Loading The Win List">
+          <LogoMark />
+          <div>
+            <span>The Win List</span>
+            <strong>Loading your wins</strong>
+            <p>Saved locally. No login needed.</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main
       suppressHydrationWarning
@@ -2142,6 +2199,7 @@ export function HabitTracker() {
                   className="mobile-return-chip"
                   type="button"
                   onClick={handleHeaderReturnAction}
+                  disabled={installActionWaiting}
                   title={headerReturnTitle}
                   aria-label={headerReturnTitle}
                 >
@@ -3365,6 +3423,8 @@ export function HabitTracker() {
                           ? "On iPhone, open this site in Safari, tap Share, then Add to Home Screen."
                         : installReady
                           ? "Your browser is ready to install The Win List."
+                          : !installFallbackReady
+                            ? "The Android install prompt is getting ready."
                           : "Use the browser menu if the install prompt is not available yet."}
                     </small>
                   </div>
@@ -3374,9 +3434,14 @@ export function HabitTracker() {
                       Installed
                     </span>
                   ) : (
-                    <button className="backup-button" type="button" onClick={handleInstallApp}>
+                    <button
+                      className="backup-button"
+                      type="button"
+                      onClick={handleInstallApp}
+                      disabled={!isIosDevice && !installReady && !installFallbackReady}
+                    >
                       {isIosDevice ? <Share2 size={17} aria-hidden="true" /> : <Download size={17} aria-hidden="true" />}
-                      {isIosDevice ? "iPhone steps" : "Install app"}
+                      {isIosDevice ? "iPhone steps" : installReady || installFallbackReady ? "Install app" : "Getting ready"}
                     </button>
                   )}
                 </div>

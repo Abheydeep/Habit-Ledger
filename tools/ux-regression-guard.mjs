@@ -94,9 +94,13 @@ const checks = [
       component.includes("headerReturnLabel") &&
       component.includes("handleHeaderReturnAction") &&
       component.includes("mobile-return-chip") &&
-      component.includes('!isInstalledApp') &&
+      component.includes("installActionWaiting") &&
+      component.includes("installFallbackReady") &&
+      component.includes('clientStateReady && !isInstalledApp') &&
       component.includes('headerReturnAction === "install"') &&
       component.includes('headerReturnAction === "reminder"') &&
+      component.includes("disabled={installActionWaiting}") &&
+      component.includes("Install is getting ready. Try again in a moment.") &&
       !component.includes("returnPromptVisible") &&
       !component.includes("RETURN_PROMPT_SEEN_DATE_KEY") &&
       !component.includes("return-path-prompt") &&
@@ -125,7 +129,7 @@ const checks = [
     ok:
       component.includes("APP_INSTALLED_STORAGE_KEY") &&
       component.includes("installed-status-chip") &&
-      component.includes('!isInstalledApp') &&
+      component.includes('clientStateReady && !isInstalledApp') &&
       component.includes("headerReturnAction") &&
       css.includes(".installed-status-chip")
   },
@@ -137,6 +141,22 @@ const checks = [
       component.includes("Share2") &&
       component.includes("mobile-return-chip") &&
       css.includes(".mobile-return-chip")
+  },
+  {
+    name: "initial shell waits for local state before showing the app",
+    ok:
+      component.includes("tracker-shell booting") &&
+      component.includes("tracker-boot-card") &&
+      component.includes("Loading your wins") &&
+      component.includes('if (!clientStateReady)') &&
+      css.includes(".tracker-shell.booting") &&
+      css.includes(".tracker-boot-card")
+  },
+  {
+    name: "dark footer edit icon stays visible",
+    ok:
+      css.includes(".tracker-shell.scheme-dark .hero-actions .setup-edit-button svg") &&
+      css.includes("stroke-width: 2.4")
   },
   {
     name: "ios has png touch icons",

@@ -99,6 +99,8 @@ const checks = [
       builtText.includes("Build in 30 sec") &&
       !builtText.includes("Use starter list") &&
       builtText.includes("mobile-return-chip") &&
+      builtText.includes("Install is getting ready. Try again in a moment.") &&
+      builtText.includes("Getting ready") &&
       builtText.includes("Change these wins anytime.") &&
       builtText.includes("long-press a win") &&
       builtText.includes("Today's sections") &&
@@ -108,17 +110,14 @@ const checks = [
       css.includes(".tracker-shell.first-run-focus .month-panel{display:none}")
   },
   {
-    name: "static fallback mirrors first-run activation contract",
+    name: "static fallback uses a neutral loading shell before local state",
     ok:
-      html.includes("Build in 30 sec") &&
+      html.includes("tracker-shell booting") &&
+      html.includes("tracker-boot-card") &&
+      html.includes("Loading your wins") &&
       !html.includes("Use starter list") &&
-      html.includes("Starter workday list") &&
-      html.includes("Change these wins anytime.") &&
-      html.includes("mobile-return-chip") &&
-      html.includes("experience-first_run_empty") &&
-      html.includes("analytics-locked") &&
-      html.includes("Mark done") &&
-      html.includes("Mood") &&
+      !html.includes("experience-first_run_empty") &&
+      !html.includes("analytics-locked") &&
       !html.includes("Tap to win") &&
       !html.includes("Monthly Review") &&
       !html.includes("Win heat map")

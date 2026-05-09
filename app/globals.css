@@ -285,6 +285,11 @@ img {
   flex: 0 0 auto;
 }
 
+.mobile-return-chip:disabled {
+  cursor: progress;
+  opacity: 0.68;
+}
+
 .mobile-hero-status strong {
   display: grid;
   place-items: center;
@@ -7880,6 +7885,13 @@ img {
   color: #4a162b;
 }
 
+.tracker-shell.scheme-dark .hero-actions .icon-text-button:not(.hot) svg,
+.tracker-shell.scheme-dark .hero-actions .setup-edit-button svg {
+  color: #0f766e;
+  opacity: 1;
+  stroke-width: 2.4;
+}
+
 .tracker-shell.scheme-dark .analytics-action-card p,
 .tracker-shell.scheme-dark .personalizer-step-copy p,
 .tracker-shell.scheme-dark .day-group-header small,
@@ -8412,4 +8424,74 @@ img {
       inset 0 0 0 1px rgba(255, 255, 255, 0.16),
       0 14px 28px color-mix(in srgb, var(--app-primary), transparent 72%);
   }
+}
+
+.tracker-shell.booting {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+}
+
+.tracker-boot-card {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: min(420px, 100%);
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--app-primary), transparent 82%);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--app-surface), transparent 4%);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--app-primary), transparent 88%);
+}
+
+.tracker-boot-card .sparkle-logo {
+  width: 58px;
+}
+
+.tracker-boot-card div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.tracker-boot-card span {
+  color: color-mix(in srgb, var(--app-primary), var(--app-ink) 22%);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.tracker-boot-card strong {
+  color: var(--app-ink);
+  font-size: 1.02rem;
+  font-weight: 900;
+  line-height: 1.12;
+}
+
+.tracker-boot-card p {
+  margin: 0;
+  color: #60716d;
+  font-size: 0.78rem;
+  font-weight: 660;
+  line-height: 1.25;
+}
+
+.tracker-shell.scheme-dark .tracker-boot-card {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, #22332d, #1b2924);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.32);
+}
+
+.tracker-shell.scheme-dark .tracker-boot-card span {
+  color: #8ee0d2;
+}
+
+.tracker-shell.scheme-dark .tracker-boot-card strong {
+  color: #f3fbf7;
+}
+
+.tracker-shell.scheme-dark .tracker-boot-card p {
+  color: #b9cbc5;
 }
