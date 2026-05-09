@@ -2126,26 +2126,28 @@ export function HabitTracker() {
                 <h2 id="today-title">{formatPrettyDate(selectedDate)}</h2>
               </div>
             </div>
-            <button
-              className={`simple-today-button${simpleToday ? " active" : ""}`}
-              type="button"
-              onClick={toggleSimpleToday}
-              aria-pressed={simpleToday}
-              title={simpleToday ? "Show full Today view" : "Use the simpler daily view"}
-            >
-              <CircleDot size={15} aria-hidden="true" />
-              <span>{simpleToday ? "Simple" : "Full"}</span>
-            </button>
-            <button
-              className="section-collapse-button"
-              type="button"
-              onClick={() => setDayOpen((open) => !open)}
-              aria-expanded={dayOpen}
-              aria-label={dayOpen ? "Hide day plan" : "Open day plan"}
-            >
-              <ChevronDown size={18} aria-hidden="true" />
-              <span>{dayOpen ? "Hide" : "Open"}</span>
-            </button>
+            <div className="today-header-controls" aria-label="Today display controls">
+              <button
+                className={`simple-today-button${simpleToday ? " active" : ""}`}
+                type="button"
+                onClick={toggleSimpleToday}
+                aria-pressed={simpleToday}
+                title={simpleToday ? "Show full Today view" : "Use the simpler daily view"}
+              >
+                <CircleDot size={15} aria-hidden="true" />
+                <span>{simpleToday ? "Simple" : "Full"}</span>
+              </button>
+              <button
+                className="section-collapse-button"
+                type="button"
+                onClick={() => setDayOpen((open) => !open)}
+                aria-expanded={dayOpen}
+                aria-label={dayOpen ? "Hide day plan" : "Open day plan"}
+              >
+                <ChevronDown size={18} aria-hidden="true" />
+                <span>{dayOpen ? "Hide" : "Open"}</span>
+              </button>
+            </div>
             <div className="progress-ring" style={{ "--progress": `${completionPercent}%` } as CSSProperties}>
               <span>{completionPercent}%</span>
             </div>
@@ -2226,7 +2228,7 @@ export function HabitTracker() {
               <div>
                 <span>Personalize</span>
                 <strong>Build your Win List</strong>
-                <p>Keep the starter wins or answer a few things to make them fit your day.</p>
+                <p>This is a starter workday list. Build one around your real routine in 30 seconds.</p>
               </div>
               <button
                 className="starter-card-button"
@@ -2285,6 +2287,14 @@ export function HabitTracker() {
                     Got it
                   </button>
                 </div>
+              </div>
+            ) : null}
+
+            {simpleToday ? (
+              <div className="desktop-orientation-strip" role="status">
+                <span>Start with one win.</span>
+                <strong>Your streak begins here.</strong>
+                <small>Saved locally. No login needed.</small>
               </div>
             ) : null}
 
@@ -2427,7 +2437,7 @@ export function HabitTracker() {
                                     <h3>{habit.name}</h3>
                                     <p>{habit.quip}</p>
                                   </span>
-                                  <span className="tap-hint">{done ? "Won today" : "Tap to win"}</span>
+                                  <span className="tap-hint">{done ? "Won today" : "Mark done"}</span>
                                 </button>
                                 <div className="habit-card-actions">
                                   <button
@@ -2445,7 +2455,7 @@ export function HabitTracker() {
                                     ) : (
                                       <ClipboardCheck size={16} aria-hidden="true" />
                                     )}
-                                    <span>{moodOption?.shortLabel ?? (done ? "Won" : "Status")}</span>
+                                    <span>{moodOption?.shortLabel ?? (done ? "Won" : "Mood")}</span>
                                   </button>
                                 </div>
                               </div>
@@ -2560,7 +2570,7 @@ export function HabitTracker() {
                                   <h3>{habit.name}</h3>
                                   <p>{habit.quip}</p>
                                 </span>
-                                <span className="tap-hint">{done ? "Logged" : "Optional"}</span>
+                                <span className="tap-hint">{done ? "Logged" : "Mark done"}</span>
                               </button>
                               <div className="habit-card-actions">
                                 <button
@@ -2589,7 +2599,7 @@ export function HabitTracker() {
                                   ) : (
                                     <ClipboardCheck size={16} aria-hidden="true" />
                                   )}
-                                  <span>{moodOption?.shortLabel ?? (done ? "Won" : "Status")}</span>
+                                  <span>{moodOption?.shortLabel ?? (done ? "Won" : "Mood")}</span>
                                 </button>
                               </div>
                             </div>

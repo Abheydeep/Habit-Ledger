@@ -197,6 +197,41 @@ const checks = [
     ok: component.includes("SIMPLE_TODAY_STORAGE_KEY") && component.includes("simple-today-button")
   },
   {
+    name: "desktop today is prioritized over analytics",
+    ok:
+      css.includes("@media (min-width: 1081px)") &&
+      css.includes("grid-template-columns: minmax(0, 1.15fr) minmax(330px, 0.85fr)") &&
+      css.includes(".today-header-controls") &&
+      css.includes(".today-panel .section-header .progress-ring")
+  },
+  {
+    name: "habit action labels make completion primary",
+    ok:
+      component.includes("Mark done") &&
+      component.includes('"Mood"') &&
+      !component.includes("Tap to win") &&
+      css.includes(".habit-card-actions .mood-preview")
+  },
+  {
+    name: "desktop simple today has orientation and local trust copy",
+    ok:
+      component.includes("desktop-orientation-strip") &&
+      component.includes("Start with one win.") &&
+      component.includes("Your streak begins here.") &&
+      component.includes("Saved locally. No login needed.") &&
+      css.includes(".desktop-orientation-strip") &&
+      css.includes("display: none") &&
+      css.includes("display: flex")
+  },
+  {
+    name: "starter personalization copy is desktop-readable",
+    ok:
+      component.includes("This is a starter workday list. Build one around your real routine in 30 seconds.") &&
+      component.includes("starter-card-button") &&
+      css.includes(".starter-card p") &&
+      css.includes("display: block")
+  },
+  {
     name: "core list hint teaches hold menu without pressure copy",
     ok:
       component.includes("getHoldMenuHint") &&

@@ -2322,6 +2322,10 @@ img {
   box-shadow: 0 6px 14px color-mix(in srgb, var(--app-primary), transparent 94%);
 }
 
+.today-header-controls {
+  display: contents;
+}
+
 .simple-today-button {
   position: relative;
   z-index: 1;
@@ -2618,6 +2622,10 @@ img {
   border: 1px solid color-mix(in srgb, var(--app-primary), transparent 82%);
   border-radius: 8px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--app-primary), #ffffff 92%), rgba(255, 255, 255, 0.78));
+}
+
+.desktop-orientation-strip {
+  display: none;
 }
 
 .return-path-prompt {
@@ -6254,8 +6262,83 @@ img {
   }
 
   .dashboard-grid {
-    grid-template-columns: minmax(330px, 0.78fr) minmax(0, 1.22fr);
+    grid-template-columns: minmax(0, 1.15fr) minmax(330px, 0.85fr);
     gap: 18px;
+  }
+
+  .today-panel .section-header {
+    align-items: center;
+    gap: 12px;
+  }
+
+  .today-panel .section-title-lockup {
+    flex: 1 1 min(430px, 100%);
+  }
+
+  .today-header-controls {
+    order: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px;
+    border: 1px solid color-mix(in srgb, var(--app-primary), transparent 86%);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-surface), #ffffff 78%);
+  }
+
+  .today-header-controls .simple-today-button,
+  .today-header-controls .section-collapse-button {
+    min-height: 32px;
+    padding: 0 9px;
+    font-size: 0.72rem;
+    box-shadow: none;
+  }
+
+  .today-panel .section-header .progress-ring {
+    order: 2;
+    width: 78px;
+    margin-left: auto;
+  }
+
+  .desktop-orientation-strip {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--app-primary), transparent 84%);
+    border-radius: 8px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--app-primary), #ffffff 92%), rgba(255, 255, 255, 0.78));
+    color: #53635f;
+    font-size: 0.76rem;
+    font-weight: 760;
+  }
+
+  .desktop-orientation-strip span,
+  .desktop-orientation-strip small {
+    color: #60716d;
+    font-weight: 760;
+  }
+
+  .desktop-orientation-strip strong {
+    color: var(--app-ink);
+    font-weight: 900;
+  }
+
+  .starter-card p {
+    display: block;
+  }
+
+  .habit-card-actions .mood-preview {
+    opacity: 0.82;
+    box-shadow: none;
+  }
+
+  .habit-card-actions .mood-preview.selected,
+  .habit-card.expanded .habit-card-actions .mood-preview {
+    opacity: 1;
   }
 
   .brand-lockup {
@@ -6324,6 +6407,7 @@ img {
 }
 
 .tracker-shell.scheme-dark .hero-actions,
+.tracker-shell.scheme-dark .today-header-controls,
 .tracker-shell.scheme-dark .icon-text-button,
 .tracker-shell.scheme-dark .backup-button,
 .tracker-shell.scheme-dark .round-button,
@@ -6337,6 +6421,7 @@ img {
 .tracker-shell.scheme-dark .heatmap-summary,
 .tracker-shell.scheme-dark .return-path-prompt,
 .tracker-shell.scheme-dark .permanent-list-toolbar,
+.tracker-shell.scheme-dark .desktop-orientation-strip,
 .tracker-shell.scheme-dark .backup-error-chip,
 .tracker-shell.scheme-dark .wins-overflow-menu,
 .tracker-shell.scheme-dark .month-grid-wrap,
@@ -6452,6 +6537,8 @@ img {
 .tracker-shell.scheme-dark .settings-section-title small,
 .tracker-shell.scheme-dark .return-path-prompt span,
 .tracker-shell.scheme-dark .permanent-list-toolbar span,
+.tracker-shell.scheme-dark .desktop-orientation-strip span,
+.tracker-shell.scheme-dark .desktop-orientation-strip small,
 .tracker-shell.scheme-dark .backup-error-chip,
 .tracker-shell.scheme-dark .mobile-collapse-summary span,
 .tracker-shell.scheme-dark .permanent-list-count-row small,
@@ -6553,6 +6640,7 @@ img {
 
 .tracker-shell.scheme-dark .return-path-prompt strong,
 .tracker-shell.scheme-dark .permanent-list-toolbar strong,
+.tracker-shell.scheme-dark .desktop-orientation-strip strong,
 .tracker-shell.scheme-dark .pressure-guard-card strong,
 .tracker-shell.scheme-dark .quick-manager-header h2,
 .tracker-shell.scheme-dark .quick-manager-summary strong,
