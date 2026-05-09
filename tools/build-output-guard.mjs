@@ -114,6 +114,7 @@ const checks = [
       !html.includes("Use starter list") &&
       html.includes("Starter workday list") &&
       html.includes("Change these wins anytime.") &&
+      html.includes("mobile-return-chip") &&
       html.includes("experience-first_run_empty") &&
       html.includes("analytics-locked") &&
       html.includes("Mark done") &&

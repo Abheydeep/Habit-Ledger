@@ -94,7 +94,7 @@ const checks = [
       component.includes("headerReturnLabel") &&
       component.includes("handleHeaderReturnAction") &&
       component.includes("mobile-return-chip") &&
-      component.includes('clientStateReady && !isInstalledApp') &&
+      component.includes('!isInstalledApp') &&
       component.includes('headerReturnAction === "install"') &&
       component.includes('headerReturnAction === "reminder"') &&
       !component.includes("returnPromptVisible") &&
@@ -125,7 +125,7 @@ const checks = [
     ok:
       component.includes("APP_INSTALLED_STORAGE_KEY") &&
       component.includes("installed-status-chip") &&
-      component.includes("clientStateReady && !isInstalledApp") &&
+      component.includes('!isInstalledApp') &&
       component.includes("headerReturnAction") &&
       css.includes(".installed-status-chip")
   },

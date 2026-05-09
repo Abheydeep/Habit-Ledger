@@ -959,7 +959,7 @@ export function HabitTracker() {
     experienceState === "starter_active_no_history" ||
     (!personalizationSnapshot && activitySummary.activeDayCount < 5);
   const headerReturnAction =
-    clientStateReady && !isInstalledApp
+    !isInstalledApp
       ? "install"
       : clientStateReady && isInstalledApp && !reminderSettings.enabled && earlyWinSetupWindow
         ? "reminder"
