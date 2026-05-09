@@ -45,7 +45,10 @@ const checks = [
     name: "desktop Today-first grid ships in CSS",
     ok:
       css.includes("@media (min-width:1081px)") &&
-      /dashboard-grid\{grid-template-columns:minmax\(0,1\.15fr\) minmax\(330px,\.?85fr\)/.test(css)
+      /dashboard-grid\{grid-template-columns:minmax\(0,1\.15fr\) minmax\(330px,\.?85fr\)/.test(css) &&
+      css.includes(".tracker-shell.analytics-locked .dashboard-grid{grid-template-columns:minmax(0,1fr)") &&
+      css.includes(".tracker-shell.first-run-focus .hero-actions{width:min(560px,100%)") &&
+      css.includes("grid-template-columns:62px minmax(0,1fr) max-content")
   },
   {
     name: "desktop activation copy and controls ship",

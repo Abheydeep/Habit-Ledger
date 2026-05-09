@@ -8001,3 +8001,67 @@ img {
     font-size: 0.78rem;
   }
 }
+
+/* Desktop activation polish: when analytics is locked, Today should use the room. */
+@media (min-width: 1081px) {
+  .tracker-shell.analytics-locked .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tracker-shell.analytics-locked .today-panel {
+    width: 100%;
+  }
+
+  .tracker-shell.first-run-focus .hero-actions {
+    width: min(560px, 100%);
+  }
+
+  .tracker-shell.first-run-focus .hero-actions-row.setup {
+    grid-template-columns: minmax(164px, 1.2fr) repeat(2, minmax(122px, 0.9fr));
+  }
+
+  .tracker-shell.first-run-focus .hero-actions .icon-text-button {
+    grid-template-columns: 20px minmax(0, max-content);
+    grid-template-rows: auto;
+    justify-items: center;
+    gap: 8px;
+    min-height: 62px;
+    padding: 0 15px;
+    font-size: 0.82rem;
+    line-height: 1.08;
+  }
+
+  .tracker-shell.first-run-focus .hero-actions .icon-text-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .habit-card {
+    padding: 10px;
+  }
+
+  .habit-card-main {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: 11px;
+    min-height: 68px;
+  }
+
+  .habit-win-button {
+    grid-template-columns: 62px minmax(0, 1fr) max-content;
+    gap: 11px;
+    min-height: 66px;
+  }
+
+  .habit-thumb {
+    width: 62px;
+  }
+
+  .habit-card p {
+    display: block;
+  }
+
+  .tap-hint {
+    display: block;
+    justify-self: end;
+  }
+}

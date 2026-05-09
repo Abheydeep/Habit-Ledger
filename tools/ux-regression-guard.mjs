@@ -224,8 +224,23 @@ const checks = [
     ok:
       css.includes("@media (min-width: 1081px)") &&
       css.includes("grid-template-columns: minmax(0, 1.15fr) minmax(330px, 0.85fr)") &&
+      css.includes(".tracker-shell.analytics-locked .dashboard-grid") &&
+      css.includes("grid-template-columns: minmax(0, 1fr)") &&
       css.includes(".today-header-controls") &&
       css.includes(".today-panel .section-header .progress-ring")
+  },
+  {
+    name: "desktop first-run layout does not waste the locked analytics column",
+    ok:
+      css.includes("Desktop activation polish") &&
+      css.includes(".tracker-shell.first-run-focus .hero-actions") &&
+      css.includes("width: min(560px, 100%)") &&
+      css.includes(".tracker-shell.first-run-focus .hero-actions-row.setup") &&
+      css.includes("minmax(164px, 1.2fr)") &&
+      css.includes(".habit-win-button") &&
+      css.includes("grid-template-columns: 62px minmax(0, 1fr) max-content") &&
+      css.includes(".tap-hint") &&
+      css.includes("justify-self: end")
   },
   {
     name: "habit action labels make completion primary",
