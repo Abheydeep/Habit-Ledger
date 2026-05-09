@@ -8004,20 +8004,70 @@ img {
 
 /* Desktop activation polish: when analytics is locked, Today should use the room. */
 @media (min-width: 1081px) {
+  .tracker-shell.first-run-focus {
+    padding-inline: clamp(18px, 3vw, 48px);
+  }
+
+  .tracker-shell.first-run-focus .tracker-hero,
+  .tracker-shell.first-run-focus .dashboard-grid {
+    max-width: 1240px;
+  }
+
+  .tracker-shell.first-run-focus .tracker-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, auto);
+    min-height: 138px;
+    padding: 18px 20px;
+    border-radius: 14px;
+  }
+
+  .tracker-shell.first-run-focus .brand-lockup {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+  }
+
+  .tracker-shell.first-run-focus .brand-media {
+    grid-template-columns: 64px;
+    min-width: 64px;
+  }
+
+  .tracker-shell.first-run-focus .brand-media .brand-avatar {
+    display: none;
+  }
+
+  .tracker-shell.first-run-focus .sparkle-logo {
+    width: 64px;
+  }
+
+  .tracker-shell.first-run-focus .tracker-hero h1 {
+    margin-top: 4px;
+    font-size: clamp(3rem, 4vw, 4.8rem);
+  }
+
+  .tracker-shell.first-run-focus .tracker-hero p {
+    margin-top: 8px;
+    font-size: 1rem;
+  }
+
   .tracker-shell.analytics-locked .dashboard-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .tracker-shell.analytics-locked .today-panel {
     width: 100%;
+    max-width: 1240px;
+    justify-self: center;
+    padding: 18px;
   }
 
   .tracker-shell.first-run-focus .hero-actions {
-    width: min(560px, 100%);
+    width: min(500px, 100%);
+    padding: 6px;
+    border-radius: 18px;
   }
 
   .tracker-shell.first-run-focus .hero-actions-row.setup {
-    grid-template-columns: minmax(164px, 1.2fr) repeat(2, minmax(122px, 0.9fr));
+    grid-template-columns: minmax(170px, 1.15fr) repeat(2, minmax(120px, 0.85fr));
   }
 
   .tracker-shell.first-run-focus .hero-actions .icon-text-button {
@@ -8025,8 +8075,9 @@ img {
     grid-template-rows: auto;
     justify-items: center;
     gap: 8px;
-    min-height: 62px;
-    padding: 0 15px;
+    min-height: 54px;
+    padding: 0 14px;
+    border-radius: 14px;
     font-size: 0.82rem;
     line-height: 1.08;
   }
@@ -8036,8 +8087,54 @@ img {
     height: 20px;
   }
 
+  .tracker-shell.first-run-focus .today-panel .section-header {
+    padding-bottom: 16px;
+    border-bottom: 1px solid color-mix(in srgb, var(--app-primary), transparent 84%);
+  }
+
+  .tracker-shell.first-run-focus .today-panel .section-header .progress-ring {
+    width: 70px;
+  }
+
+  .tracker-shell.first-run-focus .starter-card,
+  .tracker-shell.first-run-focus .desktop-orientation-strip,
+  .tracker-shell.first-run-focus .permanent-list-toolbar,
+  .tracker-shell.first-run-focus .day-group,
+  .tracker-shell.first-run-focus .note-box {
+    max-width: 1040px;
+    margin-inline: auto;
+  }
+
+  .tracker-shell.first-run-focus .starter-card {
+    margin-top: 16px;
+    padding: 14px 16px;
+  }
+
+  .tracker-shell.first-run-focus .desktop-orientation-strip {
+    justify-content: center;
+    margin-top: 12px;
+    padding: 9px 14px;
+  }
+
+  .tracker-shell.first-run-focus .permanent-list-toolbar {
+    padding: 14px;
+  }
+
+  .tracker-shell.first-run-focus .checklist {
+    gap: 8px;
+  }
+
+  .tracker-shell.first-run-focus .day-group-header {
+    min-height: 46px;
+    padding: 0 14px;
+  }
+
   .habit-card {
     padding: 10px;
+  }
+
+  .tracker-shell.first-run-focus .habit-card {
+    padding: 12px 14px;
   }
 
   .habit-card-main {
@@ -8046,14 +8143,28 @@ img {
     min-height: 68px;
   }
 
+  .tracker-shell.first-run-focus .habit-card-main {
+    min-height: 76px;
+  }
+
   .habit-win-button {
     grid-template-columns: 62px minmax(0, 1fr) max-content;
     gap: 11px;
     min-height: 66px;
   }
 
+  .tracker-shell.first-run-focus .habit-win-button {
+    grid-template-columns: 58px minmax(0, 1fr) max-content;
+    min-height: 64px;
+  }
+
   .habit-thumb {
     width: 62px;
+  }
+
+  .tracker-shell.first-run-focus .habit-thumb {
+    width: 58px;
+    border-radius: 12px;
   }
 
   .habit-card p {
@@ -8063,5 +8174,38 @@ img {
   .tap-hint {
     display: block;
     justify-self: end;
+  }
+
+  .tracker-shell.first-run-focus .tap-hint {
+    padding: 8px 12px;
+  }
+
+  .tracker-shell.first-run-focus .mood-preview {
+    min-width: 86px;
+    min-height: 40px;
+  }
+}
+
+@media (min-width: 1081px) {
+  .tracker-shell.scheme-dark.first-run-focus .hero-actions .icon-text-button:not(.hot) {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background:
+      linear-gradient(135deg, rgba(233, 255, 250, 0.12), rgba(233, 255, 250, 0.07));
+    color: #f3fbf7;
+    box-shadow: none;
+  }
+
+  .tracker-shell.scheme-dark.first-run-focus .hero-actions .icon-text-button:not(.hot) svg {
+    color: #a8efe5;
+  }
+
+  .tracker-shell.scheme-dark.first-run-focus .hero-actions .icon-text-button.hot {
+    background:
+      radial-gradient(circle at 8% 12%, rgba(255, 255, 255, 0.22), transparent 36%),
+      linear-gradient(135deg, var(--app-primary), var(--app-secondary));
+    color: #ffffff;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+      0 14px 28px color-mix(in srgb, var(--app-primary), transparent 72%);
   }
 }

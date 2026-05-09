@@ -233,10 +233,15 @@ const checks = [
     name: "desktop first-run layout does not waste the locked analytics column",
     ok:
       css.includes("Desktop activation polish") &&
+      css.includes(".tracker-shell.first-run-focus .tracker-hero,") &&
+      css.includes("max-width: 1240px") &&
       css.includes(".tracker-shell.first-run-focus .hero-actions") &&
-      css.includes("width: min(560px, 100%)") &&
+      css.includes("width: min(500px, 100%)") &&
       css.includes(".tracker-shell.first-run-focus .hero-actions-row.setup") &&
-      css.includes("minmax(164px, 1.2fr)") &&
+      css.includes("minmax(170px, 1.15fr)") &&
+      css.includes(".tracker-shell.first-run-focus .starter-card") &&
+      css.includes("max-width: 1040px") &&
+      css.includes(".tracker-shell.scheme-dark.first-run-focus .hero-actions .icon-text-button:not(.hot)") &&
       css.includes(".habit-win-button") &&
       css.includes("grid-template-columns: 62px minmax(0, 1fr) max-content") &&
       css.includes(".tap-hint") &&

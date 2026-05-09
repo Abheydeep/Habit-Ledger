@@ -47,8 +47,11 @@ const checks = [
       css.includes("@media (min-width:1081px)") &&
       /dashboard-grid\{grid-template-columns:minmax\(0,1\.15fr\) minmax\(330px,\.?85fr\)/.test(css) &&
       css.includes(".tracker-shell.analytics-locked .dashboard-grid{grid-template-columns:minmax(0,1fr)") &&
-      css.includes(".tracker-shell.first-run-focus .hero-actions{width:min(560px,100%)") &&
-      css.includes("grid-template-columns:62px minmax(0,1fr) max-content")
+      css.includes(".tracker-shell.first-run-focus .tracker-hero,.tracker-shell.first-run-focus .dashboard-grid{max-width:1240px") &&
+      css.includes(".tracker-shell.first-run-focus .hero-actions{width:min(500px,100%)") &&
+      css.includes(".tracker-shell.first-run-focus .starter-card") &&
+      css.includes("max-width:1040px") &&
+      css.includes("grid-template-columns:58px minmax(0,1fr) max-content")
   },
   {
     name: "desktop activation copy and controls ship",
