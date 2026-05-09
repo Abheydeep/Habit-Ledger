@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 const component = readFileSync("components/HabitTracker.tsx", "utf8");
 const css = readFileSync("app/globals.css", "utf8");
 const layout = readFileSync("app/layout.tsx", "utf8");
+const page = readFileSync("app/page.tsx", "utf8");
+const robots = readFileSync("app/robots.ts", "utf8");
+const sitemap = readFileSync("app/sitemap.ts", "utf8");
+const ogImage = readFileSync("app/opengraph-image.tsx", "utf8");
 const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 const personalization = readFileSync("lib/personalization.ts", "utf8");
 const habitData = readFileSync("lib/habitData.ts", "utf8");
@@ -122,6 +126,26 @@ const checks = [
       layout.includes("icon-192.png") &&
       manifest.includes("/icon-192.png") &&
       manifest.includes("/icon-512.png")
+  },
+  {
+    name: "public search indexing signals stay complete",
+    ok:
+      layout.includes('metadataBase: new URL(siteUrl)') &&
+      layout.includes('canonical: "/"') &&
+      layout.includes("daily wins tracker") &&
+      layout.includes("openGraph") &&
+      layout.includes("twitter") &&
+      page.includes('type="application/ld+json"') &&
+      page.includes('"@type": "WebApplication"') &&
+      page.includes("mywinlist.com") &&
+      robots.includes("sitemap.xml") &&
+      robots.includes('disallow: ["/admin"]') &&
+      sitemap.includes("https://www.mywinlist.com") &&
+      sitemap.includes('changeFrequency: "daily"') &&
+      manifest.includes('"id": "/"') &&
+      manifest.includes('"categories": ["productivity", "health", "lifestyle"]') &&
+      ogImage.includes("mywinlist.com") &&
+      ogImage.includes("Free. No signup. Works offline.")
   },
   {
     name: "mobile today keeps more wins above the fold",

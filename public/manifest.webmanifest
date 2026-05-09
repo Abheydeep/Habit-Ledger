@@ -1,13 +1,24 @@
 {
+  "id": "/",
   "name": "The Win List",
   "short_name": "Win List",
-  "description": "A daily must-do wins app for planning and completing what matters today.",
+  "description": "A free daily wins tracker for core habits, optional routines, mood status, streaks, reminders, and offline-first progress.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#111c19",
   "theme_color": "#111c19",
   "orientation": "portrait",
+  "categories": ["productivity", "health", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Open today's wins",
+      "short_name": "Today",
+      "description": "Open The Win List and finish today's core wins.",
+      "url": "/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
