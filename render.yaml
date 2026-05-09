@@ -4,7 +4,7 @@ services:
     runtime: static
     repo: https://github.com/Abheydeep/Habit-Ledger
     branch: release/daily-driver-v1
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run verify:release
     staticPublishPath: ./out
     domains:
       - www.mywinlist.com

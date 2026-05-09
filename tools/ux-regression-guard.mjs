@@ -10,6 +10,10 @@ const ogImage = readFileSync("public/og-image.svg", "utf8");
 const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 const personalization = readFileSync("lib/personalization.ts", "utf8");
 const habitData = readFileSync("lib/habitData.ts", "utf8");
+const packageJson = readFileSync("package.json", "utf8");
+const renderConfig = readFileSync("render.yaml", "utf8");
+const releaseWorkflow = readFileSync(".github/workflows/release-verification.yml", "utf8");
+const buildOutputGuard = readFileSync("tools/build-output-guard.mjs", "utf8");
 
 const checks = [
   {
@@ -303,6 +307,23 @@ const checks = [
   {
     name: "analytics keeps plain-language next move",
     ok: component.includes("Next best move") && component.includes("Tomorrow: protect")
+  },
+  {
+    name: "release verification gates typecheck build tests and output assets",
+    ok:
+      packageJson.includes('"verify:release"') &&
+      packageJson.includes('"build:guard"') &&
+      renderConfig.includes("npm run verify:release") &&
+      releaseWorkflow.includes("release/daily-driver-v1") &&
+      releaseWorkflow.includes("npm ci") &&
+      releaseWorkflow.includes("npm run typecheck") &&
+      releaseWorkflow.includes("npm run test:primary-wins") &&
+      releaseWorkflow.includes("npm run ux:guard") &&
+      releaseWorkflow.includes("npm run build") &&
+      releaseWorkflow.includes("npm run build:guard") &&
+      buildOutputGuard.includes("out/index.html") &&
+      buildOutputGuard.includes("Build in 30 sec") &&
+      buildOutputGuard.includes("desktop-orientation-strip")
   }
 ];
 

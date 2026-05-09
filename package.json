@@ -9,7 +9,9 @@
     "start": "next start --hostname 127.0.0.1 --port 3005",
     "typecheck": "tsc --noEmit",
     "test:primary-wins": "node --test tests/primaryWins.test.mjs",
-    "ux:guard": "node tools/ux-regression-guard.mjs"
+    "ux:guard": "node tools/ux-regression-guard.mjs",
+    "build:guard": "node tools/build-output-guard.mjs",
+    "verify:release": "npm run typecheck && npm run test:primary-wins && npm run ux:guard && npm run build && npm run build:guard"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",

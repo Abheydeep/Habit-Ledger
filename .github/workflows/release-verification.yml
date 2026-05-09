@@ -1,0 +1,43 @@
+name: Release Verification
+
+on:
+  push:
+    branches:
+      - release/daily-driver-v1
+  pull_request:
+    branches:
+      - release/daily-driver-v1
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Typecheck, Build, And Guards
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Primary Wins Tests
+        run: npm run test:primary-wins
+
+      - name: UX Regression Guard
+        run: npm run ux:guard
+
+      - name: Build
+        run: npm run build
+
+      - name: Build Output Guard
+        run: npm run build:guard
