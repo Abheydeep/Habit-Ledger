@@ -26,6 +26,14 @@
   gap: 16px;
 }
 
+.navActions,
+.ctaLinks {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .brandLink,
 .navButton,
 .cta a {
@@ -498,6 +506,11 @@
     flex-direction: column;
     align-items: flex-start;
     padding: 30px 20px;
+  }
+
+  .ctaLinks {
+    width: 100%;
+    flex-direction: column;
   }
 
   .cta a {

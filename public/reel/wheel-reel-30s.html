@@ -1,0 +1,1217 @@
+<!--
+/*
+  THE WIN LIST — 30s Reel (loop)
+  To export: Chrome F11 → OBS window capture → record 30s → loop 3x for a 90s clip
+  Or screen-record on phone for authentic mobile footage.
+  Add music in CapCut. Recommended: "Everything Hallelujah" or trending audio.
+  mywinlist.com
+*/
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Win List - 30s Reel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --teal: #0f766e;
+      --teal-light: #14b8a6;
+      --dark: #060f0d;
+      --amber: #f59e0b;
+      --text: #e4f5ef;
+      --text-soft: rgba(228, 245, 239, 0.58);
+      --surface: #0d1f1c;
+      --accent: #0f766e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      color: var(--text);
+      font-family: "DM Sans", system-ui, sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+    }
+
+    #stage {
+      position: relative;
+      width: min(100vw, 56.25vh);
+      height: min(100vh, 177.7778vw);
+      max-width: 1080px;
+      max-height: 1920px;
+      aspect-ratio: 9 / 16;
+      overflow: hidden;
+      background: #060f0d;
+      isolation: isolate;
+    }
+
+    #particleCanvas {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    #wheelLayer,
+    .wheel-ghost {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 8;
+      width: 31.4815%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      transform-origin: center;
+      will-change: transform, opacity, filter;
+    }
+
+    .wheel-ghost {
+      z-index: 7;
+      opacity: 0;
+      filter: blur(2px);
+      pointer-events: none;
+    }
+
+    .wheel-svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      filter: drop-shadow(0 22px 44px rgba(0, 0, 0, 0.5));
+    }
+
+    .spoke-line {
+      stroke-width: 2;
+      opacity: 0.6;
+      stroke-linecap: round;
+      transition: stroke-width 90ms linear, opacity 90ms linear, filter 90ms linear;
+    }
+
+    .node-ring {
+      fill: none;
+      stroke: #fff;
+      stroke-width: 0;
+      opacity: 0;
+      transition: opacity 90ms linear, stroke-width 90ms linear;
+    }
+
+    .node-dot {
+      transform-origin: center;
+      transform-box: fill-box;
+      transition: transform 90ms linear, filter 90ms linear;
+    }
+
+    .node-emoji {
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+      font-size: 26px;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+
+    .spoke.active .spoke-line {
+      stroke-width: 4;
+      opacity: 1;
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+
+    .spoke.active .node-dot {
+      transform: scale(1.4);
+      filter: drop-shadow(0 0 18px currentColor);
+    }
+
+    .spoke.active .node-ring {
+      opacity: 1;
+      stroke-width: 4;
+    }
+
+    #wheelLayer.all-glow .spoke-line {
+      stroke-width: 4;
+      opacity: 1;
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+
+    #wheelLayer.all-glow .node-dot {
+      transform: scale(1.18);
+      filter: drop-shadow(0 0 18px currentColor);
+    }
+
+    #content {
+      position: absolute;
+      inset: 0;
+      z-index: 12;
+      pointer-events: none;
+    }
+
+    #contentTop,
+    #contentBottom,
+    #contentCenter {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding-inline: 7%;
+      text-align: center;
+    }
+
+    #contentTop {
+      top: 0;
+      height: 38%;
+      align-items: flex-end;
+      padding-bottom: 3.2%;
+    }
+
+    #contentBottom {
+      bottom: 0;
+      height: 38%;
+      align-items: flex-start;
+      padding-top: 3.2%;
+    }
+
+    #contentCenter {
+      inset: 0;
+      align-items: center;
+      padding: 0 8%;
+    }
+
+    .beat-copy {
+      width: 100%;
+    }
+
+    .serif {
+      margin: 0;
+      color: #fff;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: clamp(42px, 7.8vw, 86px);
+      font-style: italic;
+      font-weight: 400;
+      line-height: 0.92;
+      text-shadow: 0 4px 0 rgba(0, 0, 0, 0.78);
+      text-wrap: balance;
+    }
+
+    .serif.big {
+      font-size: clamp(54px, 9.2vw, 104px);
+    }
+
+    .sans {
+      margin: 0;
+      color: var(--teal-light);
+      font-family: "DM Sans", system-ui, sans-serif;
+      font-size: clamp(25px, 4.5vw, 48px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      text-wrap: balance;
+    }
+
+    .soft {
+      color: var(--text-soft);
+    }
+
+    .word {
+      display: inline-block;
+      will-change: opacity, transform;
+    }
+
+    .mini-caption {
+      margin-top: 12px;
+      color: var(--text-soft);
+      font-size: clamp(12px, 1.7vw, 18px);
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .habit-pills,
+    .mood-pills,
+    .chip-row,
+    .app-icons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .habit-pill {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: clamp(36px, 6vw, 54px);
+      height: clamp(36px, 6vw, 54px);
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.86);
+      font-size: clamp(18px, 2.8vw, 28px);
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(15, 118, 110, 0.3);
+    }
+
+    .habit-pill::before {
+      position: absolute;
+      inset: auto 0 0;
+      height: var(--fill, 0%);
+      content: "";
+      background: rgba(20, 184, 166, 0.65);
+      transition: none;
+    }
+
+    .habit-pill b {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      inset: 0;
+      color: #fff;
+      font-size: clamp(17px, 2.8vw, 28px);
+      opacity: var(--check, 0);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .mood-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: color-mix(in srgb, var(--tone) 24%, #0d1f1c);
+      color: #fff;
+      font-size: clamp(10px, 1.35vw, 14px);
+      font-weight: 900;
+      white-space: nowrap;
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+      transform: scale(var(--pulse, 1));
+    }
+
+    .mood-note {
+      margin-top: 12px;
+      color: var(--note, var(--amber));
+      font-size: clamp(13px, 2vw, 19px);
+      font-weight: 900;
+    }
+
+    .habit-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(280px, 74%);
+      min-height: 48px;
+      margin-inline: auto;
+      padding: 12px 14px;
+      overflow: hidden;
+      border: 1px solid rgba(228, 245, 239, 0.12);
+      border-left: 4px solid var(--teal-light);
+      border-radius: 14px;
+      background: rgba(13, 31, 28, 0.88);
+      color: #fff;
+      font-size: clamp(14px, 2vw, 18px);
+      font-weight: 900;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+    }
+
+    .habit-card::before {
+      position: absolute;
+      inset: 0 auto 0 0;
+      z-index: 0;
+      width: var(--wash, 0%);
+      content: "";
+      background: rgba(15, 118, 110, 0.28);
+    }
+
+    .habit-card span,
+    .habit-card i {
+      position: relative;
+      z-index: 1;
+      font-style: normal;
+    }
+
+    .check-circle {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 2px solid rgba(228, 245, 239, 0.7);
+      border-radius: 999px;
+      background: var(--circle, transparent);
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .ripple {
+      position: absolute;
+      right: 10px;
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      border-radius: 999px;
+      opacity: var(--ripple-opacity, 0);
+      transform: scale(var(--ripple-scale, 0.3));
+    }
+
+    .toast {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: min(300px, 78%);
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(20, 184, 166, 0.28);
+      border-left: 4px solid var(--teal-light);
+      border-radius: 12px;
+      background: rgba(13, 31, 28, 0.95);
+      color: #fff;
+      font-size: clamp(11px, 1.55vw, 15px);
+      font-weight: 900;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.32);
+    }
+
+    .install-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+      width: min(360px, 88%);
+      margin-inline: auto;
+      border-radius: 18px;
+      background: rgba(13, 31, 28, 0.66);
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+      overflow: hidden;
+    }
+
+    .install-side {
+      padding: 12px 10px;
+      color: #fff;
+      font-size: clamp(11px, 1.7vw, 16px);
+      font-weight: 900;
+    }
+
+    .install-side + .install-side {
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .steps {
+      display: grid;
+      gap: 5px;
+      margin-top: 8px;
+      color: var(--text-soft);
+      font-size: clamp(9px, 1.35vw, 13px);
+      font-weight: 700;
+    }
+
+    .step {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 18px;
+      border-radius: 999px;
+      background: rgba(228, 245, 239, 0.06);
+    }
+
+    .step.add {
+      background: var(--teal);
+      color: #fff;
+      transform: scale(var(--step-pulse, 1));
+    }
+
+    .app-icons {
+      margin-top: 12px;
+    }
+
+    .app-icon,
+    .win-app-icon {
+      display: grid;
+      place-items: center;
+      width: clamp(26px, 4vw, 40px);
+      height: clamp(26px, 4vw, 40px);
+      border-radius: 10px;
+      background: rgba(228, 245, 239, 0.14);
+    }
+
+    .win-app-icon {
+      border-radius: 999px;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 900;
+      transform: scale(var(--icon-scale, 1));
+      box-shadow: 0 0 22px rgba(20, 184, 166, 0.55);
+    }
+
+    .streak-card,
+    .pattern-card,
+    .trust-card {
+      width: min(280px, 76%);
+      margin-inline: auto;
+      padding: 16px;
+      border: 1px solid rgba(228, 245, 239, 0.12);
+      border-left: 4px solid var(--accent);
+      border-radius: 18px;
+      background: rgba(13, 31, 28, 0.88);
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
+    }
+
+    .fire {
+      display: block;
+      color: var(--amber);
+      font-size: calc(2rem + var(--fire-grow, 0) * 2rem);
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 0 0 calc(12px + var(--fire-grow, 0) * 22px) rgba(245, 158, 11, 0.7);
+    }
+
+    .streak-number {
+      color: #fff;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: clamp(38px, 7vw, 76px);
+      font-style: italic;
+      line-height: 0.95;
+    }
+
+    .nudge-text {
+      margin-top: 8px;
+      color: #fff;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: clamp(12px, 1.75vw, 18px);
+      font-style: italic;
+    }
+
+    .pattern-card {
+      text-align: left;
+    }
+
+    .pattern-kicker {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--teal-light);
+      font-size: clamp(10px, 1.3vw, 13px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .insight {
+      margin: 0 0 10px;
+      color: #fff;
+      font-size: clamp(12px, 1.75vw, 18px);
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 10px);
+      gap: 2px;
+      margin-top: 10px;
+    }
+
+    .grid span {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: var(--cell);
+      opacity: var(--cell-opacity, 0);
+      transform: scale(var(--cell-scale, 0));
+    }
+
+    .trust-draw {
+      display: block;
+      width: min(100px, 22vw);
+      margin: 0 auto 12px;
+    }
+
+    .trust-ring,
+    .trust-check {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .trust-ring {
+      stroke: var(--teal-light);
+      stroke-width: 6;
+      stroke-dasharray: 226;
+      stroke-dashoffset: var(--ring-offset, 226);
+    }
+
+    .trust-check {
+      stroke: #fff;
+      stroke-width: 7;
+      stroke-dasharray: 50;
+      stroke-dashoffset: var(--check-offset, 50);
+    }
+
+    .trust-fill {
+      fill: var(--teal);
+      opacity: var(--fill-opacity, 0);
+    }
+
+    .trust-line {
+      margin: 6px 0;
+      color: #fff;
+      font-size: clamp(16px, 2.5vw, 27px);
+      font-weight: 900;
+      opacity: var(--line-opacity, 0);
+      transform: translateY(var(--line-y, 10px));
+    }
+
+    .cta {
+      width: 100%;
+      text-align: center;
+    }
+
+    .cta h1 {
+      margin: 0;
+      color: #fff;
+      font-family: "DM Sans", system-ui, sans-serif;
+      font-size: clamp(38px, 7vw, 78px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 0.95;
+      transform: scale(var(--cta-scale, 0.8));
+      opacity: var(--cta-opacity, 0);
+    }
+
+    .cta p {
+      margin: 14px 0 0;
+      color: var(--text-soft);
+      font-size: clamp(17px, 2.8vw, 31px);
+      font-weight: 900;
+      opacity: var(--cta-sub, 0);
+    }
+
+    .cta .bio {
+      margin-top: 18px;
+      color: var(--teal-light);
+      font-size: clamp(20px, 3.4vw, 38px);
+      font-weight: 900;
+      opacity: var(--cta-bio, 0);
+    }
+
+    .cursor {
+      display: inline-block;
+      opacity: var(--cursor, 1);
+    }
+
+    #borderPulse {
+      position: absolute;
+      inset: 0;
+      z-index: 25;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 3px rgba(20, 184, 166, var(--border-alpha, 0));
+    }
+
+    #progress {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 30;
+      height: 3px;
+      background: rgba(228, 245, 239, 0.1);
+    }
+
+    #progressFill {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), var(--teal-light));
+      box-shadow: 0 0 18px rgba(20, 184, 166, 0.78);
+    }
+  </style>
+</head>
+<body>
+  <main id="stage" aria-label="The Win List 30-second reel">
+    <canvas id="particleCanvas"></canvas>
+    <div id="ghostA" class="wheel-ghost"></div>
+    <div id="ghostB" class="wheel-ghost"></div>
+    <div id="ghostC" class="wheel-ghost"></div>
+    <div id="ghostD" class="wheel-ghost"></div>
+    <div id="wheelLayer"></div>
+    <section id="content" aria-live="off">
+      <div id="contentTop"></div>
+      <div id="contentCenter"></div>
+      <div id="contentBottom"></div>
+    </section>
+    <div id="borderPulse"></div>
+    <div id="progress"><span id="progressFill"></span></div>
+  </main>
+
+  <script>
+    const DURATION = 30000;
+    const BURST = 0.3;
+    const SPOKES = [
+      { id: "what", emoji: "🤔", color: "#0f766e" },
+      { id: "setup", emoji: "⚙️", color: "#14b8a6" },
+      { id: "mood", emoji: "🎨", color: "#f59e0b" },
+      { id: "moment", emoji: "⚡", color: "#10b981" },
+      { id: "install", emoji: "📱", color: "#8b5cf6" },
+      { id: "nudge", emoji: "🔔", color: "#f43f5e" },
+      { id: "pattern", emoji: "📊", color: "#06b6d4" },
+      { id: "trust", emoji: "🔒", color: "#84cc16" }
+    ];
+
+    const BEATS = [
+      { start: 0, end: 2.0, id: "hook", accent: "#060f0d", spoke: -1 },
+      { start: 2.3, end: 5.3, id: "what", accent: "#0f766e", spoke: 0 },
+      { start: 5.6, end: 8.6, id: "setup", accent: "#14b8a6", spoke: 1 },
+      { start: 8.9, end: 11.9, id: "mood", accent: "#f59e0b", spoke: 2 },
+      { start: 12.2, end: 15.2, id: "moment", accent: "#10b981", spoke: 3 },
+      { start: 15.5, end: 18.5, id: "install", accent: "#8b5cf6", spoke: 4 },
+      { start: 18.8, end: 21.8, id: "nudge", accent: "#f43f5e", spoke: 5 },
+      { start: 22.1, end: 25.1, id: "pattern", accent: "#06b6d4", spoke: 6 },
+      { start: 25.4, end: 28.4, id: "trust", accent: "#0f766e", spoke: 7 },
+      { start: 28.4, end: 30.0, id: "cta", accent: "#0f766e", spoke: -1 }
+    ];
+
+    const SPINS = [2.0, 5.3, 8.6, 11.9, 15.2, 18.5, 21.8, 25.1, 28.1];
+    const stage = document.getElementById("stage");
+    const canvas = document.getElementById("particleCanvas");
+    const ctx = canvas.getContext("2d");
+    const wheelLayer = document.getElementById("wheelLayer");
+    const ghosts = [
+      document.getElementById("ghostA"),
+      document.getElementById("ghostB"),
+      document.getElementById("ghostC"),
+      document.getElementById("ghostD")
+    ];
+    const topEl = document.getElementById("contentTop");
+    const centerEl = document.getElementById("contentCenter");
+    const bottomEl = document.getElementById("contentBottom");
+    const progressFill = document.getElementById("progressFill");
+    const borderPulse = document.getElementById("borderPulse");
+
+    let startMs = performance.now();
+    let lastNow = startMs;
+    let angle = 0;
+    let wasSpin = false;
+    let bg = hexToRgb("#060f0d");
+    let particles = [];
+
+    function clamp(value, min = 0, max = 1) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function easeIn(t) {
+      return t * t * t;
+    }
+
+    function easeOut(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function spring(t) {
+      return 1 + (Math.sin(t * Math.PI * 2.2) * 0.18 * (1 - t));
+    }
+
+    function hexToRgb(hex) {
+      const clean = hex.replace("#", "");
+      return {
+        r: parseInt(clean.slice(0, 2), 16),
+        g: parseInt(clean.slice(2, 4), 16),
+        b: parseInt(clean.slice(4, 6), 16)
+      };
+    }
+
+    function mixColor(from, to, amount) {
+      return {
+        r: lerp(from.r, to.r, amount),
+        g: lerp(from.g, to.g, amount),
+        b: lerp(from.b, to.b, amount)
+      };
+    }
+
+    function rgb(color, alpha = 1) {
+      return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${alpha})`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function progress(t, start, duration) {
+      return clamp((t - start) / duration);
+    }
+
+    function visibleStyle(p, y = 18, scale = 1) {
+      const eased = easeOut(clamp(p));
+      return `opacity:${eased};transform:translateY(${(1 - eased) * y}px) scale(${lerp(0.96, scale, eased)});`;
+    }
+
+    function slamStyle(p, y) {
+      const eased = easeOut(clamp(p));
+      return `opacity:${eased};transform:translateY(${(1 - eased) * y}px);`;
+    }
+
+    function wordLine(text, t, start, className) {
+      return `<h2 class="${className}">${escapeHtml(text).split(" ").map((word, index) => {
+        const p = progress(t, start + index * 0.08, 0.14);
+        return `<span class="word" style="${visibleStyle(p, 24)}">${word}</span>`;
+      }).join(" ")}</h2>`;
+    }
+
+    function renderWheelSvg() {
+      const cx = 170;
+      const cy = 170;
+      const hub = 52;
+      const nodeR = 142;
+      const lineStart = hub + 10;
+      const groups = SPOKES.map((spoke, index) => {
+        const rad = (-90 + index * 45) * Math.PI / 180;
+        const x1 = cx + Math.cos(rad) * lineStart;
+        const y1 = cy + Math.sin(rad) * lineStart;
+        const x2 = cx + Math.cos(rad) * (nodeR - 28);
+        const y2 = cy + Math.sin(rad) * (nodeR - 28);
+        const nx = cx + Math.cos(rad) * nodeR;
+        const ny = cy + Math.sin(rad) * nodeR;
+        return `
+          <g class="spoke" data-spoke="${index}" style="color:${spoke.color}">
+            <line class="spoke-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${spoke.color}" />
+            <circle class="node-ring" cx="${nx}" cy="${ny}" r="32" />
+            <circle class="node-dot" cx="${nx}" cy="${ny}" r="26" fill="${spoke.color}" />
+            <text class="node-emoji" x="${nx}" y="${ny + 1}">${spoke.emoji}</text>
+          </g>
+        `;
+      }).join("");
+
+      return `
+        <svg class="wheel-svg" viewBox="0 0 340 340" aria-label="The Win List wheel" role="img">
+          <defs>
+            <linearGradient id="hub" x1="110" y1="110" x2="230" y2="230" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#14b8a6" />
+              <stop offset="1" stop-color="#0f766e" />
+            </linearGradient>
+          </defs>
+          ${groups}
+          <circle cx="${cx}" cy="${cy}" r="${hub}" fill="url(#hub)" />
+          <path d="M143 170 L162 188 L202 143" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      `;
+    }
+
+    function setActiveSpoke(index, allGlow) {
+      wheelLayer.classList.toggle("all-glow", allGlow);
+      [...wheelLayer.querySelectorAll(".spoke")].forEach((node) => {
+        node.classList.toggle("active", Number(node.dataset.spoke) === index);
+      });
+      ghosts.forEach((ghost) => {
+        ghost.classList.toggle("all-glow", allGlow);
+        [...ghost.querySelectorAll(".spoke")].forEach((node) => {
+          node.classList.toggle("active", Number(node.dataset.spoke) === index);
+        });
+      });
+    }
+
+    function getBeat(elapsed) {
+      return BEATS.find((beat) => elapsed >= beat.start && elapsed < beat.end) || null;
+    }
+
+    function getSpin(elapsed) {
+      const start = SPINS.find((spin) => elapsed >= spin && elapsed < spin + BURST);
+      if (start === undefined) return null;
+      return { start, p: (elapsed - start) / BURST };
+    }
+
+    function getNextBeatAfter(time) {
+      return BEATS.find((beat) => beat.start >= time + BURST - 0.001) || BEATS[BEATS.length - 1];
+    }
+
+    function snapAngle(spoke) {
+      return spoke >= 0 ? -spoke * 45 : angle;
+    }
+
+    function resizeCanvas() {
+      const rect = stage.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      particles = Array.from({ length: 15 }, () => newParticle(rect, true));
+    }
+
+    function newParticle(rect, randomY = false) {
+      return {
+        x: Math.random() * rect.width,
+        y: randomY ? Math.random() * rect.height : rect.height + 10,
+        size: 1.5 + Math.random() * 1.1,
+        speed: 16 + Math.random() * 32,
+        life: Math.random() * 0.8,
+        maxLife: 1.8 + Math.random() * 1.5
+      };
+    }
+
+    function updateParticles(delta, accent) {
+      const rect = stage.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      particles.forEach((particle, index) => {
+        particle.y -= particle.speed * delta;
+        particle.life += delta;
+        if (particle.y < -10 || particle.life > particle.maxLife) {
+          particles[index] = newParticle(rect);
+          particle = particles[index];
+        }
+        const alpha = Math.sin((particle.life / particle.maxLife) * Math.PI) * 0.55;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fillStyle = rgb(accent, alpha * 0.5);
+        ctx.fill();
+      });
+    }
+
+    function updateBackground(targetHex) {
+      const target = hexToRgb(targetHex);
+      bg = mixColor(bg, target, 0.08);
+      stage.style.background = `
+        radial-gradient(circle at 50% 50%, ${rgb(bg, 0.34)} 0 13%, transparent 43%),
+        radial-gradient(circle at 50% 20%, ${rgb(bg, 0.2)} 0 18%, transparent 50%),
+        linear-gradient(180deg, #060f0d, #030706 68%, #010302)
+      `;
+      stage.style.setProperty("--accent", rgb(bg, 1));
+      return bg;
+    }
+
+    function renderHook(t) {
+      const fade = 1 - progress(t, 1.4, 0.2);
+      const first = slamStyle(progress(t, 0, 0.15) * fade, -80);
+      const second = slamStyle(progress(t, 0.7, 0.15) * fade, 80);
+      return {
+        center: `
+          <div class="beat-copy">
+            <h1 class="serif" style="${first}">You're not lazy.</h1>
+            <p class="sans" style="${second};margin-top:22px">You just never tracked it.</p>
+          </div>
+        `,
+        top: "",
+        bottom: ""
+      };
+    }
+
+    function renderWhat(t) {
+      const pulse = t > 2.2 && t < 2.55 ? 1 + Math.sin((t - 2.2) / 0.35 * Math.PI) * 0.04 : 1;
+      return {
+        top: `<div class="beat-copy" style="transform:scale(${pulse})">${wordLine("Track your wins.", t, 0, "serif")}</div>`,
+        bottom: `<div class="beat-copy" style="${visibleStyle(progress(t, 0.5, 0.22) * (t < 2.72 ? 1 : 1 - progress(t, 2.72, 0.2)), 18)}"><p class="sans">Not your failures.</p></div>`,
+        center: ""
+      };
+    }
+
+    function renderSetup(t) {
+      const emojis = ["🌅", "💧", "🚶", "💻", "🌙"];
+      const checks = t > 1.9;
+      return {
+        top: `<div class="beat-copy">${wordLine("5 core wins.", t, 0, "serif")}</div>`,
+        bottom: `
+          <div class="beat-copy">
+            <div class="habit-pills">
+              ${emojis.map((emoji, index) => {
+                const p = progress(t, 0.6 + index * 0.1, 0.14);
+                const checkP = checks ? progress(t, 1.9, 0.2) : 0;
+                return `<span class="habit-pill" style="${visibleStyle(p, 0, spring(p))};--fill:${checkP * 100}%;--check:${checkP};"><span>${emoji}</span><b>✓</b></span>`;
+              }).join("")}
+            </div>
+            <div class="mini-caption" style="${visibleStyle(progress(t, 1.15, 0.18), 10)}">Personalised to you.</div>
+          </div>
+        `,
+        center: ""
+      };
+    }
+
+    function renderMood(t) {
+      const moods = [
+        ["✅", "Won", "#0f766e"],
+        ["💪", "Strong", "#2563eb"],
+        ["🔸", "Partial", "#f59e0b"],
+        ["⏭", "Skipped", "#dc2626"],
+        ["🛌", "Rest day", "#64748b"]
+      ];
+      const partialPulse = t > 1.3 && t < 1.65 ? 1 + Math.sin((t - 1.3) / 0.35 * Math.PI) * 0.2 : 1;
+      const wonPulse = t > 2.1 && t < 2.45 ? 1 + Math.sin((t - 2.1) / 0.35 * Math.PI) * 0.2 : 1;
+      const note = t >= 2.1 ? ["Crushed it.", "#14b8a6"] : ["Some counts.", "#f59e0b"];
+      return {
+        top: `<div class="beat-copy">${wordLine("Not a checkbox.", t, 0, "serif")}</div>`,
+        bottom: `
+          <div class="beat-copy">
+            <div class="mood-pills">
+              ${moods.map(([emoji, label, color], index) => {
+                const p = progress(t, 0.5 + index * 0.06, 0.12);
+                const pulse = label === "Partial" ? partialPulse : label === "Won" ? wonPulse : 1;
+                const glow = (label === "Partial" && partialPulse > 1) || (label === "Won" && wonPulse > 1);
+                return `<span class="mood-pill" style="--tone:${color};--pulse:${pulse};${visibleStyle(p, 12)};${glow ? `box-shadow:0 0 22px ${color};` : ""}">${emoji} ${label}</span>`;
+              }).join("")}
+            </div>
+            <div class="mood-note" style="--note:${note[1]};${visibleStyle(progress(t, 1.3, 0.16), 10)}">${note[0]}</div>
+          </div>
+        `,
+        center: ""
+      };
+    }
+
+    function renderMoment(t) {
+      const card = progress(t, 0.4, 0.14);
+      const ripple = progress(t, 1.0, 0.42);
+      const won = t > 1.0 ? progress(t, 1.0, 0.42) : 0;
+      const toast = progress(t, 1.5, 0.2);
+      const showSecond = progress(t, 2.3, 0.24);
+      return {
+        top: `
+          <div class="beat-copy">
+            <h2 class="serif big" style="${visibleStyle(1 - showSecond, -6)}">One tap.</h2>
+            <h2 class="serif" style="position:absolute;left:0;right:0;margin:auto;color:var(--teal-light);${visibleStyle(showSecond, 8)}">Momentum started.</h2>
+          </div>
+        `,
+        bottom: `
+          <div class="beat-copy" style="${visibleStyle(card, 16)}">
+            <div class="habit-card" style="--wash:${won * 100}%;--circle:${won ? "var(--teal)" : "transparent"};">
+              <span>🌅 Wake up on time</span>
+              <i class="check-circle">${won > 0.85 ? "✓" : ""}</i>
+              <i class="ripple" style="--ripple-opacity:${1 - ripple};--ripple-scale:${0.3 + ripple * 1.8};"></i>
+            </div>
+            <div style="${visibleStyle(toast, 20)}"><div class="toast">🔥 Momentum started. First win logged.</div></div>
+          </div>
+        `,
+        center: ""
+      };
+    }
+
+    function renderInstall(t) {
+      const addPulse = t > 1.5 && t < 1.85 ? 1 + Math.sin((t - 1.5) / 0.35 * Math.PI) * 0.1 : 1;
+      const iconP = progress(t, 2.0, 0.35);
+      return {
+        top: `<div class="beat-copy">${wordLine("Feels like an app.", t, 0, "serif")}</div>`,
+        bottom: `
+          <div class="beat-copy" style="${visibleStyle(progress(t, 0.4, 0.18), 14)}">
+            <div class="install-box">
+              <div class="install-side">🍎 iPhone
+                <div class="steps">
+                  <span class="step">Safari</span>
+                  <span class="step">Share ↑</span>
+                  <span class="step add" style="--step-pulse:${addPulse}">Add ✓</span>
+                </div>
+              </div>
+              <div class="install-side">🤖 Android
+                <div class="steps">
+                  <span class="step">Chrome</span>
+                  <span class="step">Menu ⋮</span>
+                  <span class="step add" style="--step-pulse:${addPulse}">Add ✓</span>
+                </div>
+              </div>
+            </div>
+            <div class="app-icons" style="${visibleStyle(progress(t, 2.0, 0.2), 10)}">
+              <span class="app-icon"></span><span class="app-icon"></span><span class="win-app-icon" style="--icon-scale:${spring(iconP)}">✓</span>
+            </div>
+            <div class="mini-caption" style="color:#c4b5fd">No App Store.</div>
+          </div>
+        `,
+        center: ""
+      };
+    }
+
+    function renderNudge(t) {
+      const values = [0, 1, 3, 7, 14, 30];
+      const index = clamp(Math.floor((t - 0.4) / 0.25), 0, values.length - 1);
+      const value = values[index];
+      const grow = value / 30;
+      const nudge = value >= 30 ? "30 days. This is who you are now." : "7 days in motion. Keep the chain warm.";
+      return {
+        top: `<div class="beat-copy">${wordLine("It remembers.", t, 0, "serif")}</div>`,
+        bottom: `
+          <div class="beat-copy">
+            <div class="streak-card" style="${visibleStyle(progress(t, 0.4, 0.16), 16)};--fire-grow:${grow};">
+              <span class="fire">🔥</span>
+              <div class="streak-number">${value}</div>
+              <div class="nudge-text" style="${visibleStyle(progress(t, 1.7, 0.18), 10)}">${nudge}</div>
+            </div>
+          </div>
+        `,
+        center: ""
+      };
+    }
+
+    function renderPattern(t) {
+      const cells = ["#0f766e", "#f59e0b", "#263531", "#0f766e", "#0f766e", "#0f766e", "#0f766e", "#f59e0b", "#263531", "#0f766e", "#263531", "#0f766e", "#0f766e", "#f59e0b", "#263531", "#f59e0b", "#0f766e", "#263531", "#0f766e", "#f59e0b", "#263531", "#0f766e", "#0f766e", "#0f766e", "#f59e0b"];
+      const headlineA = 1 - progress(t, 1.0, 0.2);
+      const headlineB = progress(t, 1.0, 0.2);
+      return {
+        top: `
+          <div class="beat-copy">
+            <h2 class="serif big" style="${visibleStyle(headlineA, 0)}">5 days.</h2>
+            <h2 class="serif" style="position:absolute;left:0;right:0;margin:auto;color:#06b6d4;${visibleStyle(headlineB, 12)}">Your first insight.</h2>
+          </div>
+        `,
+        bottom: `
+          <div class="beat-copy">
+            <div class="pattern-card" style="${visibleStyle(progress(t, 0.4, 0.18), 16)}">
+              <span class="pattern-kicker">Your 5-day pattern</span>
+              <p class="insight" style="${visibleStyle(progress(t, 0.72, 0.18), 12)}">Strongest win: 💧 Water. Most fragile win: 🌙 Sleep.</p>
+              <div class="grid">
+                ${cells.map((color, index) => {
+                  const p = progress(t, 1.1 + index * 0.04, 0.12);
+                  return `<span style="--cell:${color};--cell-opacity:${p};--cell-scale:${p};"></span>`;
+                }).join("")}
+              </div>
+              <div class="mini-caption" style="text-align:left;margin-top:9px">Unlocks after 5 active days.</div>
+            </div>
+          </div>
+        `,
+        center: ""
+      };
+    }
+
+    function renderTrust(t) {
+      const ring = progress(t, 0.3, 0.6);
+      const check = progress(t, 0.9, 0.3);
+      const fill = progress(t, 1.2, 0.12);
+      return {
+        top: `<div class="beat-copy"><h2 class="serif big" style="${slamStyle(progress(t, 0, 0.14), -72)}">Your data.</h2></div>`,
+        bottom: `
+          <div class="beat-copy">
+            <div class="trust-card" style="${visibleStyle(progress(t, 0.28, 0.18), 16)}">
+              <svg class="trust-draw" viewBox="0 0 100 100" aria-hidden="true">
+                <circle class="trust-fill" cx="50" cy="50" r="36" style="--fill-opacity:${fill}" />
+                <circle class="trust-ring" cx="50" cy="50" r="36" style="--ring-offset:${226 - ring * 226}" />
+                <path class="trust-check" d="M32 52 L45 65 L70 36" style="--check-offset:${50 - check * 50}" />
+              </svg>
+              <div class="trust-line" style="--line-opacity:${progress(t, 1.0, 0.16)};--line-y:${(1 - progress(t, 1.0, 0.16)) * 10}px">Saved locally. No login needed.</div>
+              <div class="trust-line" style="--line-opacity:${progress(t, 1.6, 0.16)};--line-y:${(1 - progress(t, 1.6, 0.16)) * 10}px;color:var(--teal-light)">Always offline.</div>
+            </div>
+          </div>
+        `,
+        center: ""
+      };
+    }
+
+    function renderCta(t) {
+      const p = progress(t, 0, 0.3);
+      const sub = progress(t, 0.3, 0.18);
+      const bio = progress(t, 0.8, 0.18);
+      const cursor = Math.sin(t * Math.PI * 2.5) > 0 ? 1 : 0;
+      return {
+        top: "",
+        bottom: "",
+        center: `
+          <div class="cta" style="--cta-opacity:${p};--cta-scale:${lerp(0.8, 1, spring(p))};--cta-sub:${sub};--cta-bio:${bio};--cursor:${cursor};">
+            <h1>mywinlist.com</h1>
+            <p>Free. No login. Works offline.</p>
+            <div class="bio">Link in bio → <span class="cursor">▮</span></div>
+          </div>
+        `
+      };
+    }
+
+    function renderBeat(beat, elapsed, spin) {
+      if (spin) {
+        topEl.innerHTML = "";
+        centerEl.innerHTML = "";
+        bottomEl.innerHTML = "";
+        return;
+      }
+      const t = beat ? elapsed - beat.start : 0;
+      const views = {
+        hook: renderHook,
+        what: renderWhat,
+        setup: renderSetup,
+        mood: renderMood,
+        moment: renderMoment,
+        install: renderInstall,
+        nudge: renderNudge,
+        pattern: renderPattern,
+        trust: renderTrust,
+        cta: renderCta
+      };
+      const html = beat && views[beat.id] ? views[beat.id](t) : { top: "", center: "", bottom: "" };
+      topEl.innerHTML = html.top || "";
+      centerEl.innerHTML = html.center || "";
+      bottomEl.innerHTML = html.bottom || "";
+    }
+
+    function updateWheel(elapsed, delta, beat, spin) {
+      const inHookReveal = elapsed >= 1.4 && elapsed < 2.0;
+      const wheelShouldShow = elapsed >= 1.4;
+      const isCta = beat && beat.id === "cta";
+      let speed = isCta ? Math.max(0, 6 * (1 - progress(elapsed - beat.start, 0, 0.8))) : 6;
+      let nextSpoke = beat ? beat.spoke : -1;
+
+      if (spin) {
+        const phase = spin.p < 0.5 ? easeIn(spin.p * 2) : easeOut((spin.p - 0.5) * 2);
+        speed = lerp(6, 600, spin.p < 0.5 ? phase : 1 - phase * 0.25);
+        const nextBeat = getNextBeatAfter(spin.start);
+        nextSpoke = nextBeat ? nextBeat.spoke : -1;
+      } else if (wasSpin && beat && beat.spoke >= 0) {
+        angle = snapAngle(beat.spoke);
+      }
+
+      angle += speed * delta;
+      wasSpin = Boolean(spin);
+
+      const reveal = inHookReveal ? progress(elapsed, 1.4, 0.35) : 1;
+      const scale = inHookReveal ? spring(reveal) : 1;
+      const opacity = !wheelShouldShow ? 0 : isCta ? 0.2 : 1;
+      const transform = `translate(-50%, -50%) rotate(${angle}deg) scale(${scale})`;
+      wheelLayer.style.opacity = opacity;
+      wheelLayer.style.transform = transform;
+      wheelLayer.style.filter = spin ? "blur(0.4px)" : "";
+      setActiveSpoke(nextSpoke, Boolean(isCta));
+
+      const ghostAngles = [-30, -15, 15, 30];
+      ghosts.forEach((ghost, index) => {
+        ghost.style.opacity = spin ? String(0.25 * (1 - progress(spin.p, 0.5, 0.5))) : "0";
+        ghost.style.transform = `translate(-50%, -50%) rotate(${angle + ghostAngles[index]}deg) scale(${scale})`;
+      });
+    }
+
+    function update(now) {
+      const elapsedMs = (now - startMs) % DURATION;
+      const elapsed = elapsedMs / 1000;
+      const delta = Math.min((now - lastNow) / 1000, 0.05);
+      lastNow = now;
+
+      const beat = getBeat(elapsed);
+      const spin = getSpin(elapsed);
+      const accentHex = spin ? (getNextBeatAfter(spin.start)?.accent || "#0f766e") : (beat?.accent || "#060f0d");
+      const accent = updateBackground(accentHex);
+      updateParticles(delta, accent);
+      updateWheel(elapsed, delta, beat, spin);
+      renderBeat(beat, elapsed, spin);
+
+      progressFill.style.width = `${elapsedMs / DURATION * 100}%`;
+      const border = beat && beat.id === "cta" ? Math.max(0, 0.8 * (1 - progress(elapsed - 29.5, 0, 0.35))) : 0;
+      borderPulse.style.setProperty("--border-alpha", border);
+
+      requestAnimationFrame(update);
+    }
+
+    wheelLayer.innerHTML = renderWheelSvg();
+    ghosts.forEach((ghost) => {
+      ghost.innerHTML = renderWheelSvg();
+    });
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    requestAnimationFrame(update);
+  </script>
+</body>
+</html>

@@ -3333,6 +3333,10 @@ export function HabitTracker() {
                   <Share2 size={17} aria-hidden="true" />
                   Launch poster
                 </a>
+                <a className="backup-button" href={`${APP_BASE_PATH}/reel/`} target="_blank" rel="noreferrer">
+                  <Share2 size={17} aria-hidden="true" />
+                  30s reel
+                </a>
                 <button className="backup-button" type="button" onClick={exportBackup}>
                   <Download size={17} aria-hidden="true" />
                   Export backup (.json)

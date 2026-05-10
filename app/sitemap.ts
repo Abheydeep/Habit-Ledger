@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 const siteUrl = "https://www.mywinlist.com";
-const lastModified = new Date("2026-05-09T00:00:00.000Z");
+const lastModified = new Date("2026-05-10T00:00:00.000Z");
 
 export const dynamic = "force-static";
 
@@ -18,6 +18,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "monthly",
       priority: 0.7
+    },
+    {
+      url: `${siteUrl}/reel/`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.6
     }
   ];
 }

@@ -60,9 +60,14 @@ export default function LaunchPosterPage() {
           <img src="/icon.svg" alt="" />
           The Win List
         </a>
-        <a className={styles.navButton} href="/">
-          Open app
-        </a>
+        <div className={styles.navActions}>
+          <a className={styles.navButton} href="/">
+            Open app
+          </a>
+          <a className={styles.navButton} href="/reel/">
+            Watch reel
+          </a>
+        </div>
       </nav>
 
       <article className={styles.poster} aria-labelledby="poster-title">
@@ -183,7 +188,10 @@ export default function LaunchPosterPage() {
             <span>Start with one win.</span>
             <strong>mywinlist.com</strong>
           </div>
-          <a href="/">Open The Win List</a>
+          <div className={styles.ctaLinks}>
+            <a href="/">Open The Win List</a>
+            <a href="/reel/">Watch the 30s reel</a>
+          </div>
         </footer>
       </article>
     </main>
