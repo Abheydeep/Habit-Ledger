@@ -798,6 +798,19 @@ img {
   font-size: 1.35rem;
 }
 
+.admin-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-share-actions .tiny-text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .admin-login-row {
   display: grid;
   grid-template-columns: 1fr;
@@ -863,6 +876,44 @@ img {
   color: #0f2f2e;
   font-size: 2rem;
   line-height: 1;
+}
+
+.admin-report-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.admin-report-item {
+  display: grid;
+  gap: 6px;
+  min-height: 122px;
+  padding: 14px;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.14), transparent 34%),
+    #f8faf6;
+}
+
+.admin-report-item span {
+  color: #60716d;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-report-item strong {
+  color: #0f2f2e;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.admin-report-item small {
+  color: #53635f;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .admin-two-col {
@@ -6337,6 +6388,10 @@ img {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-report-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .admin-two-col,
   .form-row.two {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6636,6 +6691,10 @@ img {
   }
 
   .admin-metrics-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .admin-report-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

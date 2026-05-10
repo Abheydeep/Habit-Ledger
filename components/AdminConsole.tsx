@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Download, LockKeyhole, RefreshCw, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, Clipboard, Download, LockKeyhole, RefreshCw, Share2, ShieldCheck, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchAdminMetrics, type AdminMetrics } from "../lib/adminMetrics";
 import { sendMagicLink } from "../lib/cloudSync";
@@ -12,6 +12,7 @@ export function AdminConsole() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("Sign in with an admin account to view launch metrics.");
+  const [shareMessage, setShareMessage] = useState("");
 
   useEffect(() => {
     const client = getSupabaseClient();
@@ -104,6 +105,43 @@ export function AdminConsole() {
     setMessage("Signed out of admin console.");
   }, []);
 
+  const handleShareReport = useCallback(async () => {
+    if (!metrics) {
+      return;
+    }
+
+    const text = buildAdminShareText(metrics);
+
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({
+          title: "The Win List launch snapshot",
+          text
+        });
+        setShareMessage("Share sheet opened.");
+        return;
+      }
+
+      await navigator.clipboard.writeText(text);
+      setShareMessage("Launch snapshot copied.");
+    } catch {
+      setShareMessage("Could not share from this browser. Try copy again.");
+    }
+  }, [metrics]);
+
+  const handleCopyReport = useCallback(async () => {
+    if (!metrics) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(buildAdminShareText(metrics));
+      setShareMessage("Launch snapshot copied.");
+    } catch {
+      setShareMessage("Could not copy from this browser.");
+    }
+  }, [metrics]);
+
   const metricCards = useMemo(() => {
     if (!metrics) {
       return [];
@@ -192,6 +230,54 @@ export function AdminConsole() {
             ))}
           </section>
 
+          <section className="admin-card">
+            <div className="admin-card-header">
+              <div>
+                <span className="section-kicker">Founder snapshot</span>
+                <h2>No-login usage and retention</h2>
+              </div>
+              <div className="admin-share-actions">
+                <button className="tiny-text-button" type="button" onClick={handleCopyReport}>
+                  <Clipboard size={15} aria-hidden="true" />
+                  Copy
+                </button>
+                <button className="tiny-text-button" type="button" onClick={handleShareReport}>
+                  <Share2 size={15} aria-hidden="true" />
+                  Share
+                </button>
+              </div>
+            </div>
+            <div className="admin-report-grid">
+              <AdminReportItem
+                label="No-login users tried it"
+                value={formatMetric(metrics.anonymous_visitors)}
+                note={`${formatMetric(metrics.anonymous_active_24h)} active in 24h, ${formatMetric(
+                  metrics.anonymous_active_7d
+                )} active in 7d`}
+              />
+              <AdminReportItem
+                label="Users that keep using it"
+                value={formatMetric(metrics.anonymous_returning_7d)}
+                note={`${formatPercent(metrics.anonymous_returning_7d, metrics.anonymous_active_7d)} of 7-day active no-login users returned`}
+              />
+              <AdminReportItem
+                label="Users with wins"
+                value={formatMetric(metrics.anonymous_users_with_wins)}
+                note={`${formatMetric(metrics.local_wins_logged_7d)} no-login wins in 7d`}
+              />
+              <AdminReportItem
+                label="Install interest"
+                value={formatMetric(metrics.install_attempt_users_7d)}
+                note={`${formatMetric(metrics.ios_install_steps_users_7d)} opened iPhone steps, ${formatMetric(
+                  metrics.shell_installed_users
+                )} installed shell users`}
+              />
+            </div>
+            <p className="admin-note">
+              This is aggregate only: no personal notes and no custom win names are shown here. {shareMessage}
+            </p>
+          </section>
+
           <section className="admin-two-col">
             <AdminBreakdown title="Top core wins, 7 days" data={metrics.top_core_wins_7d} />
             <AdminBreakdown title="Top optional routines, 7 days" data={metrics.top_optional_routines_7d} />
@@ -261,8 +347,26 @@ function AdminBreakdown({ title, data }: { title: string; data: Record<string, n
   );
 }
 
+function AdminReportItem({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <article className="admin-report-item">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{note}</small>
+    </article>
+  );
+}
+
 function formatMetric(value: number) {
   return new Intl.NumberFormat("en-IN").format(value);
+}
+
+function formatPercent(value: number, total: number) {
+  if (total <= 0) {
+    return "0%";
+  }
+
+  return `${Math.round((value / total) * 100)}%`;
 }
 
 function formatDate(value: string) {
@@ -274,4 +378,19 @@ function formatDate(value: string) {
 
 function humanize(value: string) {
   return value.replace(/[_-]+/g, " ");
+}
+
+function buildAdminShareText(metrics: AdminMetrics) {
+  return [
+    "The Win List launch snapshot",
+    `People tried app: ${formatMetric(metrics.anonymous_visitors)}`,
+    `Active users, 7d: ${formatMetric(metrics.active_users_7d)}`,
+    `No-login returning users, 7d: ${formatMetric(metrics.anonymous_returning_7d)}`,
+    `People with wins: ${formatMetric(metrics.anonymous_users_with_wins)}`,
+    `No-login wins, 7d: ${formatMetric(metrics.local_wins_logged_7d)}`,
+    `Install tries, 7d: ${formatMetric(metrics.install_attempt_users_7d)}`,
+    `iPhone install steps, 7d: ${formatMetric(metrics.ios_install_steps_users_7d)}`,
+    `Installed shell users: ${formatMetric(metrics.shell_installed_users)}`,
+    "Admin: https://www.mywinlist.com/admin/"
+  ].join("\n");
 }

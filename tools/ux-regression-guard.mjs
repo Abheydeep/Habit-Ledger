@@ -254,6 +254,11 @@ const checks = [
       adminConsole.includes("Install tries 7d") &&
       adminConsole.includes("iPhone steps 7d") &&
       adminConsole.includes("Top core wins, 7 days") &&
+      adminConsole.includes("No-login usage and retention") &&
+      adminConsole.includes("Users that keep using it") &&
+      adminConsole.includes("handleShareReport") &&
+      adminConsole.includes("buildAdminShareText") &&
+      css.includes(".admin-report-grid") &&
       adminMetrics.includes("anonymous_visitors") &&
       adminMetrics.includes("install_attempt_users_7d") &&
       anonymousUsageMigration.includes("latest_summaries") &&
