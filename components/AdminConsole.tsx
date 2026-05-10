@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Cloud, Download, LockKeyhole, RefreshCw, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, Download, LockKeyhole, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchAdminMetrics, type AdminMetrics } from "../lib/adminMetrics";
 import { sendMagicLink } from "../lib/cloudSync";
@@ -110,13 +110,18 @@ export function AdminConsole() {
     }
 
     return [
+      ["People tried app", metrics.anonymous_visitors, Users],
+      ["Active users 7d", metrics.active_users_7d, Users],
+      ["People with wins", metrics.anonymous_users_with_wins, ShieldCheck],
+      ["No-login wins 7d", metrics.local_wins_logged_7d, BarChart3],
+      ["Install tries 7d", metrics.install_attempt_users_7d, Download],
+      ["iPhone steps 7d", metrics.ios_install_steps_users_7d, Download],
+      ["Installed shell", metrics.shell_installed_users, ShieldCheck],
+      ["App opens 7d", metrics.app_opens_7d, RefreshCw],
       ["Registered users", metrics.registered_users, Users],
       ["Profiles completed", metrics.profiles, ShieldCheck],
-      ["Active wins", metrics.active_wins, BarChart3],
-      ["Daily logs", metrics.daily_win_logs, BarChart3],
+      ["Cloud win logs", metrics.daily_win_logs, BarChart3],
       ["Notes saved", metrics.daily_notes, Download],
-      ["Intent segments", metrics.intent_segments, Cloud],
-      ["7-day active users", metrics.daily_active_7d, Users],
       ["7-day sync uploads", metrics.sync_uploads_7d, RefreshCw]
     ] as const;
   }, [metrics]);
@@ -188,7 +193,26 @@ export function AdminConsole() {
           </section>
 
           <section className="admin-two-col">
+            <AdminBreakdown title="Top core wins, 7 days" data={metrics.top_core_wins_7d} />
+            <AdminBreakdown title="Top optional routines, 7 days" data={metrics.top_optional_routines_7d} />
+          </section>
+
+          <section className="admin-two-col">
+            <AdminBreakdown title="Mood statuses, 7 days" data={metrics.mood_statuses_7d} />
             <AdminBreakdown title="Life modes" data={metrics.life_modes} />
+          </section>
+
+          <section className="admin-two-col">
+            <AdminBreakdown
+              title="Install funnel, 7 days"
+              data={{
+                "install attempts": metrics.install_attempts_7d,
+                "browser prompt opened": metrics.browser_install_prompt_users_7d,
+                "install accepted": metrics.install_accepted_7d,
+                "install dismissed": metrics.install_dismissed_7d,
+                "installed shell users": metrics.shell_installed_users_7d
+              }}
+            />
             <AdminBreakdown title="Accepted terms by type" data={metrics.consents} />
           </section>
 

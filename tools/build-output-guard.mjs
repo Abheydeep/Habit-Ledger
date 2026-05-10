@@ -46,10 +46,12 @@ const checks = [
   {
     name: "launch poster static page ships",
     ok:
-      launchHtml.includes("Track daily wins, not daily failures.") &&
+      launchHtml.includes("Track core wins. Keep optional routines light.") &&
       launchHtml.includes("Core wins first") &&
       launchHtml.includes("Optional routines") &&
       launchHtml.includes("Mood, not guilt") &&
+      launchHtml.includes("first-win momentum") &&
+      launchHtml.includes("no-login/offline trust") &&
       launchHtml.includes("Your 5-day pattern") &&
       launchHtml.includes("mywinlist.com") &&
       builtText.includes("Launch poster")

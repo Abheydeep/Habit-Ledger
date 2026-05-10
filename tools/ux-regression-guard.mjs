@@ -14,6 +14,10 @@ const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 const personalization = readFileSync("lib/personalization.ts", "utf8");
 const habitData = readFileSync("lib/habitData.ts", "utf8");
 const experienceState = readFileSync("lib/experienceState.ts", "utf8");
+const anonymousAnalytics = readFileSync("lib/anonymousAnalytics.ts", "utf8");
+const adminConsole = readFileSync("components/AdminConsole.tsx", "utf8");
+const adminMetrics = readFileSync("lib/adminMetrics.ts", "utf8");
+const anonymousUsageMigration = readFileSync("supabase/migrations/20260510_anonymous_usage_metrics.sql", "utf8");
 const packageJson = readFileSync("package.json", "utf8");
 const renderConfig = readFileSync("render.yaml", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release-verification.yml", "utf8");
@@ -229,6 +233,32 @@ const checks = [
       !reelPage.includes("track daily wins") &&
       !reelPage.includes("log moods") &&
       !reelPage.includes("heat map")
+  },
+  {
+    name: "anonymous admin metrics track usage without personal notes",
+    ok:
+      anonymousAnalytics.includes("anonymous_app_open") &&
+      anonymousAnalytics.includes("anonymous_daily_summary") &&
+      anonymousAnalytics.includes("completed_core_win_keys") &&
+      anonymousAnalytics.includes("completed_optional_routine_keys") &&
+      anonymousAnalytics.includes("getHabitCategory") &&
+      anonymousAnalytics.includes("install_button_clicked") &&
+      anonymousAnalytics.includes("ios_install_steps_opened") &&
+      anonymousAnalytics.includes("appinstalled_detected") &&
+      !anonymousAnalytics.includes("note") &&
+      component.includes("trackAnonymousAppOpen") &&
+      component.includes("trackAnonymousDailySummary") &&
+      component.includes("trackAnonymousInstallEvent") &&
+      adminConsole.includes("People tried app") &&
+      adminConsole.includes("People with wins") &&
+      adminConsole.includes("Install tries 7d") &&
+      adminConsole.includes("iPhone steps 7d") &&
+      adminConsole.includes("Top core wins, 7 days") &&
+      adminMetrics.includes("anonymous_visitors") &&
+      adminMetrics.includes("install_attempt_users_7d") &&
+      anonymousUsageMigration.includes("latest_summaries") &&
+      anonymousUsageMigration.includes("install_attempt_events") &&
+      anonymousUsageMigration.includes("shell_installed_users")
   },
   {
     name: "mobile today keeps more wins above the fold",

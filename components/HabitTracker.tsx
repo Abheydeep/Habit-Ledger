@@ -72,6 +72,11 @@ import {
   makeHabitPermanent
 } from "../lib/primaryWins";
 import {
+  trackAnonymousAppOpen,
+  trackAnonymousDailySummary,
+  trackAnonymousInstallEvent
+} from "../lib/anonymousAnalytics";
+import {
   PERSONALIZATION_STORAGE_KEY,
   createCharacterBrief,
   createPersonalizationSummary,
@@ -644,6 +649,13 @@ export function HabitTracker() {
       setInstallPrompt(event as BeforeInstallPromptEvent);
       setInstallReady(true);
       setInstallFallbackReady(false);
+      void trackAnonymousInstallEvent({
+        eventName: "install_prompt_ready",
+        localDate: localDateKey(new Date()),
+        isIosDevice: isIOSDevice(),
+        isInstalledApp: isRunningAsInstalledApp(),
+        source: "browser"
+      });
     };
     const handleInstalled = () => {
       window.localStorage.setItem(APP_INSTALLED_STORAGE_KEY, "true");
@@ -651,6 +663,13 @@ export function HabitTracker() {
       setInstallFallbackReady(false);
       setInstallPrompt(null);
       setIsInstalledApp(true);
+      void trackAnonymousInstallEvent({
+        eventName: "appinstalled_detected",
+        localDate: localDateKey(new Date()),
+        isIosDevice: isIOSDevice(),
+        isInstalledApp: true,
+        source: "system"
+      });
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -1003,6 +1022,50 @@ export function HabitTracker() {
         ? "Turn on reminders"
         : undefined;
 
+  useEffect(() => {
+    if (!clientStateReady) {
+      return;
+    }
+
+    void trackAnonymousAppOpen({
+      localDate: todayKey,
+      tracker,
+      hasPersonalization: Boolean(personalizationSnapshot),
+      isInstalledApp
+    });
+  }, [clientStateReady, isInstalledApp, personalizationSnapshot, todayKey, tracker]);
+
+  useEffect(() => {
+    if (!clientStateReady) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void trackAnonymousDailySummary({
+        localDate: selectedDate,
+        tracker,
+        primaryHabits,
+        optionalHabits,
+        record: selectedRecord,
+        hasPersonalization: Boolean(personalizationSnapshot),
+        isInstalledApp,
+        experienceState
+      });
+    }, 1200);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    clientStateReady,
+    experienceState,
+    isInstalledApp,
+    optionalHabits,
+    personalizationSnapshot,
+    primaryHabits,
+    selectedDate,
+    selectedRecord,
+    tracker
+  ]);
+
   const toggleDayPart = useCallback((dayPart: DayPartKey) => {
     setOpenDayParts((current) => ({
       ...current,
@@ -1117,7 +1180,7 @@ export function HabitTracker() {
     );
   }, [saveReminderSettings, showAppToast]);
 
-  const handleInstallApp = useCallback(async () => {
+  const handleInstallApp = useCallback(async (source: "header" | "settings" = "settings") => {
     if (isInstalledApp) {
       showAppToast("The Win List already looks installed on this device.");
       return;
@@ -1127,7 +1190,23 @@ export function HabitTracker() {
       return;
     }
 
+    const localDate = localDateKey(new Date());
+    void trackAnonymousInstallEvent({
+      eventName: "install_button_clicked",
+      localDate,
+      isIosDevice,
+      isInstalledApp,
+      source
+    });
+
     if (isIosDevice && !installPrompt) {
+      void trackAnonymousInstallEvent({
+        eventName: "ios_install_steps_opened",
+        localDate,
+        isIosDevice,
+        isInstalledApp,
+        source
+      });
       showAppToast("iPhone install: open in Safari, tap Share, then Add to Home Screen.");
       return;
     }
@@ -1138,26 +1217,54 @@ export function HabitTracker() {
     }
 
     if (!installPrompt) {
+      void trackAnonymousInstallEvent({
+        eventName: "install_fallback_steps_opened",
+        localDate,
+        isIosDevice,
+        isInstalledApp,
+        source
+      });
       showAppToast("Use your browser menu to add The Win List to your home screen.");
       return;
     }
 
+    void trackAnonymousInstallEvent({
+      eventName: "browser_install_prompt_opened",
+      localDate,
+      isIosDevice,
+      isInstalledApp,
+      source
+    });
     await installPrompt.prompt();
     const choice = await installPrompt.userChoice;
     setInstallPrompt(null);
     setInstallReady(false);
     if (choice.outcome === "accepted") {
+      void trackAnonymousInstallEvent({
+        eventName: "browser_install_prompt_accepted",
+        localDate,
+        isIosDevice,
+        isInstalledApp: true,
+        source
+      });
       window.localStorage.setItem(APP_INSTALLED_STORAGE_KEY, "true");
       setIsInstalledApp(true);
       showAppToast("The Win List is installed. The return path is shorter now.");
     } else {
+      void trackAnonymousInstallEvent({
+        eventName: "browser_install_prompt_dismissed",
+        localDate,
+        isIosDevice,
+        isInstalledApp,
+        source
+      });
       showAppToast("Install skipped. You can add it later from Settings.");
     }
   }, [clientStateReady, installFallbackReady, installPrompt, isInstalledApp, isIosDevice, showAppToast]);
 
   const handleHeaderReturnAction = useCallback(() => {
     if (headerReturnAction === "install") {
-      void handleInstallApp();
+      void handleInstallApp("header");
       return;
     }
 
@@ -3441,7 +3548,7 @@ export function HabitTracker() {
                     <button
                       className="backup-button"
                       type="button"
-                      onClick={handleInstallApp}
+                      onClick={() => void handleInstallApp("settings")}
                       disabled={!isIosDevice && !installReady && !installFallbackReady}
                     >
                       {isIosDevice ? <Share2 size={17} aria-hidden="true" /> : <Download size={17} aria-hidden="true" />}
