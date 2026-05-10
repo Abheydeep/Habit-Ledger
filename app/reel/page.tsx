@@ -7,13 +7,14 @@ const reelPath = `${basePath}/reel/wheel-reel-30s.html`;
 export const metadata: Metadata = {
   title: "30s Reel | The Win List",
   description:
-    "Watch the 30-second The Win List reel: track daily wins, log moods, install the app, and build momentum.",
+    "Watch the 30-second The Win List reel: core wins, optional routines, Mood, first-win momentum, no-login/offline trust, and 5-day pattern reflection.",
   alternates: {
     canonical: "/reel/"
   },
   openGraph: {
     title: "The Win List 30-second reel",
-    description: "Track daily wins, not daily failures. Free, no login, and works offline.",
+    description:
+      "Core wins, optional routines, Mood, first-win momentum, no-login/offline trust, and 5-day pattern reflection.",
     url: "https://www.mywinlist.com/reel/",
     siteName: "The Win List",
     type: "video.other"
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "The Win List 30-second reel",
-    description: "Track daily wins, not daily failures."
+    description: "Core wins, optional routines, Mood, and 5-day pattern reflection."
   }
 };
 
@@ -44,8 +45,8 @@ export default function ReelPage() {
           <span className={styles.kicker}>30-second reel</span>
           <h1>Every second earns the next.</h1>
           <p>
-            A fast product reel for The Win List: wins, moods, install path, daily nudge, 5-day pattern, and local
-            trust.
+            A fast product reel for The Win List: core wins, optional routines, Mood, first-win momentum,
+            no-login/offline trust, and 5-day pattern reflection.
           </p>
           <div className={styles.actionRow}>
             <a className={styles.downloadLink} href={reelPath} target="_blank" rel="noreferrer">

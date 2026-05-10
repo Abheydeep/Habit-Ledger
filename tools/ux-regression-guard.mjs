@@ -8,6 +8,7 @@ const robots = readFileSync("app/robots.ts", "utf8");
 const sitemap = readFileSync("app/sitemap.ts", "utf8");
 const launchPage = readFileSync("app/launch/page.tsx", "utf8");
 const launchCss = readFileSync("app/launch/LaunchPoster.module.css", "utf8");
+const reelPage = readFileSync("app/reel/page.tsx", "utf8");
 const ogImage = readFileSync("public/og-image.svg", "utf8");
 const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 const personalization = readFileSync("lib/personalization.ts", "utf8");
@@ -195,10 +196,13 @@ const checks = [
   {
     name: "launch poster is a polished shareable website route",
     ok:
-      launchPage.includes("Track daily wins, not daily failures.") &&
+      launchPage.includes("Track core wins. Keep optional routines light.") &&
       launchPage.includes("Core wins first") &&
       launchPage.includes("Optional routines") &&
       launchPage.includes("Mood, not guilt") &&
+      launchPage.includes("First-win momentum") &&
+      launchPage.includes("no-login/offline trust") &&
+      launchPage.includes("5-day pattern reflection") &&
       launchPage.includes("Your 5-day pattern") &&
       launchPage.includes("mywinlist.com") &&
       launchCss.includes(".poster") &&
@@ -208,9 +212,23 @@ const checks = [
       launchCss.includes("overflow-wrap: anywhere") &&
       sitemap.includes("`${siteUrl}/launch/`") &&
       component.includes('href={`${APP_BASE_PATH}/launch/`}') &&
+      component.includes('href={`${APP_BASE_PATH}/reel/`}') &&
       renderConfig.includes("source: /launch") &&
       renderConfig.includes("destination: /launch/") &&
       component.includes("Launch poster")
+  },
+  {
+    name: "reel caption uses current product language",
+    ok:
+      reelPage.includes("core wins") &&
+      reelPage.includes("optional routines") &&
+      reelPage.includes("Mood") &&
+      reelPage.includes("first-win momentum") &&
+      reelPage.includes("no-login/offline trust") &&
+      reelPage.includes("5-day pattern reflection") &&
+      !reelPage.includes("track daily wins") &&
+      !reelPage.includes("log moods") &&
+      !reelPage.includes("heat map")
   },
   {
     name: "mobile today keeps more wins above the fold",

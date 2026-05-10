@@ -4,13 +4,14 @@ import styles from "./LaunchPoster.module.css";
 export const metadata: Metadata = {
   title: "Launch Poster | The Win List",
   description:
-    "A shareable launch poster for The Win List, the daily wins tracker that helps you start with one small win.",
+    "A shareable launch poster for The Win List: core wins, optional routines, Mood, first-win momentum, no-login/offline trust, and 5-day pattern reflection.",
   alternates: {
     canonical: "/launch/"
   },
   openGraph: {
     title: "The Win List launch poster",
-    description: "Track daily wins, not daily failures. Free, no login, and works offline.",
+    description:
+      "Core wins, optional routines, Mood, first-win momentum, no-login/offline trust, and 5-day pattern reflection.",
     url: "https://www.mywinlist.com/launch/",
     siteName: "The Win List",
     type: "website"
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "The Win List launch poster",
-    description: "Track daily wins, not daily failures."
+    description: "Core wins, optional routines, Mood, and 5-day pattern reflection."
   }
 };
 
@@ -31,18 +32,18 @@ const coreWins = [
 const featureCards = [
   {
     eyebrow: "Core wins first",
-    title: "Finish the day without pressure",
-    body: "Pick the few must-do wins that make today count. Optional routines stay extra credit."
+    title: "Core wins keep today finishable",
+    body: "Core wins define the day. Optional routines stay extra credit."
   },
   {
     eyebrow: "Mood, not guilt",
-    title: "Done, Strong, Partial, Rest",
-    body: "Real life is not just a checkbox. Log the truth and keep moving."
+    title: "Won, Strong, Partial, Skipped, Rest day",
+    body: "Mood records real life without turning optional routines into pressure."
   },
   {
-    eyebrow: "Momentum loop",
-    title: "First win starts the day",
-    body: "One small mark done gives the day a starting point."
+    eyebrow: "First-win momentum",
+    title: "One core win gets the day moving",
+    body: "The first logged core win creates a clean starting point."
   }
 ];
 
@@ -74,10 +75,10 @@ export default function LaunchPosterPage() {
         <section className={styles.hero}>
           <div className={styles.heroCopy}>
             <span className={styles.badge}>Live at mywinlist.com</span>
-            <h1 id="poster-title">Track daily wins, not daily failures.</h1>
+            <h1 id="poster-title">Track core wins. Keep optional routines light.</h1>
             <p>
-              The Win List turns a tired day into core wins, optional routines, honest moods, and one clear next
-              step.
+              Core wins stay clear, optional routines stay light, and Mood captures the real day with first-win
+              momentum, no-login/offline trust, and 5-day pattern reflection.
             </p>
             <div className={styles.heroActions} aria-label="Product promises">
               <span>Free</span>
@@ -163,10 +164,9 @@ export default function LaunchPosterPage() {
         <section className={styles.storyBand}>
           <div>
             <span className={styles.badge}>After a few days</span>
-            <h2>Your pattern becomes visible.</h2>
+            <h2>Your 5-day pattern reflection becomes visible.</h2>
             <p>
-              The app keeps the first day simple, then unlocks reflection when there is enough real activity to make
-              it useful.
+              The app keeps the first day simple, then unlocks reflection when enough real activity exists.
             </p>
           </div>
           <div className={styles.patternCard} aria-label="Example five day pattern">
@@ -179,7 +179,7 @@ export default function LaunchPosterPage() {
                 </span>
               ))}
             </div>
-            <p>No reset drama. One win restarts momentum.</p>
+            <p>No reset drama. First-win momentum restarts from one core win.</p>
           </div>
         </section>
 
