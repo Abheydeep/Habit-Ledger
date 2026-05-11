@@ -101,8 +101,10 @@ const checks = [
       builtText.includes("Build in 30 sec") &&
       !builtText.includes("Use starter list") &&
       builtText.includes("mobile-return-chip") &&
-      builtText.includes("Install is getting ready. Try again in a moment.") &&
-      builtText.includes("Getting ready") &&
+      builtText.includes("mobile-return-chip reminder") &&
+      builtText.includes("Chrome install: tap the browser menu, then Add to Home screen.") &&
+      builtText.includes("Install app") &&
+      builtText.includes("Turn on daily reminders") &&
       builtText.includes("Change these wins anytime.") &&
       builtText.includes("long-press a win") &&
       builtText.includes("Today's sections") &&

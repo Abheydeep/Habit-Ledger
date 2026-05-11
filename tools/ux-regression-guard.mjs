@@ -98,18 +98,21 @@ const checks = [
       component.includes("headerReturnAction") &&
       component.includes("headerReturnLabel") &&
       component.includes("handleHeaderReturnAction") &&
+      component.includes("showHeaderReminderAction") &&
       component.includes("mobile-return-chip") &&
-      component.includes("installActionWaiting") &&
+      component.includes("mobile-return-chip reminder") &&
+      component.includes("installActionNeedsHelp") &&
       component.includes("installFallbackReady") &&
       component.includes('clientStateReady && !isInstalledApp') &&
       component.includes('headerReturnAction === "install"') &&
       component.includes('headerReturnAction === "reminder"') &&
-      component.includes("disabled={installActionWaiting}") &&
-      component.includes("Install is getting ready. Try again in a moment.") &&
+      !component.includes("disabled={installActionWaiting}") &&
+      component.includes("Chrome install: tap the browser menu, then Add to Home screen.") &&
       !component.includes("returnPromptVisible") &&
       !component.includes("RETURN_PROMPT_SEEN_DATE_KEY") &&
       !component.includes("return-path-prompt") &&
       css.includes(".mobile-return-chip") &&
+      css.includes(".mobile-return-chip.reminder") &&
       !css.includes(".mobile-activation-actions{grid-template-columns:minmax(0,1.55fr) repeat(2")
   },
   {

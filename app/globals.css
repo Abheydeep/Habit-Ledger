@@ -281,6 +281,12 @@ img {
   box-shadow: 0 6px 12px color-mix(in srgb, var(--app-primary), transparent 92%);
 }
 
+.mobile-return-chip.reminder {
+  border-color: color-mix(in srgb, var(--app-secondary), transparent 68%);
+  background: color-mix(in srgb, var(--app-secondary), #ffffff 78%);
+  color: color-mix(in srgb, var(--app-secondary), #06110f 28%);
+}
+
 .mobile-return-chip svg {
   flex: 0 0 auto;
 }
@@ -2937,7 +2943,11 @@ img {
   flex: 0 0 auto;
   min-height: 36px;
   padding: 0 12px;
+  border-color: color-mix(in srgb, var(--app-primary), #ffffff 68%);
   border-radius: 999px;
+  background: color-mix(in srgb, var(--app-primary), #ffffff 86%);
+  color: color-mix(in srgb, var(--app-primary), #06110f 24%);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--app-primary), transparent 86%);
 }
 
 .permanent-list-actions .manage-wins-button span {
@@ -2947,6 +2957,10 @@ img {
   font-weight: 850;
   line-height: 1;
   text-transform: none;
+}
+
+.permanent-list-actions .manage-wins-button svg {
+  color: currentColor;
 }
 
 .permanent-list-progress {
@@ -4317,24 +4331,31 @@ img {
   right: 3px;
   bottom: 3px;
   display: inline-flex;
-  min-height: 14px;
+  width: 18px;
+  min-height: 18px;
   align-items: center;
+  justify-content: center;
   padding: 0 4px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--app-primary), #06110f 22%);
   color: #ffffff;
-  font-size: 0.53rem;
-  font-weight: 850;
-  line-height: 1;
-  letter-spacing: 0;
-  text-transform: none;
   box-shadow: 0 2px 6px rgba(4, 14, 12, 0.28);
+}
+
+.quick-icon-affordance svg {
+  width: 11px;
+  height: 11px;
+  stroke-width: 2.8;
 }
 
 .quick-win-row strong,
 .quick-win-row span {
   display: block;
   min-width: 0;
+}
+
+.quick-thumb-button .quick-icon-affordance {
+  display: inline-flex;
 }
 
 .quick-win-name-field {
@@ -5595,6 +5616,17 @@ img {
   z-index: 2;
   padding: 4px 0 10px;
   background: #f8fcf8;
+}
+
+.sample-ideas-sheet .drawer-close-button {
+  border-color: color-mix(in srgb, var(--app-primary), transparent 58%);
+  background: color-mix(in srgb, var(--app-primary), #ffffff 86%);
+  color: color-mix(in srgb, var(--app-primary), #06110f 24%);
+}
+
+.sample-ideas-sheet .drawer-close-button span,
+.sample-ideas-sheet .drawer-close-button svg {
+  color: currentColor;
 }
 
 .editor-card {
@@ -7297,6 +7329,12 @@ button.priority-badge {
   color: #d8fff7;
 }
 
+.tracker-shell.scheme-dark .mobile-return-chip.reminder {
+  border-color: rgba(245, 158, 11, 0.32);
+  background: rgba(245, 158, 11, 0.16);
+  color: #fff2ce;
+}
+
 .tracker-shell.scheme-dark .icon-text-button.hot,
 .tracker-shell.scheme-dark .cloud-hero-icon,
 .tracker-shell.scheme-dark .appearance-toggle button.selected {
@@ -8676,6 +8714,20 @@ button.priority-badge {
   border-color: rgba(189, 247, 238, 0.24);
   background: #e9fffa;
   color: #0a2a25;
+}
+
+.tracker-shell.scheme-dark .sample-ideas-sheet .drawer-close-button,
+.tracker-shell.scheme-dark .permanent-list-actions .manage-wins-button {
+  border-color: rgba(189, 247, 238, 0.5);
+  background: #e9fffa;
+  color: #123b35;
+}
+
+.tracker-shell.scheme-dark .sample-ideas-sheet .drawer-close-button span,
+.tracker-shell.scheme-dark .sample-ideas-sheet .drawer-close-button svg,
+.tracker-shell.scheme-dark .permanent-list-actions .manage-wins-button span,
+.tracker-shell.scheme-dark .permanent-list-actions .manage-wins-button svg {
+  color: currentColor;
 }
 
 .tracker-shell.scheme-dark .quick-win-name-field input {
