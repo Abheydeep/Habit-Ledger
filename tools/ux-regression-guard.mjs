@@ -422,7 +422,12 @@ const checks = [
       experienceState.includes('type AnalyticsUnlockStage = "locked" | "recap" | "review" | "patterns"') &&
       experienceState.includes("getProductExperienceState") &&
       experienceState.includes("getAnalyticsUnlockStage") &&
-      component.includes("Momentum summary") &&
+      component.includes("review: false") &&
+      component.includes("matrix: true") &&
+      component.includes("scrollMonthGridToSelectedDay") &&
+      component.includes("monthGridWrapRef") &&
+      component.includes("Win heat map") &&
+      !component.includes("<span>Momentum summary</span>") &&
       component.includes("Review unlocks after 2 active days or 3 wins.") &&
       component.includes("Heat map unlocks after 5 active days.") &&
       component.includes("monthlyReviewUnlocked") &&

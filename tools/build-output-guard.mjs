@@ -133,7 +133,10 @@ const checks = [
       builtText.includes("Momentum started. First win logged.") &&
       builtText.includes("Your 5-day pattern") &&
       builtText.includes("five-day-pattern-card") &&
-      builtText.includes("Momentum summary") &&
+      builtText.includes("Win heat map") &&
+      builtText.includes("day-header.selected") &&
+      builtText.includes("scrollTo({left") &&
+      !builtText.includes("Momentum summary") &&
       builtText.includes("Review unlocks after 2 active days or 3 wins.") &&
       builtText.includes("Heat map unlocks after 5 active days.")
   },

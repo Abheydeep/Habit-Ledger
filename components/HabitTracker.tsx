@@ -250,8 +250,8 @@ const defaultReminderSettings: ReminderSettings = {
   time: "20:30"
 };
 const defaultAnalyticsSections: Record<AnalyticsSectionKey, boolean> = {
-  review: true,
-  matrix: false
+  review: false,
+  matrix: true
 };
 const personalizerFlowSteps: Array<{ key: Exclude<PersonalizerStep, "intro">; label: string }> = [
   { key: "about", label: "About you" },
@@ -423,6 +423,7 @@ export function HabitTracker() {
   const [selectedDate, setSelectedDate] = useState(() => localDateKey(new Date()));
   const selectedDateRef = useRef(selectedDate);
   const noteRef = useRef<HTMLTextAreaElement | null>(null);
+  const monthGridWrapRef = useRef<HTMLDivElement | null>(null);
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
@@ -1975,16 +1976,39 @@ export function HabitTracker() {
     });
   }, [selectToday]);
 
+  const scrollMonthGridToSelectedDay = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const gridWrap = monthGridWrapRef.current;
+    const selectedHeader = gridWrap?.querySelector<HTMLElement>(".day-header.selected");
+
+    if (!gridWrap || !selectedHeader) {
+      return;
+    }
+
+    const stickyHabitWidth = Math.min(170, gridWrap.clientWidth * 0.44);
+    const targetLeft = Math.max(0, selectedHeader.offsetLeft - stickyHabitWidth);
+    gridWrap.scrollTo({ left: targetLeft, behavior });
+  }, []);
+
   const openMonthView = useCallback(() => {
+    const today = new Date();
+    const todayKey = localDateKey(today);
+    setSelectedDate(todayKey);
+    setVisibleMonth(startOfMonth(today));
     setMonthOpen(true);
+    setAnalyticsSections((current) => ({
+      ...current,
+      review: false,
+      matrix: true
+    }));
     setExpandedHabitId(null);
     if (isCompactViewport()) {
       setDayOpen(false);
     }
     window.requestAnimationFrame(() => {
       document.getElementById("month-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.requestAnimationFrame(() => scrollMonthGridToSelectedDay("smooth"));
     });
-  }, []);
+  }, [scrollMonthGridToSelectedDay]);
 
   const selectDay = useCallback((dateKey: string, habitId: string | null = null) => {
     setSelectedDate(dateKey);
@@ -2403,6 +2427,23 @@ export function HabitTracker() {
     setHoldMenuHintSeenDate(todayKey);
     setHoldMenuHintSessionDate(todayKey);
   }, [clientStateReady, dayOpen, holdMenuHintCandidate, holdMenuHintSeenDate, holdMenuHintSessionDate, todayKey]);
+
+  useEffect(() => {
+    if (!clientStateReady || !monthOpen || !analyticsSections.matrix || !patternAnalyticsUnlocked) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => scrollMonthGridToSelectedDay("auto"), 80);
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    analyticsSections.matrix,
+    clientStateReady,
+    monthOpen,
+    patternAnalyticsUnlocked,
+    scrollMonthGridToSelectedDay,
+    selectedDate,
+    visibleMonth
+  ]);
 
   if (!clientStateReady) {
     return (
@@ -3374,16 +3415,6 @@ export function HabitTracker() {
 
             <div className="month-panel-content">
               <div className="analytics-sections">
-                <div className="analytics-stage-card" role="status">
-                  <span>Momentum summary</span>
-                  <strong>{analyticsRecapText}</strong>
-                  <p>
-                    {monthlyReviewUnlocked
-                      ? "Monthly review is ready."
-                      : "Review unlocks after 2 active days or 3 wins."}
-                  </p>
-                </div>
-
                 {fiveDayReflectionVisible ? (
                   <div className="analytics-stage-card five-day-pattern-card" role="status" aria-label="Your 5-day pattern">
                     <span>Your 5-day pattern</span>
@@ -3438,7 +3469,7 @@ export function HabitTracker() {
                     <div className="analytics-lock-copy">
                       <span>Next unlock</span>
                       <strong>Review needs a little more signal.</strong>
-                      <p>Log 3 wins or come back for a second active day.</p>
+                      <p>Review unlocks after 2 active days or 3 wins.</p>
                     </div>
                   </section>
                 )}
@@ -3463,9 +3494,9 @@ export function HabitTracker() {
                         <div className="heatmap-summary">
                           <div>
                             <span className="section-kicker">Matrix</span>
-                            <strong>Habit heat map</strong>
+                            <strong>Win heat map</strong>
                           </div>
-                          <p>{monthProgress.completed}/{monthProgress.total} core wins so far. Optional routines stay loggable outside the score.</p>
+                          <p>{analyticsRecapText} {monthProgress.completed}/{monthProgress.total} core wins so far. Optional routines stay outside the score.</p>
                         </div>
                         <div className="heatmap-legend" aria-label="Heat map legend">
                           <span><i className="heat-empty" /> Empty</span>
@@ -3474,7 +3505,13 @@ export function HabitTracker() {
                           <span><i className="heat-strong" /> Strong</span>
                           <span><i className="heat-rest" /> Rest/skip</span>
                         </div>
-                        <div className="month-grid-wrap" role="region" aria-label="Monthly win grid" tabIndex={0}>
+                        <div
+                          ref={monthGridWrapRef}
+                          className="month-grid-wrap"
+                          role="region"
+                          aria-label="Monthly win grid"
+                          tabIndex={0}
+                        >
                           <div
                             className="month-grid"
                             style={{ "--day-count": monthDays.length } as CSSProperties}
