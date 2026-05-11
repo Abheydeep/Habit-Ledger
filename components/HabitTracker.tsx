@@ -16,6 +16,7 @@ import {
   Download,
   FileUp,
   Footprints,
+  GripVertical,
   Home,
   Leaf,
   Moon,
@@ -205,7 +206,8 @@ const appThemes = {
 type AppThemeKey = keyof typeof appThemes;
 type ColorScheme = "light" | "dark";
 type SettingsSectionKey = "personalize" | "backup" | "theme" | "feedback" | "reminders" | "wins" | "sync";
-type PersonalizerStep = "intro" | "about" | "goals" | "preview";
+type PersonalizerStep = "intro" | "about" | "wins" | "preview";
+type EditorFieldKey = "icon" | "color" | "daypart";
 type AnalyticsSectionKey = "review" | "matrix";
 type FeedbackSettings = {
   sound: boolean;
@@ -252,7 +254,7 @@ const defaultAnalyticsSections: Record<AnalyticsSectionKey, boolean> = {
 };
 const personalizerFlowSteps: Array<{ key: Exclude<PersonalizerStep, "intro">; label: string }> = [
   { key: "about", label: "About you" },
-  { key: "goals", label: "Goals" },
+  { key: "wins", label: "Your wins" },
   { key: "preview", label: "Preview" }
 ];
 const dayPartLabels: Record<DayPartKey, string> = {
@@ -265,7 +267,7 @@ const dayPartMicrocopy: Record<DayPartKey, string> = {
   daytime: "Protect focus",
   evening: "Close gently"
 };
-const defaultWinCategoryOpenState = createCategoryOpenState(["morning-routine", "health"]);
+const defaultWinCategoryOpenState = createCategoryOpenState(["morning-routine"]);
 const defaultSampleCategoryOpenState = createCategoryOpenState(["morning-routine"]);
 const dailyNotePrompts = [
   "What made today easier or harder? One line is enough.",
@@ -305,32 +307,6 @@ const characterOutfits: Record<OnboardingInput["routineType"], { title: string; 
     detail: "Deep teal blazer, ivory shirt, muted gold, and a premium planner prop."
   }
 };
-const goalOptions = [
-  "fitness",
-  "focus",
-  "better sleep",
-  "screen balance",
-  "money tracking",
-  "learning",
-  "exam prep",
-  "self-care",
-  "business discipline",
-  "energy",
-  "calmer routine"
-];
-const constraintOptions = [
-  "long sitting hours",
-  "late meetings",
-  "hostel food",
-  "food delivery temptation",
-  "family interruptions",
-  "travel",
-  "heat",
-  "irregular meals",
-  "late-night phone use",
-  "cash and UPI expenses",
-  "limited alone time"
-];
 const lifeModeThemes: Record<
   OnboardingInput["routineType"],
   {
@@ -453,6 +429,8 @@ export function HabitTracker() {
   const [newHabitThumbnail, setNewHabitThumbnail] = useState(thumbnailOptions[0].src);
   const [newHabitColor, setNewHabitColor] = useState(colorPalette[0]);
   const [newHabitDayPart, setNewHabitDayPart] = useState<DayPartKey>("daytime");
+  const [addFormOpen, setAddFormOpen] = useState(false);
+  const [sampleIdeasOpen, setSampleIdeasOpen] = useState(false);
   const [expandedWinCategories, setExpandedWinCategories] =
     useState<Record<HabitCategoryKey, boolean>>(defaultWinCategoryOpenState);
   const [expandedSampleCategories, setExpandedSampleCategories] =
@@ -460,7 +438,11 @@ export function HabitTracker() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [expandedHabitId, setExpandedHabitId] = useState<string | null>(null);
+  const [expandedEditorField, setExpandedEditorField] = useState<EditorFieldKey | null>(null);
+  const [requirementConfirmId, setRequirementConfirmId] = useState<string | null>(null);
   const [requirementMenuHabitId, setRequirementMenuHabitId] = useState<string | null>(null);
+  const [requirementDeleteConfirmId, setRequirementDeleteConfirmId] = useState<string | null>(null);
+  const [draggingHabitId, setDraggingHabitId] = useState<string | null>(null);
   const [dayOpen, setDayOpen] = useState(true);
   const [monthOpen, setMonthOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -484,6 +466,10 @@ export function HabitTracker() {
   const [personalizerOpen, setPersonalizerOpen] = useState(false);
   const [personalizerStep, setPersonalizerStep] = useState<PersonalizerStep>("intro");
   const [onboarding, setOnboarding] = useState<OnboardingInput>(defaultOnboardingInput);
+  const [draftPersonalizedHabits, setDraftPersonalizedHabits] = useState<Habit[]>([]);
+  const [draftWinsCustomized, setDraftWinsCustomized] = useState(false);
+  const [draftIconHabitId, setDraftIconHabitId] = useState<string | null>(null);
+  const [draftNewHabitName, setDraftNewHabitName] = useState("");
   const [personalizationSnapshot, setPersonalizationSnapshot] = useState<PersonalizationSnapshot | null>(null);
   const [appThemeKey, setAppThemeKey] = useState<AppThemeKey>("fresh-ledger");
   const [colorScheme, setColorScheme] = useState<ColorScheme>(() => getInitialColorScheme());
@@ -542,7 +528,7 @@ export function HabitTracker() {
         const parsed = JSON.parse(storedPersonalization) as PersonalizationSnapshot;
         if (parsed?.input?.routineType) {
           const normalizedInput = normalizeOnboardingInput(parsed.input);
-          const healedTracker = maybeRefreshPersonalizedHabits(loadedTracker ?? trackerRef.current, normalizedInput);
+          const healedTracker = maybeRefreshPersonalizedHabits(loadedTracker ?? trackerRef.current, normalizedInput, parsed);
           setOnboarding(normalizedInput);
           setPersonalizationSnapshot({ ...parsed, input: normalizedInput });
           setAppThemeKey(themeByRoutine[normalizedInput.routineType]);
@@ -1344,6 +1330,7 @@ export function HabitTracker() {
         requirementPressTimerRef.current = null;
         requirementPressTriggeredRef.current = true;
         setExpandedHabitId(null);
+        setRequirementDeleteConfirmId(null);
         setRequirementMenuHabitId(habit.id);
         if (feedbackSettings.haptics) {
           triggerCompletionHaptic("tap");
@@ -1503,6 +1490,7 @@ export function HabitTracker() {
       const record = trackerRef.current.days[selectedDate] ?? emptyDay;
 
       setRequirementMenuHabitId(null);
+      setRequirementDeleteConfirmId(null);
       if (isHabitComplete(record, habit.id)) {
         triggerCompletionFeedback(habit.color, "tap", feedbackSettings);
         clearHabitMood(habit.id);
@@ -1589,6 +1577,8 @@ export function HabitTracker() {
     setNewHabitName("");
     setNewHabitQuip("Custom win ready to track.");
     setNewHabitColor((current) => colorPalette[(colorPalette.indexOf(current) + 1) % colorPalette.length]);
+    setAddFormOpen(false);
+    setSampleIdeasOpen(false);
     showLocalTrustToast("Saved locally. Your win list changed.");
   }, [commit, newHabitColor, newHabitDayPart, newHabitName, newHabitQuip, newHabitThumbnail, showLocalTrustToast]);
 
@@ -1598,10 +1588,20 @@ export function HabitTracker() {
     setNewHabitColor(sample.color);
     setNewHabitThumbnail(sample.thumbnail);
     setNewHabitDayPart(sample.dayPart ?? "daytime");
+    setAddFormOpen(true);
+    setSampleIdeasOpen(false);
   }, []);
 
   const toggleWinCategory = useCallback((category: HabitCategoryKey) => {
-    setExpandedWinCategories((current) => ({ ...current, [category]: !current[category] }));
+    setExpandedWinCategories((current) => {
+      const shouldOpen = !current[category];
+      return shouldOpen ? createCategoryOpenState([category]) : createCategoryOpenState([]);
+    });
+    setExpandedHabitId(null);
+    setExpandedEditorField(null);
+    setRequirementConfirmId(null);
+    setDeleteConfirmId(null);
+    setDraggingHabitId(null);
   }, []);
 
   const toggleSampleCategory = useCallback((category: HabitCategoryKey) => {
@@ -1614,7 +1614,41 @@ export function HabitTracker() {
         ...current,
         habits: current.habits.map((habit) => (habit.id === habitId ? { ...habit, ...patch } : habit))
       }));
+      setRequirementConfirmId(null);
       showLocalTrustToast("Saved locally. Your win list changed.");
+    },
+    [commit, showLocalTrustToast]
+  );
+
+  const moveHabitToPosition = useCallback(
+    (habitId: string, targetHabitId: string) => {
+      if (habitId === targetHabitId) {
+        setDraggingHabitId(null);
+        return;
+      }
+
+      commit((current) => {
+        const ordered = [...current.habits].sort((a, b) => a.order - b.order);
+        const fromIndex = ordered.findIndex((habit) => habit.id === habitId);
+        const toIndex = ordered.findIndex((habit) => habit.id === targetHabitId);
+
+        if (fromIndex < 0 || toIndex < 0) {
+          return current;
+        }
+
+        const [moved] = ordered.splice(fromIndex, 1);
+        ordered.splice(toIndex, 0, moved);
+
+        return {
+          ...current,
+          habits: ordered.map((habit, order) => ({ ...habit, order }))
+        };
+      });
+      setDraggingHabitId(null);
+      setExpandedEditorField(null);
+      setDeleteConfirmId(null);
+      setRequirementConfirmId(null);
+      showLocalTrustToast("Saved locally. Your win order changed.");
     },
     [commit, showLocalTrustToast]
   );
@@ -1663,7 +1697,10 @@ export function HabitTracker() {
       });
 
       setExpandedHabitId(null);
+      setExpandedEditorField(null);
       setRequirementMenuHabitId(null);
+      setRequirementConfirmId(null);
+      setRequirementDeleteConfirmId(null);
       setQuickIconHabitId(null);
       setQuickDeleteConfirmId(null);
       if (changedHabitName) {
@@ -1693,7 +1730,10 @@ export function HabitTracker() {
       });
 
       setExpandedHabitId(null);
+      setExpandedEditorField(null);
       setRequirementMenuHabitId(null);
+      setRequirementConfirmId(null);
+      setRequirementDeleteConfirmId(null);
       setQuickIconHabitId(null);
       setQuickDeleteConfirmId(null);
       if (changedHabitName) {
@@ -1714,6 +1754,9 @@ export function HabitTracker() {
         )
       }));
       showLocalTrustToast("Saved locally. Your win list changed.");
+      setExpandedEditorField(null);
+      setDeleteConfirmId(null);
+      setRequirementConfirmId(null);
       setQuickIconHabitId(null);
       setQuickDeleteConfirmId(null);
     },
@@ -1741,6 +1784,9 @@ export function HabitTracker() {
         };
       });
       setDeleteConfirmId(null);
+      setExpandedEditorField(null);
+      setRequirementDeleteConfirmId(null);
+      setRequirementMenuHabitId(null);
       setQuickIconHabitId(null);
       setQuickDeleteConfirmId(null);
       showLocalTrustToast("Saved locally. Your win list changed.");
@@ -1949,32 +1995,140 @@ export function HabitTracker() {
   const updateOnboarding = useCallback(
     <Key extends keyof OnboardingInput>(key: Key, value: OnboardingInput[Key]) => {
       setOnboarding((current) => ({ ...current, [key]: value }));
+      if (!draftWinsCustomized) {
+        setDraftPersonalizedHabits([]);
+      }
       if (key === "routineType") {
         const nextTheme = themeByRoutine[value as OnboardingInput["routineType"]];
         setAppThemeKey(nextTheme);
         window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
       }
     },
-    []
+    [draftWinsCustomized]
   );
 
-  const toggleOnboardingListItem = useCallback(
-    (key: "primaryGoals" | "constraints", value: string) => {
-      setOnboarding((current) => {
-        const currentValues = current[key];
-        const nextValues = currentValues.includes(value)
-          ? currentValues.filter((item) => item !== value)
-          : [...currentValues, value];
-        return { ...current, [key]: nextValues.length > 0 ? nextValues : [value] };
+  const initializeDraftPersonalizedHabits = useCallback(
+    (force = false) => {
+      const normalizedInput = normalizeOnboardingInput(onboarding);
+      setDraftPersonalizedHabits((current) => {
+        if (!force && current.length > 0) {
+          return current;
+        }
+        return createPersonalizedHabits(normalizedInput, new Date().toISOString());
       });
+      if (force) {
+        setDraftWinsCustomized(false);
+        setDraftIconHabitId(null);
+        setDraftNewHabitName("");
+      }
     },
-    []
+    [onboarding]
+  );
+
+  const openPersonalizerStep = useCallback(
+    (step: PersonalizerStep) => {
+      if (step === "wins" || step === "preview") {
+        initializeDraftPersonalizedHabits();
+      }
+      setPersonalizerStep(step);
+    },
+    [initializeDraftPersonalizedHabits]
+  );
+
+  const markDraftWinsCustomized = useCallback(() => {
+    setDraftWinsCustomized(true);
+  }, []);
+
+  const updateDraftHabit = useCallback(
+    (habitId: string, patch: Partial<Pick<Habit, "name" | "thumbnail" | "color" | "quip" | "dayPart" | "requirement">>) => {
+      setDraftPersonalizedHabits((current) =>
+        current.map((habit) => (habit.id === habitId ? { ...habit, ...patch } : habit))
+      );
+      markDraftWinsCustomized();
+    },
+    [markDraftWinsCustomized]
+  );
+
+  const deleteDraftHabit = useCallback(
+    (habitId: string) => {
+      setDraftPersonalizedHabits((current) => {
+        const habit = current.find((item) => item.id === habitId);
+        if (!habit) {
+          return current;
+        }
+        const isCore = habit.requirement !== "optional";
+        const coreCount = current.filter((item) => item.requirement !== "optional").length;
+        if (isCore && coreCount <= 1) {
+          showAppToast("Keep at least one core win.", "error");
+          return current;
+        }
+        return current.filter((item) => item.id !== habitId).map((item, order) => ({ ...item, order }));
+      });
+      setDraftIconHabitId(null);
+      markDraftWinsCustomized();
+    },
+    [markDraftWinsCustomized, showAppToast]
+  );
+
+  const addDraftHabit = useCallback(() => {
+    const name = draftNewHabitName.trim();
+    if (!name) {
+      return;
+    }
+
+    setDraftPersonalizedHabits((current) => {
+      const coreCount = current.filter((habit) => habit.requirement !== "optional").length;
+      const next: Habit = {
+        id: `draft-${Date.now().toString(36)}`,
+        name,
+        color: colorPalette[coreCount % colorPalette.length],
+        thumbnail: thumbnailOptions[0].src,
+        quip: "Custom win ready to track.",
+        order: current.length,
+        createdAt: new Date().toISOString(),
+        dayPart: "daytime",
+        requirement: coreCount < DEFAULT_PRIMARY_WIN_COUNT ? "permanent" : "optional"
+      };
+      return [...current, next];
+    });
+    setDraftNewHabitName("");
+    markDraftWinsCustomized();
+  }, [draftNewHabitName, markDraftWinsCustomized]);
+
+  const toggleDraftRequirement = useCallback(
+    (habitId: string) => {
+      setDraftPersonalizedHabits((current) => {
+        const habit = current.find((item) => item.id === habitId);
+        if (!habit) {
+          return current;
+        }
+        const isCore = habit.requirement !== "optional";
+        const coreCount = current.filter((item) => item.requirement !== "optional").length;
+        if (isCore && coreCount <= 1) {
+          showAppToast("Keep at least one core win.", "error");
+          return current;
+        }
+        return current.map((item) =>
+          item.id === habitId ? { ...item, requirement: isCore ? "optional" : "permanent" } : item
+        );
+      });
+      markDraftWinsCustomized();
+    },
+    [markDraftWinsCustomized, showAppToast]
   );
 
   const applyPersonalizedPlan = useCallback(() => {
     const now = new Date().toISOString();
     const normalizedInput = normalizeOnboardingInput(onboarding);
-    const habits = createPersonalizedHabits(normalizedInput, now);
+    const habits = (draftPersonalizedHabits.length > 0
+      ? draftPersonalizedHabits
+      : createPersonalizedHabits(normalizedInput, now)
+    ).map((habit, order) => ({
+      ...habit,
+      order,
+      createdAt: habit.createdAt || now,
+      requirement: habit.requirement === "optional" ? ("optional" as const) : ("permanent" as const)
+    }));
     const nextTracker: TrackerState = {
       version: 1,
       habits,
@@ -1985,7 +2139,9 @@ export function HabitTracker() {
     const snapshot: PersonalizationSnapshot = {
       input: normalizedInput,
       characterBrief: createCharacterBrief(normalizedInput),
-      generatedAt: now
+      generatedAt: now,
+      draftHabits: habits,
+      userCustomizedWins: draftWinsCustomized
     };
     const nextTheme = themeByRoutine[normalizedInput.routineType];
 
@@ -2001,9 +2157,13 @@ export function HabitTracker() {
     setDayOpen(true);
     setPersonalizerStep("about");
     setPersonalizerOpen(false);
+    setDraftPersonalizedHabits([]);
+    setDraftWinsCustomized(false);
+    setDraftIconHabitId(null);
+    setDraftNewHabitName("");
     queueCloudBackup();
     showLocalTrustToast("Saved locally. Your personalized Win List is ready.");
-  }, [onboarding, queueCloudBackup, showLocalTrustToast]);
+  }, [draftPersonalizedHabits, draftWinsCustomized, onboarding, queueCloudBackup, showLocalTrustToast]);
 
   const selectAppTheme = useCallback((themeKey: AppThemeKey) => {
     setAppThemeKey(themeKey);
@@ -2542,9 +2702,18 @@ export function HabitTracker() {
               onboarding={onboarding}
               snapshot={personalizationSnapshot}
               onToggle={() => setPersonalizerOpen(false)}
-              onStepChange={setPersonalizerStep}
+              onStepChange={openPersonalizerStep}
               onUpdate={updateOnboarding}
-              onToggleListItem={toggleOnboardingListItem}
+              draftHabits={draftPersonalizedHabits}
+              draftIconHabitId={draftIconHabitId}
+              draftNewHabitName={draftNewHabitName}
+              onDraftIconHabitChange={setDraftIconHabitId}
+              onDraftNewHabitNameChange={setDraftNewHabitName}
+              onDraftHabitChange={updateDraftHabit}
+              onDraftHabitDelete={deleteDraftHabit}
+              onDraftHabitAdd={addDraftHabit}
+              onDraftRequirementToggle={toggleDraftRequirement}
+              onDraftReset={() => initializeDraftPersonalizedHabits(true)}
               onApply={applyPersonalizedPlan}
             />
           </aside>
@@ -2833,6 +3002,7 @@ export function HabitTracker() {
                                     event.preventDefault();
                                     clearRequirementPressTimer();
                                     setExpandedHabitId(null);
+                                    setRequirementDeleteConfirmId(null);
                                     setRequirementMenuHabitId(habit.id);
                                   }}
                                   onClick={() => {
@@ -2889,8 +3059,23 @@ export function HabitTracker() {
                                       setQuickManagerOpen(true);
                                     }}
                                   >
-                                    Edit wins
+                                    Edit name/icons
                                   </button>
+                                  {requirementDeleteConfirmId === habit.id ? (
+                                    <div className="quick-delete-confirm" role="group" aria-label={`Confirm remove ${habit.name}`}>
+                                      <span>Remove?</span>
+                                      <button type="button" onClick={() => setRequirementDeleteConfirmId(null)}>
+                                        No
+                                      </button>
+                                      <button className="danger" type="button" onClick={() => deleteHabit(habit.id)}>
+                                        Remove
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button type="button" onClick={() => setRequirementDeleteConfirmId(habit.id)}>
+                                      Remove this win
+                                    </button>
+                                  )}
                                   <button type="button" onClick={() => setRequirementMenuHabitId(null)}>
                                     Keep core
                                   </button>
@@ -2974,9 +3159,12 @@ export function HabitTracker() {
                         const habitMood = selectedRecord.habitMoods?.[habit.id];
                         const moodOption = moodOptions.find((item) => item.key === habitMood);
                         const moodMenuOpen = expandedHabitId === habit.id;
+                        const requirementMenuOpen = requirementMenuHabitId === habit.id;
                         return (
                           <article
                             className={`habit-card optional${done ? " done" : ""}${moodMenuOpen ? " expanded" : ""}${
+                              requirementMenuOpen ? " requirement-menu-open" : ""
+                            }${
                               celebration?.habitId === habit.id ? " celebrating" : ""
                             }`}
                             key={habit.id}
@@ -2986,10 +3174,30 @@ export function HabitTracker() {
                               <button
                                 className="habit-win-button"
                                 type="button"
-                                onPointerDown={primeCompletionFeedback}
-                                onTouchStart={primeCompletionFeedback}
-                                onClick={() => toggleHabitWin(habit)}
-                                aria-label={done ? `Undo optional ${habit.name} for ${formatPrettyDate(selectedDate)}` : `Mark optional ${habit.name} as won`}
+                                onPointerDown={() => startRequirementLongPress(habit)}
+                                onPointerUp={finishRequirementLongPress}
+                                onPointerLeave={finishRequirementLongPress}
+                                onPointerCancel={finishRequirementLongPress}
+                                onContextMenu={(event) => {
+                                  event.preventDefault();
+                                  clearRequirementPressTimer();
+                                  setExpandedHabitId(null);
+                                  setRequirementDeleteConfirmId(null);
+                                  setRequirementMenuHabitId(habit.id);
+                                }}
+                                onClick={() => {
+                                  clearRequirementPressTimer();
+                                  if (consumeRequirementLongPress()) {
+                                    return;
+                                  }
+                                  toggleHabitWin(habit);
+                                }}
+                                aria-label={
+                                  done
+                                    ? `Undo optional ${habit.name} for ${formatPrettyDate(selectedDate)}. Press and hold for options.`
+                                    : `Mark optional ${habit.name} as won. Press and hold for options.`
+                                }
+                                title="Press and hold for options"
                               >
                                 <img src={assetUrl(habit.thumbnail)} alt="" className="habit-thumb" />
                                 <span className="habit-card-copy">
@@ -3029,6 +3237,41 @@ export function HabitTracker() {
                                 </button>
                               </div>
                             </div>
+                            {requirementMenuOpen ? (
+                              <div className="requirement-longpress-panel" aria-label={`Options for optional ${habit.name}`}>
+                                <span>Hold menu</span>
+                                <button type="button" onClick={() => makeOptionalHabitPermanent(habit.id)}>
+                                  Make core
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRequirementMenuHabitId(null);
+                                    setQuickManagerOpen(true);
+                                  }}
+                                >
+                                  Edit name/icons
+                                </button>
+                                {requirementDeleteConfirmId === habit.id ? (
+                                  <div className="quick-delete-confirm" role="group" aria-label={`Confirm remove optional ${habit.name}`}>
+                                    <span>Remove?</span>
+                                    <button type="button" onClick={() => setRequirementDeleteConfirmId(null)}>
+                                      No
+                                    </button>
+                                    <button className="danger" type="button" onClick={() => deleteHabit(habit.id)}>
+                                      Remove
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button type="button" onClick={() => setRequirementDeleteConfirmId(habit.id)}>
+                                    Remove this win
+                                  </button>
+                                )}
+                                <button type="button" onClick={() => setRequirementMenuHabitId(null)}>
+                                  Keep optional
+                                </button>
+                              </div>
+                            ) : null}
                             {moodMenuOpen ? (
                               <div className="activity-mood-panel" aria-label={`Win status choices for optional ${habit.name}`}>
                                 {moodOptions.map((mood) => (
@@ -3682,93 +3925,130 @@ export function HabitTracker() {
               expanded={expandedSettingsSections.wins}
               onToggle={toggleSettingsSection}
             >
-              <div className="add-habit-box">
-                <label>
-                  <span>{copy.newWin}</span>
-                  <input
-                    value={newHabitName}
-                    onChange={(event) => {
-                      setNewHabitName(event.target.value);
-                      if (!event.target.value.trim()) {
-                        setNewHabitQuip("Custom win ready to track.");
-                      }
-                    }}
-                    placeholder="Add an important win"
-                  />
-                </label>
-                <label>
-                  <span>Card note</span>
-                  <input
-                    value={newHabitQuip}
-                    onChange={(event) => setNewHabitQuip(event.target.value)}
-                    placeholder="Short note shown under the win"
-                  />
-                </label>
-                <div className="sample-habit-library" aria-label="Sample habit ideas">
-                  <div className="sample-library-heading">
-                    <span>Sample habits</span>
-                    <small>Tap one to fill the fields.</small>
-                  </div>
-                  {sampleCategoryGroups.map((group) => {
-                    const meta = habitCategoryMeta[group.key];
-                    const expanded = expandedSampleCategories[group.key];
-
-                    return (
-                      <section className={`sample-category${expanded ? " expanded" : ""}`} key={group.key}>
-                        <button
-                          className="sample-category-toggle"
-                          type="button"
-                          aria-expanded={expanded}
-                          onClick={() => toggleSampleCategory(group.key)}
-                        >
-                          <span>
-                            <strong>{meta.label}</strong>
-                            <small>{group.samples.length} ideas</small>
-                          </span>
-                          <ChevronDown size={16} aria-hidden="true" />
-                        </button>
-                        {expanded ? (
-                          <div className="sample-habit-buttons">
-                            {group.samples.map((sample) => (
-                              <button key={sample.id} type="button" onClick={() => applyHabitSample(sample)}>
-                                <img src={assetUrl(sample.thumbnail)} alt="" />
-                                <span>{sample.name}</span>
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-                      </section>
-                    );
-                  })}
-                </div>
-                <div className="thumbnail-picker compact" aria-label="Choose thumbnail for new win">
-                  {thumbnailOptions.map((thumbnail) => (
-                    <button
-                      className={newHabitThumbnail === thumbnail.src ? "selected" : ""}
-                      key={thumbnail.slug}
-                      type="button"
-                      onClick={() => setNewHabitThumbnail(thumbnail.src)}
-                      title={thumbnail.label}
-                    >
-                      <img src={assetUrl(thumbnail.src)} alt="" />
+              <div className={`add-habit-box${addFormOpen ? " open" : " collapsed"}`}>
+                {!addFormOpen ? (
+                  <div className="add-habit-collapsed">
+                    <button className="icon-text-button hot" type="button" onClick={() => setAddFormOpen(true)}>
+                      <Plus size={18} aria-hidden="true" />
+                      + Add a win
                     </button>
-                  ))}
-                </div>
-                <ColorSwatches
-                  label="Choose color for new win"
-                  selectedColor={newHabitColor}
-                  onSelect={setNewHabitColor}
-                />
-                <DayPartPicker
-                  label="Choose time of day for new win"
-                  selectedDayPart={newHabitDayPart}
-                  onSelect={setNewHabitDayPart}
-                />
-                <button className="icon-text-button hot full" type="button" onClick={addHabit}>
-                  <Plus size={18} aria-hidden="true" />
-                  {copy.addWin}
-                </button>
+                    <button className="icon-text-button ghost" type="button" onClick={() => setSampleIdeasOpen(true)}>
+                      <BookOpen size={17} aria-hidden="true" />
+                      Browse ideas
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="add-habit-header">
+                      <span>{copy.newWin}</span>
+                      <div>
+                        <button className="tiny-text-button" type="button" onClick={() => setSampleIdeasOpen(true)}>
+                          Browse ideas
+                        </button>
+                        <button className="tiny-text-button" type="button" onClick={() => setAddFormOpen(false)}>
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                    <label>
+                      <span>Name</span>
+                      <input
+                        value={newHabitName}
+                        onChange={(event) => {
+                          setNewHabitName(event.target.value);
+                          if (!event.target.value.trim()) {
+                            setNewHabitQuip("Custom win ready to track.");
+                          }
+                        }}
+                        placeholder="Add an important win"
+                      />
+                    </label>
+                    <label>
+                      <span>Card note</span>
+                      <input
+                        value={newHabitQuip}
+                        onChange={(event) => setNewHabitQuip(event.target.value)}
+                        placeholder="Short note shown under the win"
+                      />
+                    </label>
+                    <div className="thumbnail-picker compact" aria-label="Choose thumbnail for new win">
+                      {thumbnailOptions.map((thumbnail) => (
+                        <button
+                          className={newHabitThumbnail === thumbnail.src ? "selected" : ""}
+                          key={thumbnail.slug}
+                          type="button"
+                          onClick={() => setNewHabitThumbnail(thumbnail.src)}
+                          title={thumbnail.label}
+                        >
+                          <img src={assetUrl(thumbnail.src)} alt="" />
+                        </button>
+                      ))}
+                    </div>
+                    <ColorSwatches
+                      label="Choose color for new win"
+                      selectedColor={newHabitColor}
+                      onSelect={setNewHabitColor}
+                    />
+                    <DayPartPicker
+                      label="Choose time of day for new win"
+                      selectedDayPart={newHabitDayPart}
+                      onSelect={setNewHabitDayPart}
+                    />
+                    <button className="icon-text-button hot full" type="button" onClick={addHabit}>
+                      <Plus size={18} aria-hidden="true" />
+                      {copy.addWin}
+                    </button>
+                  </>
+                )}
               </div>
+
+              {sampleIdeasOpen ? (
+                <div className="sample-ideas-layer" role="dialog" aria-modal="true" aria-label="Browse sample win ideas">
+                  <button className="sample-ideas-backdrop" type="button" onClick={() => setSampleIdeasOpen(false)} aria-label="Close sample ideas" />
+                  <div className="sample-ideas-sheet">
+                    <div className="sample-library-heading">
+                      <span>Sample habits</span>
+                      <button className="drawer-close-button" type="button" onClick={() => setSampleIdeasOpen(false)}>
+                        <X size={16} aria-hidden="true" />
+                        <span>Close</span>
+                      </button>
+                    </div>
+                    <div className="sample-habit-library" aria-label="Sample habit ideas">
+                      {sampleCategoryGroups.map((group) => {
+                        const meta = habitCategoryMeta[group.key];
+                        const expanded = expandedSampleCategories[group.key];
+
+                        return (
+                          <section className={`sample-category${expanded ? " expanded" : ""}`} key={group.key}>
+                            <button
+                              className="sample-category-toggle"
+                              type="button"
+                              aria-expanded={expanded}
+                              onClick={() => toggleSampleCategory(group.key)}
+                            >
+                              <span>
+                                <strong>{meta.label}</strong>
+                                <small>{group.samples.length} ideas</small>
+                              </span>
+                              <ChevronDown size={16} aria-hidden="true" />
+                            </button>
+                            {expanded ? (
+                              <div className="sample-habit-buttons">
+                                {group.samples.map((sample) => (
+                                  <button key={sample.id} type="button" onClick={() => applyHabitSample(sample)}>
+                                    <img src={assetUrl(sample.thumbnail)} alt="" />
+                                    <span>{sample.name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
+                          </section>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="habit-editor-list" aria-label="Wins grouped by category">
                 {editorCategoryGroups.map((group) => {
@@ -3797,71 +4077,192 @@ export function HabitTracker() {
                       {expanded ? (
                         <div className="editor-category-body">
                           {group.habits.map((habit) => {
-                            const habitIndex = habitOrderIndexById.get(habit.id) ?? 0;
+                            const isExpanded = expandedHabitId === habit.id;
+                            const isCore = permanentRequirementIds.has(habit.id);
+                            const activeEditorField = isExpanded ? expandedEditorField : null;
+                            const dayPart = getHabitDayPart(habit);
 
                             return (
-                              <article className={`editor-card${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
-                                <img className="editor-thumb" src={assetUrl(habit.thumbnail)} alt="" />
-                                <div className="editor-fields">
-                                  <span className={`priority-badge${permanentRequirementIds.has(habit.id) ? " primary" : ""}`}>
-                                    {permanentRequirementIds.has(habit.id) ? "Core win" : "Optional routine"}
-                                  </span>
-                                  <input
-                                    value={habit.name}
-                                    onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
-                                    aria-label={`Win name for ${habit.name}`}
-                                  />
-                                  <input
-                                    value={habit.quip}
-                                    onChange={(event) => updateHabit(habit.id, { quip: event.target.value })}
-                                    aria-label={`Win note for ${habit.name}`}
-                                  />
-                                  <div className="thumbnail-picker" aria-label={`Choose thumbnail for ${habit.name}`}>
-                                    {thumbnailOptions.map((thumbnail) => (
-                                      <button
-                                        className={habit.thumbnail === thumbnail.src ? "selected" : ""}
-                                        key={thumbnail.slug}
-                                        type="button"
-                                        onClick={() => updateHabit(habit.id, { thumbnail: thumbnail.src })}
-                                        title={thumbnail.label}
-                                      >
-                                        <img src={assetUrl(thumbnail.src)} alt="" />
-                                      </button>
-                                    ))}
-                                  </div>
-                                  <ColorSwatches
-                                    label={`Choose color for ${habit.name}`}
-                                    selectedColor={habit.color}
-                                    onSelect={(color) => updateHabit(habit.id, { color })}
-                                  />
-                                  <DayPartPicker
-                                    label={`Choose time of day for ${habit.name}`}
-                                    selectedDayPart={getHabitDayPart(habit)}
-                                    onSelect={(dayPart) => updateHabit(habit.id, { dayPart })}
-                                  />
+                              <article
+                                className={`editor-card${habit.pausedAt ? " paused" : ""}${isExpanded ? " expanded" : ""}${
+                                  draggingHabitId === habit.id ? " dragging" : ""
+                                }`}
+                                key={habit.id}
+                                onDragOver={(event) => event.preventDefault()}
+                                onDrop={(event) => {
+                                  event.preventDefault();
+                                  if (draggingHabitId) {
+                                    moveHabitToPosition(draggingHabitId, habit.id);
+                                  }
+                                }}
+                              >
+                                <div className="editor-card-row">
+                                  <button
+                                    className="editor-drag-handle"
+                                    type="button"
+                                    draggable
+                                    onDragStart={(event) => {
+                                      event.dataTransfer.effectAllowed = "move";
+                                      setDraggingHabitId(habit.id);
+                                      setExpandedEditorField(null);
+                                      setDeleteConfirmId(null);
+                                      setRequirementConfirmId(null);
+                                    }}
+                                    onDragEnd={() => setDraggingHabitId(null)}
+                                    aria-label={`Drag ${habit.name} to reorder`}
+                                  >
+                                    <GripVertical size={17} aria-hidden="true" />
+                                  </button>
+                                  <img className="editor-thumb" src={assetUrl(habit.thumbnail)} alt="" />
+                                  <button
+                                    className="editor-card-summary"
+                                    type="button"
+                                    onClick={() => {
+                                      setExpandedHabitId(isExpanded ? null : habit.id);
+                                      setExpandedEditorField(null);
+                                      setRequirementConfirmId(null);
+                                      setDeleteConfirmId(null);
+                                    }}
+                                    aria-expanded={isExpanded}
+                                  >
+                                    <strong>{habit.name}</strong>
+                                    <small>{habit.quip}</small>
+                                  </button>
+                                  <button
+                                    className={`priority-badge${isCore ? " primary" : ""}`}
+                                    type="button"
+                                    onClick={() => {
+                                      setRequirementConfirmId(requirementConfirmId === habit.id ? null : habit.id);
+                                      setExpandedHabitId(habit.id);
+                                      setExpandedEditorField(null);
+                                      setDeleteConfirmId(null);
+                                    }}
+                                    aria-expanded={requirementConfirmId === habit.id}
+                                  >
+                                    {isCore ? "Core" : "Optional"}
+                                  </button>
+                                  <button
+                                    className="round-button small"
+                                    type="button"
+                                    onClick={() => {
+                                      setExpandedHabitId(isExpanded ? null : habit.id);
+                                      setExpandedEditorField(null);
+                                      setRequirementConfirmId(null);
+                                      setDeleteConfirmId(null);
+                                    }}
+                                    aria-label={isExpanded ? `Collapse ${habit.name}` : `Expand ${habit.name}`}
+                                  >
+                                    <ChevronDown size={16} aria-hidden="true" />
+                                  </button>
                                 </div>
-                                <div className="editor-actions">
-                                  <button
-                                    className="round-button small"
-                                    type="button"
-                                    onClick={() => moveHabit(habit.id, -1)}
-                                    disabled={habitIndex === 0}
-                                    aria-label={`Move ${habit.name} up`}
-                                  >
-                                    <ArrowUp size={15} aria-hidden="true" />
-                                  </button>
-                                  <button
-                                    className="round-button small"
-                                    type="button"
-                                    onClick={() => moveHabit(habit.id, 1)}
-                                    disabled={habitIndex === sortedHabits.length - 1}
-                                    aria-label={`Move ${habit.name} down`}
-                                  >
-                                    <ArrowDown size={15} aria-hidden="true" />
-                                  </button>
-                                  <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
-                                    {habit.pausedAt ? "Resume" : "Pause"}
-                                  </button>
+
+                                {requirementConfirmId === habit.id ? (
+                                  <div className="requirement-confirm-row" role="group" aria-label={`Change requirement for ${habit.name}`}>
+                                    <span>{isCore ? "Move to optional?" : "Make core?"}</span>
+                                    <button type="button" onClick={() => setRequirementConfirmId(null)}>
+                                      No
+                                    </button>
+                                    <button
+                                      className={isCore ? "" : "primary"}
+                                      type="button"
+                                      onClick={() =>
+                                        isCore ? makePermanentHabitOptional(habit.id) : makeOptionalHabitPermanent(habit.id)
+                                      }
+                                    >
+                                      {isCore ? "Move" : "Make core"}
+                                    </button>
+                                  </div>
+                                ) : null}
+
+                                {isExpanded ? (
+                                  <div className="editor-fields">
+                                    <input
+                                      value={habit.name}
+                                      onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
+                                      aria-label={`Win name for ${habit.name}`}
+                                    />
+                                    <input
+                                      value={habit.quip}
+                                      onChange={(event) => updateHabit(habit.id, { quip: event.target.value })}
+                                      aria-label={`Win note for ${habit.name}`}
+                                    />
+                                    <div className="editor-field-accordion">
+                                      <button
+                                        className="editor-field-toggle"
+                                        type="button"
+                                        onClick={() => setExpandedEditorField(activeEditorField === "icon" ? null : "icon")}
+                                        aria-expanded={activeEditorField === "icon"}
+                                      >
+                                        <span>Icon</span>
+                                        <img src={assetUrl(habit.thumbnail)} alt="" />
+                                      </button>
+                                      {activeEditorField === "icon" ? (
+                                        <div className="thumbnail-picker" aria-label={`Choose thumbnail for ${habit.name}`}>
+                                          {thumbnailOptions.map((thumbnail) => (
+                                            <button
+                                              className={habit.thumbnail === thumbnail.src ? "selected" : ""}
+                                              key={thumbnail.slug}
+                                              type="button"
+                                              onClick={() => {
+                                                updateHabit(habit.id, { thumbnail: thumbnail.src });
+                                                setExpandedEditorField(null);
+                                              }}
+                                              title={thumbnail.label}
+                                            >
+                                              <img src={assetUrl(thumbnail.src)} alt="" />
+                                            </button>
+                                          ))}
+                                        </div>
+                                      ) : null}
+
+                                      <button
+                                        className="editor-field-toggle"
+                                        type="button"
+                                        onClick={() => setExpandedEditorField(activeEditorField === "color" ? null : "color")}
+                                        aria-expanded={activeEditorField === "color"}
+                                      >
+                                        <span>Color</span>
+                                        <i style={{ "--swatch": habit.color } as CSSProperties} />
+                                      </button>
+                                      {activeEditorField === "color" ? (
+                                        <ColorSwatches
+                                          label={`Choose color for ${habit.name}`}
+                                          selectedColor={habit.color}
+                                          onSelect={(color) => {
+                                            updateHabit(habit.id, { color });
+                                            setExpandedEditorField(null);
+                                          }}
+                                        />
+                                      ) : null}
+
+                                      <button
+                                        className="editor-field-toggle"
+                                        type="button"
+                                        onClick={() => setExpandedEditorField(activeEditorField === "daypart" ? null : "daypart")}
+                                        aria-expanded={activeEditorField === "daypart"}
+                                      >
+                                        <span>Time of day</span>
+                                        <em>{dayPartLabels[dayPart]}</em>
+                                      </button>
+                                      {activeEditorField === "daypart" ? (
+                                        <DayPartPicker
+                                          label={`Choose time of day for ${habit.name}`}
+                                          selectedDayPart={dayPart}
+                                          onSelect={(nextDayPart) => {
+                                            updateHabit(habit.id, { dayPart: nextDayPart });
+                                            setExpandedEditorField(null);
+                                          }}
+                                        />
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                ) : null}
+
+                                {isExpanded ? (
+                                  <div className="editor-actions">
+                                    <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
+                                      {habit.pausedAt ? "Resume" : "Pause"}
+                                    </button>
                                   {deleteConfirmId === habit.id ? (
                                     <div className="delete-confirm-row" role="group" aria-label={`Confirm delete ${habit.name}`}>
                                       <span>Really delete?</span>
@@ -3882,7 +4283,8 @@ export function HabitTracker() {
                                       <Trash2 size={15} aria-hidden="true" />
                                     </button>
                                   )}
-                                </div>
+                                  </div>
+                                ) : null}
                               </article>
                             );
                           })}
@@ -3952,7 +4354,19 @@ type PersonalizerPanelProps = {
   onToggle: () => void;
   onStepChange: (step: PersonalizerStep) => void;
   onUpdate: <Key extends keyof OnboardingInput>(key: Key, value: OnboardingInput[Key]) => void;
-  onToggleListItem: (key: "primaryGoals" | "constraints", value: string) => void;
+  draftHabits: Habit[];
+  draftIconHabitId: string | null;
+  draftNewHabitName: string;
+  onDraftIconHabitChange: (habitId: string | null) => void;
+  onDraftNewHabitNameChange: (name: string) => void;
+  onDraftHabitChange: (
+    habitId: string,
+    patch: Partial<Pick<Habit, "name" | "thumbnail" | "color" | "quip" | "dayPart" | "requirement">>
+  ) => void;
+  onDraftHabitDelete: (habitId: string) => void;
+  onDraftHabitAdd: () => void;
+  onDraftRequirementToggle: (habitId: string) => void;
+  onDraftReset: () => void;
   onApply: () => void;
 };
 
@@ -4175,11 +4589,23 @@ function PersonalizerPanel({
   onToggle,
   onStepChange,
   onUpdate,
-  onToggleListItem,
+  draftHabits,
+  draftIconHabitId,
+  draftNewHabitName,
+  onDraftIconHabitChange,
+  onDraftNewHabitNameChange,
+  onDraftHabitChange,
+  onDraftHabitDelete,
+  onDraftHabitAdd,
+  onDraftRequirementToggle,
+  onDraftReset,
   onApply
 }: PersonalizerPanelProps) {
   const summary = createPersonalizationSummary(snapshot?.input ?? onboarding);
-  const planPreview = createPersonalizedHabits(onboarding, "preview").slice(0, DEFAULT_PRIMARY_WIN_COUNT);
+  const draftPreview = draftHabits.length > 0 ? draftHabits : createPersonalizedHabits(onboarding, "preview");
+  const planPreview = draftPreview.filter((habit) => habit.requirement !== "optional").slice(0, DEFAULT_PRIMARY_WIN_COUNT);
+  const draftCoreHabits = draftPreview.filter((habit) => habit.requirement !== "optional").sort((a, b) => a.order - b.order);
+  const draftOptionalHabits = draftPreview.filter((habit) => habit.requirement === "optional").sort((a, b) => a.order - b.order);
   const modeTheme = lifeModeThemes[onboarding.routineType];
   const avatarStyle = resolveAvatarStyle(onboarding);
   const outfit = characterOutfits[onboarding.routineType];
@@ -4195,10 +4621,10 @@ function PersonalizerPanel({
           title: "Tell us the real day",
           detail: "Thirty seconds of context is enough to shape useful wins, not a generic checklist."
         }
-      : step === "goals"
+      : step === "wins"
         ? {
-            title: "Choose the outcomes",
-            detail: "Pick what should get easier and what usually gets in the way."
+            title: "Shape the wins",
+            detail: "Rename, remove, or swap icons now. Core wins define the day; optional routines stay extra."
           }
         : {
             title: "See your first draft",
@@ -4366,47 +4792,56 @@ function PersonalizerPanel({
               </div>
             ) : null}
 
-            {step === "goals" ? (
-              <div className="personalizer-form personalizer-step-card">
-                <label>
-                  <span>Usual schedule</span>
-                  <textarea
-                    value={onboarding.schedule}
-                    onChange={(event) => onUpdate("schedule", event.target.value)}
-                    placeholder="Office 10-7, college till 4, shop closes at 8:30..."
-                  />
-                </label>
-
-                <div className="chip-group" aria-label="Primary goals">
-                  <span>Goals</span>
+            {step === "wins" ? (
+              <div className="personalizer-form personalizer-step-card draft-wins-builder">
+                <div className="draft-wins-header">
                   <div>
-                    {goalOptions.map((goal) => (
-                      <button
-                        className={onboarding.primaryGoals.includes(goal) ? "selected" : ""}
-                        key={goal}
-                        type="button"
-                        onClick={() => onToggleListItem("primaryGoals", goal)}
-                      >
-                        {goal}
-                      </button>
-                    ))}
+                    <span>Core wins</span>
+                    <strong>{draftCoreHabits.length} must-do wins</strong>
+                  </div>
+                  <button className="tiny-text-button" type="button" onClick={onDraftReset}>
+                    Reset draft
+                  </button>
+                </div>
+
+                <DraftHabitList
+                  habits={draftCoreHabits}
+                  emptyLabel="Keep at least one core win."
+                  draftIconHabitId={draftIconHabitId}
+                  onDraftIconHabitChange={onDraftIconHabitChange}
+                  onDraftHabitChange={onDraftHabitChange}
+                  onDraftHabitDelete={onDraftHabitDelete}
+                  onDraftRequirementToggle={onDraftRequirementToggle}
+                />
+
+                <div className="draft-wins-header optional">
+                  <div>
+                    <span>Optional routines</span>
+                    <strong>{draftOptionalHabits.length} extra-credit routines</strong>
                   </div>
                 </div>
 
-                <div className="chip-group" aria-label="Constraints">
-                  <span>Constraints</span>
-                  <div>
-                    {constraintOptions.map((constraint) => (
-                      <button
-                        className={onboarding.constraints.includes(constraint) ? "selected" : ""}
-                        key={constraint}
-                        type="button"
-                        onClick={() => onToggleListItem("constraints", constraint)}
-                      >
-                        {constraint}
-                      </button>
-                    ))}
-                  </div>
+                <DraftHabitList
+                  habits={draftOptionalHabits}
+                  emptyLabel="Optional can stay empty."
+                  draftIconHabitId={draftIconHabitId}
+                  onDraftIconHabitChange={onDraftIconHabitChange}
+                  onDraftHabitChange={onDraftHabitChange}
+                  onDraftHabitDelete={onDraftHabitDelete}
+                  onDraftRequirementToggle={onDraftRequirementToggle}
+                />
+
+                <div className="draft-add-row">
+                  <input
+                    value={draftNewHabitName}
+                    onChange={(event) => onDraftNewHabitNameChange(event.target.value)}
+                    placeholder="Add a custom win"
+                    aria-label="Add custom draft win"
+                  />
+                  <button className="icon-text-button hot" type="button" onClick={onDraftHabitAdd}>
+                    <Plus size={16} aria-hidden="true" />
+                    Add
+                  </button>
                 </div>
               </div>
             ) : null}
@@ -4465,6 +4900,98 @@ function PersonalizerPanel({
         </>
       )}
     </section>
+  );
+}
+
+function DraftHabitList({
+  habits,
+  emptyLabel,
+  draftIconHabitId,
+  onDraftIconHabitChange,
+  onDraftHabitChange,
+  onDraftHabitDelete,
+  onDraftRequirementToggle
+}: {
+  habits: Habit[];
+  emptyLabel: string;
+  draftIconHabitId: string | null;
+  onDraftIconHabitChange: (habitId: string | null) => void;
+  onDraftHabitChange: (
+    habitId: string,
+    patch: Partial<Pick<Habit, "name" | "thumbnail" | "color" | "quip" | "dayPart" | "requirement">>
+  ) => void;
+  onDraftHabitDelete: (habitId: string) => void;
+  onDraftRequirementToggle: (habitId: string) => void;
+}) {
+  if (habits.length === 0) {
+    return <p className="draft-empty">{emptyLabel}</p>;
+  }
+
+  return (
+    <div className="draft-habit-list">
+      {habits.map((habit) => {
+        const iconOpen = draftIconHabitId === habit.id;
+        const isCore = habit.requirement !== "optional";
+
+        return (
+          <article className="draft-habit-row" key={habit.id}>
+            <button
+              className="quick-thumb-button"
+              type="button"
+              onClick={() => onDraftIconHabitChange(iconOpen ? null : habit.id)}
+              aria-expanded={iconOpen}
+              aria-label={`Change icon for ${habit.name}`}
+            >
+              <img src={assetUrl(habit.thumbnail)} alt="" />
+            </button>
+            <div className="draft-habit-fields">
+              <input
+                value={habit.name}
+                onChange={(event) => onDraftHabitChange(habit.id, { name: event.target.value })}
+                aria-label={`Draft win name for ${habit.name}`}
+              />
+              <input
+                value={habit.quip}
+                onChange={(event) => onDraftHabitChange(habit.id, { quip: event.target.value })}
+                aria-label={`Draft win note for ${habit.name}`}
+              />
+            </div>
+            <div className="draft-habit-actions">
+              <button className="tiny-text-button" type="button" onClick={() => onDraftRequirementToggle(habit.id)}>
+                {isCore ? "Make optional" : "Make core"}
+              </button>
+              <button
+                className="round-button danger small"
+                type="button"
+                onClick={() => onDraftHabitDelete(habit.id)}
+                aria-label={`Remove ${habit.name}`}
+              >
+                <Trash2 size={14} aria-hidden="true" />
+              </button>
+            </div>
+            {iconOpen ? (
+              <div className="quick-icon-picker draft-icon-picker" aria-label={`Choose icon for ${habit.name}`}>
+                {thumbnailOptions.map((thumbnail) => (
+                  <button
+                    className={habit.thumbnail === thumbnail.src ? "selected" : ""}
+                    key={thumbnail.slug}
+                    type="button"
+                    onClick={() => {
+                      onDraftHabitChange(habit.id, { thumbnail: thumbnail.src });
+                      onDraftIconHabitChange(null);
+                    }}
+                    title={thumbnail.label}
+                    aria-label={`Use ${thumbnail.label} icon for ${habit.name}`}
+                  >
+                    <img src={assetUrl(thumbnail.src)} alt="" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </article>
+        );
+      })}
+    </div>
   );
 }
 
@@ -5238,9 +5765,20 @@ function readSavedTrackerState() {
   return window.localStorage.getItem(STORAGE_KEY) ?? readCookieBackup() ?? readHistoryBackup();
 }
 
-function maybeRefreshPersonalizedHabits(current: TrackerState, input: OnboardingInput) {
+function maybeRefreshPersonalizedHabits(
+  current: TrackerState,
+  input: OnboardingInput,
+  snapshot?: PersonalizationSnapshot | null
+) {
+  if (snapshot?.userCustomizedWins) {
+    return null;
+  }
+
   const now = new Date().toISOString();
   const expectedHabits = createPersonalizedHabits(input, now);
+  if (snapshot?.draftHabits && habitListSignature(current.habits) !== habitListSignature(snapshot.draftHabits)) {
+    return null;
+  }
   const currentIds = current.habits.map((habit) => habit.id).join("|");
   const expectedIds = expectedHabits.map((habit) => habit.id).join("|");
 
@@ -5259,6 +5797,21 @@ function maybeRefreshPersonalizedHabits(current: TrackerState, input: Onboarding
     habits: expectedHabits,
     updatedAt: now
   };
+}
+
+function habitListSignature(habits: Habit[]) {
+  return [...habits]
+    .sort((a, b) => a.order - b.order)
+    .map((habit) => [
+      habit.id,
+      habit.name,
+      habit.thumbnail,
+      habit.color,
+      habit.quip,
+      getHabitDayPart(habit),
+      habit.requirement === "optional" ? "optional" : "permanent"
+    ].join(":"))
+    .join("|");
 }
 
 function isGeneratedHabitList(habits: Habit[]) {

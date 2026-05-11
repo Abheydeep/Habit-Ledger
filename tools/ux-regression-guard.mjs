@@ -495,13 +495,50 @@ const checks = [
       habitData.includes("First hour no screen") &&
       habitData.includes("Plan tomorrow") &&
       habitData.includes("getHabitCategory") &&
+      component.includes("addFormOpen") &&
+      component.includes("sampleIdeasOpen") &&
+      component.includes("sample-ideas-sheet") &&
       component.includes("sample-habit-library") &&
       component.includes("editor-category-toggle") &&
       component.includes("groupHabitsByCategory") &&
       component.includes("expandedWinCategories") &&
+      component.includes("createCategoryOpenState([category])") &&
+      component.includes("editor-drag-handle") &&
+      component.includes("expandedEditorField") &&
+      component.includes("requirement-confirm-row") &&
       css.includes(".sample-habit-library") &&
+      css.includes(".sample-ideas-sheet") &&
+      css.includes(".add-habit-collapsed") &&
       css.includes(".editor-category") &&
+      css.includes(".editor-card-row") &&
+      css.includes(".editor-field-toggle") &&
       css.includes(".category-count-chip")
+  },
+  {
+    name: "new users can edit wins before confirming personalization",
+    ok:
+      component.includes('type PersonalizerStep = "intro" | "about" | "wins" | "preview"') &&
+      component.includes('{ key: "wins", label: "Your wins" }') &&
+      component.includes("draftPersonalizedHabits") &&
+      component.includes("DraftHabitList") &&
+      component.includes("Core wins") &&
+      component.includes("Optional routines") &&
+      component.includes("userCustomizedWins") &&
+      component.includes("draftHabits: habits") &&
+      component.includes("onDraftRequirementToggle") &&
+      css.includes(".draft-wins-builder") &&
+      css.includes(".draft-habit-row") &&
+      css.includes(".draft-add-row")
+  },
+  {
+    name: "today long press exposes edit and remove without card clutter",
+    ok:
+      component.includes("Remove this win") &&
+      component.includes("Edit name/icons") &&
+      component.includes("requirementDeleteConfirmId") &&
+      component.includes("Confirm remove optional") &&
+      component.includes("Keep optional") &&
+      component.includes("Press and hold for options")
   },
   {
     name: "settings opens as an overview instead of a heavy editor",

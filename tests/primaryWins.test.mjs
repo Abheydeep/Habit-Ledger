@@ -141,6 +141,16 @@ test("legacy saved data normalizes missing requirements", () => {
   assert.equal("permanentAt" in normalized.habits[5], false);
 });
 
+test("explicit core to optional change persists through reload normalization", () => {
+  const state = createDefaultState("2026-05-06T00:00:00.000Z");
+  const demotedId = getPermanentHabits(activeHabits(state.habits))[0].id;
+  const demoted = makeHabitOptional(state.habits, demotedId);
+  const reloaded = normalizeImportedState({ ...state, habits: demoted.habits });
+
+  assert.equal(getOptionalHabits(activeHabits(reloaded.habits)).some((habit) => habit.id === demotedId), true);
+  assert.equal(getPermanentHabits(activeHabits(reloaded.habits)).length, 4);
+});
+
 test("sample habit library covers notebook categories without changing default pressure", () => {
   const names = new Set(habitSamples.map((sample) => sample.name));
   const categories = new Set(habitSamples.map((sample) => sample.category));

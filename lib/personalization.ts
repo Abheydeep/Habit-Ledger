@@ -7,6 +7,8 @@ export type PersonalizationSnapshot = {
   input: OnboardingInput;
   characterBrief: string;
   generatedAt: string;
+  draftHabits?: Habit[];
+  userCustomizedWins?: boolean;
 };
 
 type HabitTemplate = Omit<Habit, "order" | "createdAt"> & {
