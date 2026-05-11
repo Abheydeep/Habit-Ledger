@@ -468,6 +468,11 @@ const checks = [
       component.includes("Edit names here.") &&
       component.includes("quickOptionalOpen") &&
       component.includes("quickOptionalHabits") &&
+      component.includes("quickIconHabitId") &&
+      component.includes("quickDeleteConfirmId") &&
+      component.includes("quick-thumb-button") &&
+      component.includes("quick-icon-picker") &&
+      component.includes("quick-delete-confirm") &&
       component.includes("quick-optional-toggle") &&
       component.includes("Optional wins") &&
       component.includes("Expand when you want to edit them.") &&
@@ -476,6 +481,9 @@ const checks = [
       component.includes("MoreHorizontal") &&
       css.includes(".quick-manager-sheet") &&
       css.includes(".quick-win-name-field input") &&
+      css.includes(".quick-thumb-button") &&
+      css.includes(".quick-icon-picker") &&
+      css.includes(".quick-delete-confirm") &&
       css.includes(".quick-optional-toggle") &&
       css.includes(".wins-overflow-menu")
   },

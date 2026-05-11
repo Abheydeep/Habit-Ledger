@@ -499,6 +499,8 @@ export function HabitTracker() {
   const [starterListAccepted, setStarterListAccepted] = useState(false);
   const [quickManagerOpen, setQuickManagerOpen] = useState(false);
   const [quickOptionalOpen, setQuickOptionalOpen] = useState(false);
+  const [quickIconHabitId, setQuickIconHabitId] = useState<string | null>(null);
+  const [quickDeleteConfirmId, setQuickDeleteConfirmId] = useState<string | null>(null);
   const [winsMenuOpen, setWinsMenuOpen] = useState(false);
   const [holdMenuHintSeenDate, setHoldMenuHintSeenDate] = useState<string | null>(null);
   const [holdMenuHintSessionDate, setHoldMenuHintSessionDate] = useState<string | null>(null);
@@ -640,6 +642,8 @@ export function HabitTracker() {
   useEffect(() => {
     if (!quickManagerOpen) {
       setQuickOptionalOpen(false);
+      setQuickIconHabitId(null);
+      setQuickDeleteConfirmId(null);
     }
   }, [quickManagerOpen]);
 
@@ -1633,6 +1637,8 @@ export function HabitTracker() {
         return { ...current, habits };
       });
       showLocalTrustToast("Saved locally. Your win order changed.");
+      setQuickIconHabitId(null);
+      setQuickDeleteConfirmId(null);
     },
     [commit, showLocalTrustToast]
   );
@@ -1658,6 +1664,8 @@ export function HabitTracker() {
 
       setExpandedHabitId(null);
       setRequirementMenuHabitId(null);
+      setQuickIconHabitId(null);
+      setQuickDeleteConfirmId(null);
       if (changedHabitName) {
         showLocalTrustToast(`${changedHabitName} is a core win now. Core wins: ${permanentCount ?? primaryHabits.length + 1}.`);
       }
@@ -1686,6 +1694,8 @@ export function HabitTracker() {
 
       setExpandedHabitId(null);
       setRequirementMenuHabitId(null);
+      setQuickIconHabitId(null);
+      setQuickDeleteConfirmId(null);
       if (changedHabitName) {
         showLocalTrustToast(`${changedHabitName} is optional now. Core wins: ${permanentCount ?? Math.max(0, primaryHabits.length - 1)}.`);
       }
@@ -1704,6 +1714,8 @@ export function HabitTracker() {
         )
       }));
       showLocalTrustToast("Saved locally. Your win list changed.");
+      setQuickIconHabitId(null);
+      setQuickDeleteConfirmId(null);
     },
     [commit, showLocalTrustToast]
   );
@@ -1729,6 +1741,8 @@ export function HabitTracker() {
         };
       });
       setDeleteConfirmId(null);
+      setQuickIconHabitId(null);
+      setQuickDeleteConfirmId(null);
       showLocalTrustToast("Saved locally. Your win list changed.");
     },
     [commit, showLocalTrustToast]
@@ -2249,6 +2263,128 @@ export function HabitTracker() {
       </main>
     );
   }
+
+  const closeQuickManager = () => {
+    setQuickManagerOpen(false);
+    setQuickIconHabitId(null);
+    setQuickDeleteConfirmId(null);
+  };
+
+  const renderQuickWinRow = (habit: Habit) => {
+    const isPermanent = permanentRequirementIds.has(habit.id);
+    const index = habitOrderIndexById.get(habit.id) ?? 0;
+    const iconPickerOpen = quickIconHabitId === habit.id;
+    const deleteConfirmOpen = quickDeleteConfirmId === habit.id;
+
+    return (
+      <article className={`quick-win-row${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
+        <button
+          className="quick-thumb-button"
+          type="button"
+          onClick={() => {
+            setQuickDeleteConfirmId(null);
+            setQuickIconHabitId((current) => (current === habit.id ? null : habit.id));
+          }}
+          aria-expanded={iconPickerOpen}
+          aria-label={`Change icon for ${habit.name}`}
+        >
+          <img src={assetUrl(habit.thumbnail)} alt="" />
+        </button>
+        <div>
+          <label className="quick-win-name-field">
+            <span>Win name</span>
+            <input
+              value={habit.name}
+              onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
+              aria-label={`Edit win name for ${habit.name}`}
+            />
+          </label>
+          <span>{isPermanent ? "Core win" : "Optional routine"}</span>
+        </div>
+        <div className="quick-win-actions">
+          <button
+            className="round-button small"
+            type="button"
+            onClick={() => moveHabit(habit.id, -1)}
+            disabled={index === 0}
+            aria-label={`Move ${habit.name} up`}
+          >
+            <ArrowUp size={15} aria-hidden="true" />
+          </button>
+          <button
+            className="round-button small"
+            type="button"
+            onClick={() => moveHabit(habit.id, 1)}
+            disabled={index === sortedHabits.length - 1}
+            aria-label={`Move ${habit.name} down`}
+          >
+            <ArrowDown size={15} aria-hidden="true" />
+          </button>
+          <button
+            className="tiny-text-button"
+            type="button"
+            onClick={() => (isPermanent ? makePermanentHabitOptional(habit.id) : makeOptionalHabitPermanent(habit.id))}
+          >
+            {isPermanent ? "Make optional" : "Make core"}
+          </button>
+          <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
+            {habit.pausedAt ? "Resume" : "Pause"}
+          </button>
+          {deleteConfirmOpen ? (
+            <div className="quick-delete-confirm">
+              <span>Remove?</span>
+              <button type="button" onClick={() => setQuickDeleteConfirmId(null)}>
+                No
+              </button>
+              <button
+                className="danger"
+                type="button"
+                onClick={() => {
+                  deleteHabit(habit.id);
+                  setQuickDeleteConfirmId(null);
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <button
+              className="round-button danger small"
+              type="button"
+              onClick={() => {
+                setQuickIconHabitId(null);
+                setQuickDeleteConfirmId(habit.id);
+              }}
+              aria-label={`Delete ${habit.name}`}
+            >
+              <Trash2 size={15} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+
+        {iconPickerOpen ? (
+          <div className="quick-icon-picker" aria-label={`Choose icon for ${habit.name}`}>
+            {thumbnailOptions.map((thumbnail) => (
+              <button
+                key={thumbnail.slug}
+                className={habit.thumbnail === thumbnail.src ? "selected" : ""}
+                type="button"
+                onClick={() => {
+                  updateHabit(habit.id, { thumbnail: thumbnail.src });
+                  setQuickIconHabitId(null);
+                  setQuickDeleteConfirmId(null);
+                }}
+                title={thumbnail.label}
+                aria-label={`Use ${thumbnail.label} icon for ${habit.name}`}
+              >
+                <img src={assetUrl(thumbnail.src)} alt="" />
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </article>
+    );
+  };
 
   return (
     <main
@@ -3209,7 +3345,7 @@ export function HabitTracker() {
           <button
             className="settings-backdrop"
             type="button"
-            onClick={() => setQuickManagerOpen(false)}
+            onClick={closeQuickManager}
             aria-label="Close quick win manager"
           />
           <aside className="quick-manager-sheet">
@@ -3218,7 +3354,7 @@ export function HabitTracker() {
                 <span className="section-kicker">Quick manage</span>
                 <h2 id="quick-manager-title">Core wins</h2>
               </div>
-              <button className="drawer-done-button" type="button" onClick={() => setQuickManagerOpen(false)}>
+              <button className="drawer-done-button" type="button" onClick={closeQuickManager}>
                 Done
               </button>
             </div>
@@ -3235,58 +3371,7 @@ export function HabitTracker() {
             </div>
 
             <div className="quick-win-list">
-              {quickCoreHabits.map((habit) => {
-                const isPermanent = permanentRequirementIds.has(habit.id);
-                const index = habitOrderIndexById.get(habit.id) ?? 0;
-                return (
-                  <article className={`quick-win-row${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
-                    <img src={assetUrl(habit.thumbnail)} alt="" />
-                    <div>
-                      <label className="quick-win-name-field">
-                        <span>Win name</span>
-                        <input
-                          value={habit.name}
-                          onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
-                          aria-label={`Edit win name for ${habit.name}`}
-                        />
-                      </label>
-                      <span>{isPermanent ? "Core win" : "Optional routine"}</span>
-                    </div>
-                    <div className="quick-win-actions">
-                      <button
-                        className="round-button small"
-                        type="button"
-                        onClick={() => moveHabit(habit.id, -1)}
-                        disabled={index === 0}
-                        aria-label={`Move ${habit.name} up`}
-                      >
-                        <ArrowUp size={15} aria-hidden="true" />
-                      </button>
-                      <button
-                        className="round-button small"
-                        type="button"
-                        onClick={() => moveHabit(habit.id, 1)}
-                        disabled={index === sortedHabits.length - 1}
-                        aria-label={`Move ${habit.name} down`}
-                      >
-                        <ArrowDown size={15} aria-hidden="true" />
-                      </button>
-                      <button
-                        className="tiny-text-button"
-                        type="button"
-                        onClick={() =>
-                          isPermanent ? makePermanentHabitOptional(habit.id) : makeOptionalHabitPermanent(habit.id)
-                        }
-                      >
-                        {isPermanent ? "Make optional" : "Make core"}
-                      </button>
-                      <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
-                        {habit.pausedAt ? "Resume" : "Pause"}
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
+              {quickCoreHabits.map(renderQuickWinRow)}
             </div>
 
             {quickOptionalHabits.length > 0 ? (
@@ -3294,7 +3379,11 @@ export function HabitTracker() {
                 <button
                   className="quick-optional-toggle"
                   type="button"
-                  onClick={() => setQuickOptionalOpen((open) => !open)}
+                  onClick={() => {
+                    setQuickIconHabitId(null);
+                    setQuickDeleteConfirmId(null);
+                    setQuickOptionalOpen((open) => !open);
+                  }}
                   aria-expanded={quickOptionalOpen}
                 >
                   <span>
@@ -3306,58 +3395,7 @@ export function HabitTracker() {
 
                 {quickOptionalOpen ? (
                   <div className="quick-win-list optional">
-                    {quickOptionalHabits.map((habit) => {
-                      const isPermanent = permanentRequirementIds.has(habit.id);
-                      const index = habitOrderIndexById.get(habit.id) ?? 0;
-                      return (
-                        <article className={`quick-win-row${habit.pausedAt ? " paused" : ""}`} key={habit.id}>
-                          <img src={assetUrl(habit.thumbnail)} alt="" />
-                          <div>
-                            <label className="quick-win-name-field">
-                              <span>Win name</span>
-                              <input
-                                value={habit.name}
-                                onChange={(event) => updateHabit(habit.id, { name: event.target.value })}
-                                aria-label={`Edit win name for ${habit.name}`}
-                              />
-                            </label>
-                            <span>{isPermanent ? "Core win" : "Optional routine"}</span>
-                          </div>
-                          <div className="quick-win-actions">
-                            <button
-                              className="round-button small"
-                              type="button"
-                              onClick={() => moveHabit(habit.id, -1)}
-                              disabled={index === 0}
-                              aria-label={`Move ${habit.name} up`}
-                            >
-                              <ArrowUp size={15} aria-hidden="true" />
-                            </button>
-                            <button
-                              className="round-button small"
-                              type="button"
-                              onClick={() => moveHabit(habit.id, 1)}
-                              disabled={index === sortedHabits.length - 1}
-                              aria-label={`Move ${habit.name} down`}
-                            >
-                              <ArrowDown size={15} aria-hidden="true" />
-                            </button>
-                            <button
-                              className="tiny-text-button"
-                              type="button"
-                              onClick={() =>
-                                isPermanent ? makePermanentHabitOptional(habit.id) : makeOptionalHabitPermanent(habit.id)
-                              }
-                            >
-                              {isPermanent ? "Make optional" : "Make core"}
-                            </button>
-                            <button className="tiny-text-button" type="button" onClick={() => togglePauseHabit(habit.id)}>
-                              {habit.pausedAt ? "Resume" : "Pause"}
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
+                    {quickOptionalHabits.map(renderQuickWinRow)}
                   </div>
                 ) : null}
               </section>
