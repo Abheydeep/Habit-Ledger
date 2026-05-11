@@ -3982,13 +3982,23 @@ img {
   position: relative;
   z-index: 1;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
   margin-bottom: 10px;
+  padding-bottom: 1px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.heatmap-legend::-webkit-scrollbar {
+  display: none;
 }
 
 .heatmap-legend span {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 5px;
   min-height: 28px;
@@ -3999,6 +4009,7 @@ img {
   color: #53635f;
   font-size: 0.72rem;
   font-weight: 680;
+  white-space: nowrap;
 }
 
 .heatmap-legend i {

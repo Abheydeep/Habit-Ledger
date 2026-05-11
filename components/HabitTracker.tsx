@@ -946,12 +946,6 @@ export function HabitTracker() {
   const lapsedReturnVisible = experienceState === "returning_lapsed" && selectedDate === todayKey;
   const endOfDayRecapVisible =
     !firstRunFocus && !firstWinAhaVisible && selectedDate === todayKey && currentDayPart === "evening" && completedCount > 0;
-  const analyticsRecapText =
-    activitySummary.totalLoggedWins === 1
-      ? "1 win logged so far."
-      : `${activitySummary.totalLoggedWins} wins logged across ${activitySummary.activeDayCount} active day${
-          activitySummary.activeDayCount === 1 ? "" : "s"
-        }.`;
   const companionNudge = useMemo(
     () =>
       getCompanionNudge({
@@ -3491,19 +3485,12 @@ export function HabitTracker() {
                     </button>
                     {analyticsSections.matrix ? (
                       <div className="analytics-collapse-body">
-                        <div className="heatmap-summary">
-                          <div>
-                            <span className="section-kicker">Matrix</span>
-                            <strong>Win heat map</strong>
-                          </div>
-                          <p>{analyticsRecapText} {monthProgress.completed}/{monthProgress.total} core wins so far. Optional routines stay outside the score.</p>
-                        </div>
                         <div className="heatmap-legend" aria-label="Heat map legend">
                           <span><i className="heat-empty" /> Empty</span>
                           <span><i className="heat-partial" /> Partial</span>
                           <span><i className="heat-done" /> Won</span>
                           <span><i className="heat-strong" /> Strong</span>
-                          <span><i className="heat-rest" /> Rest/skip</span>
+                          <span><i className="heat-rest" /> Rest</span>
                         </div>
                         <div
                           ref={monthGridWrapRef}
