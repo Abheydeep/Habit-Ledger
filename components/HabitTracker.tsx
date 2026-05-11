@@ -20,7 +20,6 @@ import {
   Home,
   Leaf,
   Moon,
-  MoreHorizontal,
   Plus,
   RotateCcw,
   Settings2,
@@ -487,7 +486,6 @@ export function HabitTracker() {
   const [quickOptionalOpen, setQuickOptionalOpen] = useState(false);
   const [quickIconHabitId, setQuickIconHabitId] = useState<string | null>(null);
   const [quickDeleteConfirmId, setQuickDeleteConfirmId] = useState<string | null>(null);
-  const [winsMenuOpen, setWinsMenuOpen] = useState(false);
   const [holdMenuHintSeenDate, setHoldMenuHintSeenDate] = useState<string | null>(null);
   const [holdMenuHintSessionDate, setHoldMenuHintSessionDate] = useState<string | null>(null);
   const [optionalOpen, setOptionalOpen] = useState(false);
@@ -2449,6 +2447,7 @@ export function HabitTracker() {
           aria-label={`Change icon for ${habit.name}`}
         >
           <img src={assetUrl(habit.thumbnail)} alt="" />
+          <span className="quick-icon-affordance">Icon</span>
         </button>
         <div>
           <label className="quick-win-name-field">
@@ -2894,40 +2893,13 @@ export function HabitTracker() {
               </div>
               <div className="permanent-list-actions">
                 <button
-                  className="icon-menu-button"
+                  className="manage-wins-button"
                   type="button"
-                  onClick={() => setWinsMenuOpen((open) => !open)}
-                  aria-expanded={winsMenuOpen}
-                  aria-label="Open win list options"
+                  onClick={() => setQuickManagerOpen(true)}
                 >
-                  <MoreHorizontal size={18} aria-hidden="true" />
+                  <Settings2 size={16} aria-hidden="true" />
+                  <span>Manage wins</span>
                 </button>
-                {winsMenuOpen ? (
-                  <div className="wins-overflow-menu" role="menu" aria-label="Win list options">
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setWinsMenuOpen(false);
-                        setQuickManagerOpen(true);
-                      }}
-                    >
-                      <Settings2 size={15} aria-hidden="true" />
-                      Manage wins
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setWinsMenuOpen(false);
-                        openWinsSettings();
-                      }}
-                    >
-                      <ArrowUp size={15} aria-hidden="true" />
-                      Order wins
-                    </button>
-                  </div>
-                ) : null}
               </div>
               <div
                 className="permanent-list-progress"
@@ -3606,10 +3578,10 @@ export function HabitTracker() {
               <strong>{primaryHabits.length} core wins</strong>
               <span>
                 {earlyWinSetupWindow
-                  ? "Edit names here. Long-press a Today card for core or optional options."
+                  ? "Edit names here. Tap any icon to change it. Long-press a Today card for more options."
                   : primaryHabits.length > DEFAULT_PRIMARY_WIN_COUNT
-                  ? "Keep this list honest for a normal tired day."
-                  : "This is a light daily target."}
+                  ? "Tap any icon to change it. Keep this list honest for a normal tired day."
+                  : "Tap any icon to change it. This is a light daily target."}
               </span>
             </div>
 

@@ -2933,12 +2933,20 @@ img {
   gap: 6px;
 }
 
-.permanent-list-actions .icon-menu-button {
-  flex: 0 0 36px;
-  width: 36px;
+.permanent-list-actions .manage-wins-button {
+  flex: 0 0 auto;
   min-height: 36px;
-  padding: 0;
+  padding: 0 12px;
   border-radius: 999px;
+}
+
+.permanent-list-actions .manage-wins-button span {
+  display: inline;
+  color: inherit;
+  font-size: 0.74rem;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: none;
 }
 
 .permanent-list-progress {
@@ -4268,10 +4276,12 @@ img {
 }
 
 .quick-thumb-button {
+  position: relative;
   display: grid;
   place-items: center;
   width: 42px;
   aspect-ratio: 1;
+  overflow: hidden;
   padding: 2px;
   border: 2px solid transparent;
   border-radius: 10px;
@@ -4300,6 +4310,25 @@ img {
 
 .quick-thumb-button img {
   width: 100%;
+}
+
+.quick-icon-affordance {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  display: inline-flex;
+  min-height: 14px;
+  align-items: center;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-primary), #06110f 22%);
+  color: #ffffff;
+  font-size: 0.53rem;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: 0 2px 6px rgba(4, 14, 12, 0.28);
 }
 
 .quick-win-row strong,
@@ -7784,6 +7813,18 @@ button.priority-badge {
 .habit-card h3 {
   font-size: 0.92rem;
   line-height: 1.15;
+}
+
+.habit-card p {
+  display: -webkit-box;
+  margin-top: 3px;
+  overflow: hidden;
+  color: #60716d;
+  font-size: 0.7rem;
+  font-weight: 620;
+  line-height: 1.18;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .mood-preview {

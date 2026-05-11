@@ -471,21 +471,23 @@ const checks = [
       component.includes("quickIconHabitId") &&
       component.includes("quickDeleteConfirmId") &&
       component.includes("quick-thumb-button") &&
+      component.includes("quick-icon-affordance") &&
       component.includes("quick-icon-picker") &&
       component.includes("quick-delete-confirm") &&
       component.includes("quick-optional-toggle") &&
       component.includes("Optional wins") &&
       component.includes("Expand when you want to edit them.") &&
       component.includes("Full win settings") &&
-      component.includes("wins-overflow-menu") &&
-      component.includes("MoreHorizontal") &&
+      component.includes("manage-wins-button") &&
+      component.includes("Manage wins") &&
       css.includes(".quick-manager-sheet") &&
       css.includes(".quick-win-name-field input") &&
       css.includes(".quick-thumb-button") &&
+      css.includes(".quick-icon-affordance") &&
       css.includes(".quick-icon-picker") &&
       css.includes(".quick-delete-confirm") &&
       css.includes(".quick-optional-toggle") &&
-      css.includes(".wins-overflow-menu")
+      css.includes(".manage-wins-button")
   },
   {
     name: "wins settings stay categorized and sample-led",
