@@ -1,48 +1,16 @@
 import { HabitTracker } from "../components/HabitTracker";
-
-const appJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "The Win List",
-  alternateName: "My Win List",
-  url: "https://www.mywinlist.com/",
-  applicationCategory: "ProductivityApplication",
-  operatingSystem: "Web, iOS, Android",
-  browserRequirements: "Requires JavaScript. Works offline after first load.",
-  description:
-    "The Win List is a free daily wins tracker for core habits, optional routines, mood status, streaks, reminders, and offline-first progress.",
-  creator: {
-    "@type": "Person",
-    name: "Abhey Deep"
-  },
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD"
-  },
-  featureList: [
-    "Track core daily wins",
-    "Keep optional routines separate from required wins",
-    "Log realistic mood statuses like strong, partial, skipped, and rest day",
-    "Build streaks and monthly progress",
-    "Use local reminders and install as a PWA",
-    "Save progress offline first with optional cloud backup"
-  ]
-};
+import { HomeSeoSection, JsonLd, appJsonLd } from "../components/SeoPages";
 
 export default function HabitTrackerPage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd).replace(/</g, "\\u003c") }}
-      />
+      <JsonLd data={appJsonLd} />
       <noscript>
         <main>
-          <h1>The Win List</h1>
+          <h1>Free Habit Tracker App - The Win List</h1>
           <p>
-            The Win List is a free daily wins tracker at mywinlist.com for core habits, optional routines, mood
-            status, streaks, reminders, and offline-first progress.
+            The Win List is a free habit tracker app at mywinlist.com for 5 core wins, optional routines, Mood
+            logging, streaks, reminders, and offline-first progress.
           </p>
           <p>
             Track the few wins that make today count, keep optional routines separate, and build momentum one day at a
@@ -55,6 +23,7 @@ export default function HabitTrackerPage() {
         </main>
       </noscript>
       <HabitTracker />
+      <HomeSeoSection />
     </>
   );
 }

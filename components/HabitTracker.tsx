@@ -2634,7 +2634,8 @@ export function HabitTracker() {
           </div>
           <div className="mobile-hero-status" aria-label={`${formatPrettyDate(selectedDate)} progress ${completionPercent}%`}>
             <div className="mobile-hero-meta">
-              <span>{formatPrettyDate(selectedDate)}</span>
+              <span className="mobile-date-full">{formatPrettyDate(selectedDate)}</span>
+              <span className="mobile-date-short" aria-hidden="true">{formatCompactDate(selectedDate)}</span>
               {headerReturnAction ? (
                 <button
                   className="mobile-return-chip"
@@ -6295,6 +6296,13 @@ function formatMonthLabel(date: Date) {
 function formatPrettyDate(key: string) {
   return new Intl.DateTimeFormat("en", {
     weekday: "short",
+    month: "short",
+    day: "numeric"
+  }).format(dateFromKey(key));
+}
+
+function formatCompactDate(key: string) {
+  return new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric"
   }).format(dateFromKey(key));

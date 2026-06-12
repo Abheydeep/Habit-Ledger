@@ -2,7 +2,7 @@
   "id": "/",
   "name": "The Win List",
   "short_name": "Win List",
-  "description": "A free daily wins tracker for core habits, optional routines, mood status, streaks, reminders, and offline-first progress.",
+  "description": "A free habit tracker app for 5 core wins, optional routines, Mood logging, streaks, reminders, and offline-first progress.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

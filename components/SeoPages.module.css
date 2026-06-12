@@ -1,0 +1,316 @@
+.shell {
+  min-height: 100vh;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 8% 6%, rgba(20, 184, 166, 0.12), transparent 30%),
+    radial-gradient(circle at 92% 12%, rgba(245, 158, 11, 0.12), transparent 28%),
+    linear-gradient(180deg, #f8faf6, #eef5f1);
+  color: #142f2b;
+}
+
+.nav,
+.hero,
+.sectionGrid,
+.faq,
+.footer,
+.homeSeoInner {
+  width: min(1120px, 100%);
+  margin-inline: auto;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0 22px;
+}
+
+.brand,
+.navLinks,
+.actions,
+.footerLinks,
+.homeSeoLinks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.brand {
+  color: #142f2b;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.brand img {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+}
+
+.navLinks a,
+.footerLinks a,
+.homeSeoLinks a {
+  color: #31514b;
+  font-size: 0.9rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 18px;
+  align-items: stretch;
+  padding: 26px;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(15, 118, 110, 0.12), transparent 38%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(235, 247, 241, 0.84));
+  box-shadow: 0 18px 48px rgba(15, 47, 43, 0.08);
+}
+
+.eyebrow {
+  display: inline-flex;
+  color: #0f766e;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.faq h2,
+.homeSeo h2 {
+  margin: 10px 0 0;
+  color: #0f2f2e;
+  font-size: clamp(2.2rem, 6vw, 4.4rem);
+  font-weight: 950;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.hero p,
+.homeSeo p {
+  max-width: 720px;
+  margin: 16px 0 0;
+  color: #51645f;
+  font-size: 1.02rem;
+  font-weight: 620;
+  line-height: 1.6;
+}
+
+.actions {
+  margin-top: 22px;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.primaryAction {
+  background: linear-gradient(135deg, #0f766e, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 14px 28px rgba(15, 118, 110, 0.22);
+}
+
+.secondaryAction {
+  border: 1px solid rgba(15, 118, 110, 0.22);
+  background: #ffffff;
+  color: #0f514b;
+}
+
+.promiseCard {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  border-radius: 14px;
+  background: #10201d;
+  color: #e4f5ef;
+}
+
+.promiseCard span {
+  padding: 11px 12px;
+  border: 1px solid rgba(228, 245, 239, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.055);
+  font-size: 0.92rem;
+  font-weight: 780;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.infoCard,
+.faq,
+.homeSeoInner,
+.footer {
+  border: 1px solid rgba(15, 118, 110, 0.15);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 14px 34px rgba(15, 47, 43, 0.06);
+}
+
+.infoCard {
+  padding: 18px;
+}
+
+.infoCard h2 {
+  margin: 0;
+  color: #0f2f2e;
+  font-size: 1.2rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.infoCard p {
+  margin: 10px 0 0;
+  color: #536660;
+  font-size: 0.96rem;
+  font-weight: 610;
+  line-height: 1.55;
+}
+
+.faq {
+  margin-top: 18px;
+  padding: 22px;
+}
+
+.faq h2 {
+  max-width: 760px;
+  font-size: clamp(1.7rem, 4vw, 3rem);
+}
+
+.faqList {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.faqList details {
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.faqList summary {
+  cursor: pointer;
+  padding: 14px;
+  color: #0f2f2e;
+  font-weight: 850;
+}
+
+.faqList p {
+  margin: 0;
+  padding: 0 14px 14px;
+  color: #536660;
+  font-weight: 610;
+  line-height: 1.5;
+}
+
+.footer {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 18px;
+  margin-top: 18px;
+  padding: 20px;
+}
+
+.footer strong {
+  color: #0f2f2e;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.footer p {
+  max-width: 440px;
+  margin: 6px 0 0;
+  color: #536660;
+  font-size: 0.9rem;
+  font-weight: 610;
+  line-height: 1.45;
+}
+
+.footerLinks {
+  justify-content: flex-end;
+}
+
+.homeSeo {
+  padding: 18px 8px 28px;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(20, 184, 166, 0.12), transparent 28%),
+    linear-gradient(180deg, #111c19, #18231f);
+}
+
+.homeSeoInner {
+  padding: 22px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.045));
+  color: #e4f5ef;
+}
+
+.homeSeo h2 {
+  color: #ffffff;
+  font-size: clamp(1.8rem, 5vw, 3.4rem);
+}
+
+.homeSeo p {
+  color: #cfe4dd;
+}
+
+.homeSeoLinks {
+  margin-top: 16px;
+}
+
+.homeSeoLinks a {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(189, 247, 238, 0.2);
+  border-radius: 999px;
+  background: rgba(233, 255, 250, 0.08);
+  color: #bdf7ee;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 12px;
+  }
+
+  .nav,
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .navLinks,
+  .footerLinks {
+    justify-content: flex-start;
+  }
+
+  .hero,
+  .sectionGrid,
+  .footer {
+    grid-template-columns: 1fr;
+  }
+
+  .hero,
+  .faq,
+  .homeSeoInner {
+    padding: 18px;
+  }
+}

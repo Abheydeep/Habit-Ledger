@@ -5,7 +5,7 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const siteUrl = "https://www.mywinlist.com";
 const siteName = "The Win List";
 const siteDescription =
-  "The Win List is a free daily wins tracker for core habits, optional routines, mood status, streaks, reminders, and offline-first progress.";
+  "The Win List is a free habit tracker app for 5 core wins, optional routines, Mood logging, streaks, and offline-first progress. No sign up needed.";
 const iconPath = `${basePath}/icon.svg`;
 const icon192Path = `${basePath}/icon-192.png`;
 const appleTouchIconPath = `${basePath}/apple-touch-icon.png`;
@@ -43,18 +43,27 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: siteName,
   title: {
-    default: "The Win List | Daily Wins Tracker",
+    default: "Free Habit Tracker App, No Login | The Win List",
     template: `%s | ${siteName}`
   },
   description: siteDescription,
   keywords: [
     "The Win List",
     "mywinlist",
+    "habit tracker app",
+    "free habit tracker app",
+    "habit tracker no sign up",
+    "habit tracker without login",
+    "online habit tracker",
+    "daily habit tracker",
     "daily wins tracker",
     "habit tracker",
     "routine tracker",
     "streak tracker",
     "offline habit tracker",
+    "habit tracker pwa",
+    "habit tracker for students",
+    "habit tracker for working professionals",
     "no signup habit tracker",
     "daily routine app",
     "core wins"
@@ -89,24 +98,24 @@ export const metadata: Metadata = {
     type: "website",
     url: siteUrl,
     siteName,
-    title: "The Win List | Daily Wins Tracker",
+    title: "Free Habit Tracker App, No Login | The Win List",
     description: siteDescription,
     images: [
       {
-        url: "/og-image.svg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
-        type: "image/svg+xml",
-        alt: "The Win List daily wins tracker"
+        type: "image/png",
+        alt: "The Win List free habit tracker app"
       }
     ],
     locale: "en_US"
   },
   twitter: {
     card: "summary_large_image",
-    title: "The Win List | Daily Wins Tracker",
+    title: "Free Habit Tracker App, No Login | The Win List",
     description: siteDescription,
-    images: ["/og-image.svg"]
+    images: ["/og-image.png"]
   },
   appleWebApp: {
     capable: true,
@@ -116,6 +125,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#111c19" },
     { media: "(prefers-color-scheme: light)", color: "#f5f7f2" }

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const component = readFileSync("components/HabitTracker.tsx", "utf8");
 const css = readFileSync("app/globals.css", "utf8");
@@ -10,6 +10,17 @@ const launchPage = readFileSync("app/launch/page.tsx", "utf8");
 const launchCss = readFileSync("app/launch/LaunchPoster.module.css", "utf8");
 const reelPage = readFileSync("app/reel/page.tsx", "utf8");
 const ogImage = readFileSync("public/og-image.svg", "utf8");
+const seoPages = readFileSync("components/SeoPages.tsx", "utf8");
+const seoCss = readFileSync("components/SeoPages.module.css", "utf8");
+const habitTrackerLanding = readFileSync("app/habit-tracker/page.tsx", "utf8");
+const noSignUpPage = readFileSync("app/habit-tracker-no-sign-up/page.tsx", "utf8");
+const offlinePage = readFileSync("app/offline-habit-tracker/page.tsx", "utf8");
+const studentPage = readFileSync("app/habit-tracker-for-students/page.tsx", "utf8");
+const professionalPage = readFileSync("app/habit-tracker-for-working-professionals/page.tsx", "utf8");
+const aboutPage = readFileSync("app/about/page.tsx", "utf8");
+const contactPage = readFileSync("app/contact/page.tsx", "utf8");
+const privacyPage = readFileSync("app/privacy-policy/page.tsx", "utf8");
+const termsPage = readFileSync("app/terms/page.tsx", "utf8");
 const manifest = readFileSync("public/manifest.webmanifest", "utf8");
 const personalization = readFileSync("lib/personalization.ts", "utf8");
 const habitData = readFileSync("lib/habitData.ts", "utf8");
@@ -180,25 +191,47 @@ const checks = [
     ok:
       layout.includes('metadataBase: new URL(siteUrl)') &&
       layout.includes('canonical: "/"') &&
-      layout.includes("daily wins tracker") &&
+      layout.includes("Free Habit Tracker App") &&
+      layout.includes("habit tracker app") &&
+      layout.includes("habit tracker no sign up") &&
       layout.includes("openGraph") &&
       layout.includes("twitter") &&
-      layout.includes("/og-image.svg") &&
-      page.includes('type="application/ld+json"') &&
+      layout.includes("/og-image.png") &&
+      page.includes("<JsonLd data={appJsonLd}") &&
+      seoPages.includes('type="application/ld+json"') &&
       page.includes("<noscript>") &&
-      page.includes("free daily wins tracker at mywinlist.com") &&
-      page.includes('"@type": "WebApplication"') &&
+      page.includes("free habit tracker app at mywinlist.com") &&
+      page.includes("<HomeSeoSection />") &&
+      seoPages.includes('"@type": "SoftwareApplication"') &&
+      seoPages.includes('"@type": "FAQPage"') &&
+      seoPages.includes("Free habit tracker app") &&
+      habitTrackerLanding.includes("Free Habit Tracker App for Daily Routines") &&
+      noSignUpPage.includes("Habit Tracker App With No Sign Up") &&
+      offlinePage.includes("Offline Habit Tracker You Can Add to Your Phone") &&
+      studentPage.includes("Free Habit Tracker for Students") &&
+      professionalPage.includes("Simple Habit Tracker for Working Professionals") &&
+      aboutPage.includes("I built The Win List") &&
+      contactPage.includes("GitHub repository") &&
+      privacyPage.includes("Local-first storage") &&
+      termsPage.includes("No professional advice") &&
       page.includes("mywinlist.com") &&
       robots.includes("sitemap.xml") &&
       robots.includes('export const dynamic = "force-static"') &&
       robots.includes('disallow: ["/admin"]') &&
       sitemap.includes("https://www.mywinlist.com") &&
+      sitemap.includes("`${siteUrl}/habit-tracker/`") &&
+      sitemap.includes("`${siteUrl}/habit-tracker-no-sign-up/`") &&
+      sitemap.includes("`${siteUrl}/offline-habit-tracker/`") &&
+      sitemap.includes("`${siteUrl}/privacy-policy/`") &&
       sitemap.includes('export const dynamic = "force-static"') &&
       sitemap.includes('changeFrequency: "daily"') &&
       manifest.includes('"id": "/"') &&
       manifest.includes('"categories": ["productivity", "health", "lifestyle"]') &&
+      manifest.includes("A free habit tracker app") &&
       ogImage.includes("mywinlist.com") &&
-      ogImage.includes("Free. No signup. Works offline.")
+      ogImage.includes("Free habit tracker app.") &&
+      existsSync("public/og-image.png") &&
+      seoCss.includes(".homeSeo")
   },
   {
     name: "launch poster is a polished shareable website route",

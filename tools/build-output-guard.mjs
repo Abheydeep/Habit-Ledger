@@ -4,6 +4,15 @@ import { join } from "node:path";
 const outDir = "out";
 const indexPath = join(outDir, "index.html");
 const launchPath = join(outDir, "launch", "index.html");
+const habitTrackerPath = join(outDir, "habit-tracker", "index.html");
+const noSignUpPath = join(outDir, "habit-tracker-no-sign-up", "index.html");
+const offlinePath = join(outDir, "offline-habit-tracker", "index.html");
+const studentPath = join(outDir, "habit-tracker-for-students", "index.html");
+const professionalPath = join(outDir, "habit-tracker-for-working-professionals", "index.html");
+const aboutPath = join(outDir, "about", "index.html");
+const contactPath = join(outDir, "contact", "index.html");
+const privacyPath = join(outDir, "privacy-policy", "index.html");
+const termsPath = join(outDir, "terms", "index.html");
 
 if (!existsSync(indexPath)) {
   console.error("Build output guard failed: out/index.html is missing. Run `npm run build` first.");
@@ -30,6 +39,15 @@ function readMatchingAssets(extension) {
 
 const html = readFileSync(indexPath, "utf8");
 const launchHtml = existsSync(launchPath) ? readFileSync(launchPath, "utf8") : "";
+const habitTrackerHtml = existsSync(habitTrackerPath) ? readFileSync(habitTrackerPath, "utf8") : "";
+const noSignUpHtml = existsSync(noSignUpPath) ? readFileSync(noSignUpPath, "utf8") : "";
+const offlineHtml = existsSync(offlinePath) ? readFileSync(offlinePath, "utf8") : "";
+const studentHtml = existsSync(studentPath) ? readFileSync(studentPath, "utf8") : "";
+const professionalHtml = existsSync(professionalPath) ? readFileSync(professionalPath, "utf8") : "";
+const aboutHtml = existsSync(aboutPath) ? readFileSync(aboutPath, "utf8") : "";
+const contactHtml = existsSync(contactPath) ? readFileSync(contactPath, "utf8") : "";
+const privacyHtml = existsSync(privacyPath) ? readFileSync(privacyPath, "utf8") : "";
+const termsHtml = existsSync(termsPath) ? readFileSync(termsPath, "utf8") : "";
 const css = readMatchingAssets(".css");
 const js = readMatchingAssets(".js");
 const builtText = `${html}\n${css}\n${js}`;
@@ -38,10 +56,28 @@ const checks = [
   {
     name: "production shell includes SEO and PWA metadata",
     ok:
-      html.includes("The Win List | Daily Wins Tracker") &&
+      html.includes("Free Habit Tracker App, No Login") &&
       html.includes('rel="manifest"') &&
       html.includes("https://www.mywinlist.com/") &&
-      html.includes('"@type":"WebApplication"')
+      html.includes('"@type":"SoftwareApplication"') &&
+      html.includes("/og-image.png") &&
+      html.includes("A simple habit tracker app that starts with today")
+  },
+  {
+    name: "seo landing and trust pages ship",
+    ok:
+      habitTrackerHtml.includes("Free Habit Tracker App for Daily Routines") &&
+      habitTrackerHtml.includes('"@type":"FAQPage"') &&
+      noSignUpHtml.includes("Habit Tracker App With No Sign Up") &&
+      offlineHtml.includes("Offline Habit Tracker You Can Add to Your Phone") &&
+      studentHtml.includes("Free Habit Tracker for Students") &&
+      professionalHtml.includes("Simple Habit Tracker for Working Professionals") &&
+      aboutHtml.includes("I built The Win List") &&
+      contactHtml.includes("GitHub repository") &&
+      privacyHtml.includes("Local-first storage") &&
+      termsHtml.includes("No professional advice") &&
+      existsSync(noSignUpPath) &&
+      existsSync(join(outDir, "og-image.png"))
   },
   {
     name: "launch poster static page ships",

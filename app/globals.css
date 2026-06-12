@@ -101,6 +101,7 @@ img {
 
 .tracker-hero,
 .dashboard-grid {
+  width: 100%;
   max-width: 1480px;
   margin-inline: auto;
 }
@@ -263,6 +264,10 @@ img {
   white-space: nowrap;
 }
 
+.mobile-date-short {
+  display: none;
+}
+
 .mobile-return-chip {
   display: inline-flex;
   align-items: center;
@@ -411,7 +416,19 @@ img {
 }
 
 .mobile-activation-actions {
-  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.9fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.hero-actions-row.setup .icon-text-button {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.hero-actions-row.setup .icon-text-button span,
+.hero-actions-row.setup .icon-text-button {
+  overflow-wrap: anywhere;
 }
 
 .setup-build-button {
@@ -2902,9 +2919,12 @@ img {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 7px 10px;
+  width: 100%;
+  max-width: 100%;
   margin-top: 0;
   margin-bottom: 10px;
   padding: 10px;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.72);
 }
 
@@ -2935,14 +2955,18 @@ img {
   position: relative;
   display: inline-flex;
   flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+  justify-self: end;
   justify-content: flex-end;
   gap: 6px;
 }
 
 .permanent-list-actions .manage-wins-button {
   flex: 0 0 auto;
+  max-width: 100%;
   min-height: 36px;
-  padding: 0 12px;
+  padding: 0 10px;
   border-color: color-mix(in srgb, var(--app-primary), #ffffff 68%);
   border-radius: 999px;
   background: color-mix(in srgb, var(--app-primary), #ffffff 86%);
@@ -2952,11 +2976,14 @@ img {
 
 .permanent-list-actions .manage-wins-button span {
   display: inline;
+  overflow: hidden;
   color: inherit;
   font-size: 0.74rem;
   font-weight: 850;
   line-height: 1;
+  text-overflow: ellipsis;
   text-transform: none;
+  white-space: nowrap;
 }
 
 .permanent-list-actions .manage-wins-button svg {
@@ -8921,6 +8948,135 @@ button.priority-badge {
     min-height: 46px;
     padding-inline: 10px;
     font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .tracker-shell,
+  .tracker-hero,
+  .dashboard-grid,
+  .today-panel,
+  .month-panel {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    box-sizing: border-box;
+  }
+
+  .tracker-shell.first-run-focus .hero-actions {
+    width: 100%;
+    max-width: 100%;
+    justify-self: stretch;
+    overflow-x: clip;
+  }
+
+  .tracker-shell.first-run-focus .hero-actions-row.setup,
+  .tracker-shell.first-run-focus .mobile-activation-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .tracker-shell.first-run-focus .hero-actions .icon-text-button {
+    min-width: 0;
+    padding-inline: 4px;
+    overflow: hidden;
+    white-space: normal;
+  }
+
+  .tracker-shell.first-run-focus .permanent-list-toolbar {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .tracker-shell.first-run-focus .permanent-list-actions {
+    min-width: 0;
+    max-width: 100%;
+    justify-self: end;
+  }
+
+  .tracker-shell.first-run-focus .permanent-list-actions .manage-wins-button {
+    min-width: 0;
+    max-width: 100%;
+    gap: 5px;
+    padding-inline: 9px;
+  }
+}
+
+@media (max-width: 374px) {
+  .tracker-shell.first-run-focus .tracker-hero {
+    padding-inline: 5px;
+  }
+
+  .brand-lockup {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .brand-media {
+    grid-template-columns: 34px;
+    min-width: 34px;
+  }
+
+  .sparkle-logo {
+    width: 34px;
+  }
+
+  .mobile-hero-status {
+    gap: 6px;
+  }
+
+  .mobile-hero-meta {
+    gap: 5px;
+  }
+
+  .mobile-hero-status span {
+    font-size: 0.78rem;
+  }
+
+  .mobile-date-full {
+    display: none;
+  }
+
+  .mobile-date-short {
+    display: block;
+  }
+
+  .mobile-return-chip {
+    min-height: 24px;
+    padding-inline: 6px;
+    gap: 3px;
+    font-size: 0.6rem;
+  }
+
+  .mobile-return-chip svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .mobile-hero-status strong {
+    width: 34px;
+    border-width: 3px;
+    font-size: 0.62rem;
+  }
+
+  .tracker-shell.first-run-focus .hero-actions .icon-text-button {
+    min-height: 44px;
+    font-size: 0.64rem;
+  }
+
+  .tracker-shell.first-run-focus .permanent-list-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-shell.first-run-focus .permanent-list-actions {
+    justify-self: stretch;
+  }
+
+  .tracker-shell.first-run-focus .permanent-list-actions .manage-wins-button {
+    width: 100%;
   }
 }
 
