@@ -404,6 +404,8 @@ const checks = [
     ok:
       component.includes("Mark done") &&
       component.includes('"Mood"') &&
+      component.includes("${habit.name}. ${habit.quip}. Mark done.") &&
+      component.includes('moodOption?.shortLabel ?? (done ? "Won" : "Mood")') &&
       !component.includes("Tap to win") &&
       css.includes(".habit-card-actions .mood-preview")
   },

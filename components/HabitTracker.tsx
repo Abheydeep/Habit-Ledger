@@ -3037,8 +3037,8 @@ export function HabitTracker() {
                                   }}
                                   aria-label={
                                     done
-                                      ? `Undo ${habit.name} for ${formatPrettyDate(selectedDate)}. Press and hold for options.`
-                                      : `Mark ${habit.name} as won. Press and hold for options.`
+                                      ? `${habit.name}. ${habit.quip}. Won today. Undo for ${formatPrettyDate(selectedDate)}. Press and hold for options.`
+                                      : `${habit.name}. ${habit.quip}. Mark done. Press and hold for options.`
                                   }
                                   title="Press and hold for options"
                                 >
@@ -3058,7 +3058,9 @@ export function HabitTracker() {
                                     onTouchStart={primeCompletionFeedback}
                                     onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
                                     aria-expanded={moodMenuOpen}
-                                    aria-label={`${done || moodOption ? "Change" : "Choose"} status for ${habit.name}`}
+                                    aria-label={`${moodOption?.shortLabel ?? (done ? "Won" : "Mood")}: ${
+                                      done || moodOption ? "change" : "choose"
+                                    } status for ${habit.name}`}
                                   >
                                     {moodOption ? (
                                       <img src={assetUrl(moodOption.src)} alt="" />
@@ -3217,8 +3219,8 @@ export function HabitTracker() {
                                 }}
                                 aria-label={
                                   done
-                                    ? `Undo optional ${habit.name} for ${formatPrettyDate(selectedDate)}. Press and hold for options.`
-                                    : `Mark optional ${habit.name} as won. Press and hold for options.`
+                                    ? `${habit.name}. ${habit.quip}. Logged. Undo optional win for ${formatPrettyDate(selectedDate)}. Press and hold for options.`
+                                    : `${habit.name}. ${habit.quip}. Mark done. Optional win. Press and hold for options.`
                                 }
                                 title="Press and hold for options"
                               >
@@ -3249,7 +3251,9 @@ export function HabitTracker() {
                                   onTouchStart={primeCompletionFeedback}
                                   onClick={() => setExpandedHabitId(moodMenuOpen ? null : habit.id)}
                                   aria-expanded={moodMenuOpen}
-                                  aria-label={`${done || moodOption ? "Change" : "Choose"} status for optional ${habit.name}`}
+                                  aria-label={`${moodOption?.shortLabel ?? (done ? "Won" : "Mood")}: ${
+                                    done || moodOption ? "change" : "choose"
+                                  } status for optional ${habit.name}`}
                                 >
                                   {moodOption ? (
                                     <img src={assetUrl(moodOption.src)} alt="" />
