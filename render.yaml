@@ -7,38 +7,41 @@ services:
     buildCommand: npm install && npm run verify:release
     staticPublishPath: ./out
     routes:
-      - type: redirect
-        source: /habit-tracker/
-        destination: /habit-tracker
-      - type: redirect
-        source: /habit-tracker-no-sign-up/
-        destination: /habit-tracker-no-sign-up
-      - type: redirect
-        source: /offline-habit-tracker/
-        destination: /offline-habit-tracker
-      - type: redirect
-        source: /habit-tracker-for-students/
-        destination: /habit-tracker-for-students
-      - type: redirect
-        source: /habit-tracker-for-working-professionals/
-        destination: /habit-tracker-for-working-professionals
-      - type: redirect
-        source: /about/
-        destination: /about
-      - type: redirect
-        source: /contact/
-        destination: /contact
-      - type: redirect
-        source: /privacy-policy/
-        destination: /privacy-policy
-      - type: redirect
-        source: /terms/
-        destination: /terms
-      - type: redirect
-        source: /launch/
-        destination: /launch
-      - type: redirect
-        source: /reel/
-        destination: /reel
+      - type: rewrite
+        source: /habit-tracker
+        destination: /habit-tracker.html
+      - type: rewrite
+        source: /habit-tracker-no-sign-up
+        destination: /habit-tracker-no-sign-up.html
+      - type: rewrite
+        source: /offline-habit-tracker
+        destination: /offline-habit-tracker.html
+      - type: rewrite
+        source: /habit-tracker-for-students
+        destination: /habit-tracker-for-students.html
+      - type: rewrite
+        source: /habit-tracker-for-working-professionals
+        destination: /habit-tracker-for-working-professionals.html
+      - type: rewrite
+        source: /about
+        destination: /about.html
+      - type: rewrite
+        source: /contact
+        destination: /contact.html
+      - type: rewrite
+        source: /privacy-policy
+        destination: /privacy-policy.html
+      - type: rewrite
+        source: /terms
+        destination: /terms.html
+      - type: rewrite
+        source: /launch
+        destination: /launch.html
+      - type: rewrite
+        source: /reel
+        destination: /reel.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
     domains:
       - www.mywinlist.com

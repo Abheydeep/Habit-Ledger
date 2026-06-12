@@ -239,7 +239,10 @@ const checks = [
       seoPages.includes("Who it is built for") &&
       seoPages.includes("Habit tracker questions") &&
       seoCss.includes(".homeSeoGrid") &&
-      routeAliases.includes('"habit-tracker"')
+      routeAliases.includes('"habit-tracker"') &&
+      renderConfig.includes("source: /habit-tracker\n        destination: /habit-tracker.html") &&
+      renderConfig.includes("source: /offline-habit-tracker\n        destination: /offline-habit-tracker.html") &&
+      renderConfig.includes("source: /*\n        destination: /index.html")
   },
   {
     name: "launch poster is a polished shareable website route",
@@ -262,7 +265,7 @@ const checks = [
       component.includes('href={`${APP_BASE_PATH}/launch`}') &&
       component.includes('href={`${APP_BASE_PATH}/reel`}') &&
       renderConfig.includes("source: /launch") &&
-      renderConfig.includes("destination: /launch") &&
+      renderConfig.includes("destination: /launch.html") &&
       component.includes("Launch poster")
   },
   {
