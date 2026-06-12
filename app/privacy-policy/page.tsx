@@ -7,12 +7,12 @@ export const metadata: Metadata = {
   description:
     "Privacy Policy for The Win List: local-first habit tracker storage, optional cloud backup, anonymous aggregate metrics, and no required account.",
   alternates: {
-    canonical: "/privacy-policy/"
+    canonical: "/privacy-policy"
   },
   openGraph: {
     title: "Privacy Policy - The Win List",
     description: "How The Win List handles local storage, optional sync, and aggregate usage metrics.",
-    url: `${siteUrl}/privacy-policy/`
+    url: `${siteUrl}/privacy-policy`
   }
 };
 

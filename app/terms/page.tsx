@@ -7,12 +7,12 @@ export const metadata: Metadata = {
   description:
     "Terms for using The Win List, a free habit tracker app for daily routines, core wins, optional routines, and offline-first progress.",
   alternates: {
-    canonical: "/terms/"
+    canonical: "/terms"
   },
   openGraph: {
     title: "Terms - The Win List",
     description: "Terms for using The Win List habit tracker app.",
-    url: `${siteUrl}/terms/`
+    url: `${siteUrl}/terms`
   }
 };
 

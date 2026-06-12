@@ -6,12 +6,12 @@ export const metadata: Metadata = {
   description:
     "Use The Win List as a habit tracker without login. No account, no password, local save, and optional cloud backup only when you choose it.",
   alternates: {
-    canonical: "/habit-tracker-no-sign-up/"
+    canonical: "/habit-tracker-no-sign-up"
   },
   openGraph: {
     title: "Habit Tracker Without Login - The Win List",
     description: "A free habit tracker app that starts without sign up and saves progress locally.",
-    url: `${siteUrl}/habit-tracker-no-sign-up/`,
+    url: `${siteUrl}/habit-tracker-no-sign-up`,
     images: [{ url: ogImageUrl, width: 1200, height: 630, type: "image/png" }]
   }
 };

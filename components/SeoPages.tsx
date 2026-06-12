@@ -6,15 +6,15 @@ export const ogImageUrl = `${siteUrl}/og-image.png`;
 
 export const publicRoutes = [
   { href: "/", label: "Open app" },
-  { href: "/habit-tracker/", label: "Habit tracker" },
-  { href: "/habit-tracker-no-sign-up/", label: "No sign up" },
-  { href: "/offline-habit-tracker/", label: "Offline" },
-  { href: "/habit-tracker-for-students/", label: "Students" },
-  { href: "/habit-tracker-for-working-professionals/", label: "Professionals" },
-  { href: "/about/", label: "About" },
-  { href: "/contact/", label: "Contact" },
-  { href: "/privacy-policy/", label: "Privacy" },
-  { href: "/terms/", label: "Terms" }
+  { href: "/habit-tracker", label: "Habit tracker" },
+  { href: "/habit-tracker-no-sign-up", label: "No sign up" },
+  { href: "/offline-habit-tracker", label: "Offline" },
+  { href: "/habit-tracker-for-students", label: "Students" },
+  { href: "/habit-tracker-for-working-professionals", label: "Professionals" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+  { href: "/privacy-policy", label: "Privacy" },
+  { href: "/terms", label: "Terms" }
 ];
 
 export const productFeatures = [
@@ -145,9 +145,9 @@ export function MarketingNav() {
         <span>The Win List</span>
       </a>
       <div className={styles.navLinks}>
-        <a href="/habit-tracker/">Habit tracker</a>
-        <a href="/about/">About</a>
-        <a href="/contact/">Contact</a>
+        <a href="/habit-tracker">Habit tracker</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
       </div>
     </nav>
   );
@@ -193,7 +193,7 @@ export function SeoPage({
             <a className={styles.primaryAction} href={ctaHref}>
               {ctaLabel}
             </a>
-            <a className={styles.secondaryAction} href="/habit-tracker-no-sign-up/">
+            <a className={styles.secondaryAction} href="/habit-tracker-no-sign-up">
               No sign up
             </a>
           </div>
@@ -244,10 +244,82 @@ export function HomeSeoSection() {
           The Win List is a free habit tracker app for daily routines, core wins, optional routines, Mood logging,
           streaks, and offline-first progress. No sign up is needed: your wins are saved locally on this device.
         </p>
+        <div className={styles.homeSeoGrid}>
+          <article>
+            <h3>What The Win List is</h3>
+            <p>
+              The Win List is a browser-based habit tracker app for people who want a finishable daily routine. Instead
+              of asking you to track every possible goal, it starts with a small set of core wins that make the day feel
+              complete. Optional routines stay separate, so extra habits can support the day without turning the app
+              into a pressure machine.
+            </p>
+          </article>
+          <article>
+            <h3>How daily tracking works</h3>
+            <p>
+              Open the app, choose a win, and mark it when you have shown up. If the day was messy, use Mood to record
+              what actually happened: Won, Strong, Partial, Skipped, or Rest day. That gives you a more honest habit
+              record than a plain checkbox, especially on days when you did something but not everything.
+            </p>
+          </article>
+          <article>
+            <h3>Why no sign up matters</h3>
+            <p>
+              The first session should be about logging a win, not creating another account. The Win List saves progress
+              locally on your device by default, works offline after first load, and keeps optional cloud backup as a
+              choice. You can try the habit tracker immediately and decide later whether sync is useful.
+            </p>
+          </article>
+          <article>
+            <h3>Who it is built for</h3>
+            <p>
+              Students can use it for study blocks, water, movement, and sleep. Working professionals can use it for
+              focused work, meals, steps, and evening shutdown. The same core wins model works for anyone who needs a
+              simple daily routine tracker that does not punish real life.
+            </p>
+          </article>
+          <article>
+            <h3>What unlocks after a few days</h3>
+            <p>
+              Once you have enough activity, the app starts showing your 5-day pattern. That reflection highlights your
+              strongest win, the win that needs protection, and the next small move to make tomorrow easier. The point
+              is not to judge your month. It is to help you notice what is already working.
+            </p>
+          </article>
+          <article>
+            <h3>How to use it on your phone</h3>
+            <p>
+              Visit mywinlist.com in Safari or Chrome and add it to your home screen. The installable PWA opens quickly,
+              uses a compact mobile layout, and keeps the main path simple: open, mark one core win, optionally log
+              Mood, and leave with momentum.
+            </p>
+          </article>
+        </div>
+        <div className={styles.homeSeoFaq} aria-label="The Win List FAQ">
+          <h3>Habit tracker questions</h3>
+          <details>
+            <summary>Is The Win List free?</summary>
+            <p>Yes. The app is free to use, requires no sign up, and saves your daily wins locally on this device.</p>
+          </details>
+          <details>
+            <summary>Can I use it offline?</summary>
+            <p>
+              Yes. After the first load, the app is designed as an offline-first PWA, so your daily routine stays
+              available even when the connection is unreliable.
+            </p>
+          </details>
+          <details>
+            <summary>How many habits should I start with?</summary>
+            <p>
+              Start small. The Win List is designed around core wins and optional routines, so you can keep the required
+              day light while still tracking extra habits when you have energy.
+            </p>
+          </details>
+        </div>
         <div className={styles.homeSeoLinks}>
-          <a href="/habit-tracker/">Read how it works</a>
-          <a href="/offline-habit-tracker/">Offline habit tracker</a>
-          <a href="/privacy-policy/">Privacy</a>
+          <a href="/habit-tracker">Read how it works</a>
+          <a href="/offline-habit-tracker">Offline habit tracker</a>
+          <a href="/privacy-policy">Privacy</a>
         </div>
       </div>
     </section>

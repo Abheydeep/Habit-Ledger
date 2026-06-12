@@ -6,13 +6,13 @@ export const metadata: Metadata = {
   description:
     "A free habit tracker app for daily routines, 5 core wins, optional routines, Mood logging, streaks, and offline-first progress. No sign up needed.",
   alternates: {
-    canonical: "/habit-tracker/"
+    canonical: "/habit-tracker"
   },
   openGraph: {
     title: "Free Habit Tracker App - The Win List",
     description:
       "Track 5 core wins daily with a simple habit tracker app that works without login and saves locally.",
-    url: `${siteUrl}/habit-tracker/`,
+    url: `${siteUrl}/habit-tracker`,
     images: [{ url: ogImageUrl, width: 1200, height: 630, type: "image/png" }]
   }
 };

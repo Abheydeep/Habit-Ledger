@@ -9,13 +9,13 @@ export const metadata: Metadata = {
   description:
     "Watch the 30-second The Win List reel: core wins, optional routines, Mood, first-win momentum, no-login/offline trust, and 5-day pattern reflection.",
   alternates: {
-    canonical: "/reel/"
+    canonical: "/reel"
   },
   openGraph: {
     title: "The Win List 30-second reel",
     description:
       "Core wins, optional routines, Mood, first-win momentum, no-login/offline trust, and 5-day pattern reflection.",
-    url: "https://www.mywinlist.com/reel/",
+    url: "https://www.mywinlist.com/reel",
     siteName: "The Win List",
     type: "video.other"
   },
@@ -35,7 +35,7 @@ export default function ReelPage() {
           The Win List
         </a>
         <div className={styles.navActions}>
-          <a href={`${basePath}/launch/`}>Launch poster</a>
+          <a href={`${basePath}/launch`}>Launch poster</a>
           <a href={`${basePath}/`}>Open app</a>
         </div>
       </nav>

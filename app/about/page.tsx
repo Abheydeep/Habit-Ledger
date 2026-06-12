@@ -7,12 +7,12 @@ export const metadata: Metadata = {
   description:
     "About The Win List, a free habit tracker app by Abhey Deep for core wins, optional routines, Mood, and offline-first daily progress.",
   alternates: {
-    canonical: "/about/"
+    canonical: "/about"
   },
   openGraph: {
     title: "About The Win List",
     description: "Why The Win List exists and how the 5 core wins habit tracker model works.",
-    url: `${siteUrl}/about/`
+    url: `${siteUrl}/about`
   }
 };
 
@@ -33,7 +33,7 @@ export default function AboutPage() {
             <a className={styles.primaryAction} href="/">
               Open the app
             </a>
-            <a className={styles.secondaryAction} href="/habit-tracker/">
+            <a className={styles.secondaryAction} href="/habit-tracker">
               How it works
             </a>
           </div>

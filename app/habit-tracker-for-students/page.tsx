@@ -6,12 +6,12 @@ export const metadata: Metadata = {
   description:
     "A free habit tracker for students to track wake time, water, study focus, movement, screen limits, sleep, and optional routines.",
   alternates: {
-    canonical: "/habit-tracker-for-students/"
+    canonical: "/habit-tracker-for-students"
   },
   openGraph: {
     title: "Habit Tracker for Students - The Win List",
     description: "Track study routines, sleep, movement, and daily core wins without sign up.",
-    url: `${siteUrl}/habit-tracker-for-students/`,
+    url: `${siteUrl}/habit-tracker-for-students`,
     images: [{ url: ogImageUrl, width: 1200, height: 630, type: "image/png" }]
   }
 };

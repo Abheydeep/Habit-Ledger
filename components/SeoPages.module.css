@@ -273,6 +273,60 @@
   color: #cfe4dd;
 }
 
+.homeSeoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.homeSeoGrid article,
+.homeSeoFaq {
+  border: 1px solid rgba(189, 247, 238, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.homeSeoGrid article {
+  padding: 16px;
+}
+
+.homeSeoGrid h3,
+.homeSeoFaq h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.02rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.homeSeoGrid p,
+.homeSeoFaq p {
+  margin: 9px 0 0;
+  color: #cfe4dd;
+  font-size: 0.94rem;
+  font-weight: 560;
+  line-height: 1.55;
+}
+
+.homeSeoFaq {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.homeSeoFaq details {
+  border-top: 1px solid rgba(189, 247, 238, 0.12);
+  padding-top: 8px;
+}
+
+.homeSeoFaq summary {
+  cursor: pointer;
+  color: #ffffff;
+  font-weight: 820;
+}
+
 .homeSeoLinks {
   margin-top: 16px;
 }
@@ -304,6 +358,7 @@
 
   .hero,
   .sectionGrid,
+  .homeSeoGrid,
   .footer {
     grid-template-columns: 1fr;
   }

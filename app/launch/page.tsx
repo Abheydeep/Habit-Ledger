@@ -6,13 +6,13 @@ export const metadata: Metadata = {
   description:
     "A shareable launch poster for The Win List: core wins, optional routines, Mood, first-win momentum, no-login/offline trust, and 5-day pattern reflection.",
   alternates: {
-    canonical: "/launch/"
+    canonical: "/launch"
   },
   openGraph: {
     title: "The Win List launch poster",
     description:
       "Core wins, optional routines, Mood, first-win momentum, no-login/offline trust, and 5-day pattern reflection.",
-    url: "https://www.mywinlist.com/launch/",
+    url: "https://www.mywinlist.com/launch",
     siteName: "The Win List",
     type: "website"
   },
@@ -65,7 +65,7 @@ export default function LaunchPosterPage() {
           <a className={styles.navButton} href="/">
             Open app
           </a>
-          <a className={styles.navButton} href="/reel/">
+          <a className={styles.navButton} href="/reel">
             Watch reel
           </a>
         </div>
@@ -190,7 +190,7 @@ export default function LaunchPosterPage() {
           </div>
           <div className={styles.ctaLinks}>
             <a href="/">Open The Win List</a>
-            <a href="/reel/">Watch the 30s reel</a>
+            <a href="/reel">Watch the 30s reel</a>
           </div>
         </footer>
       </article>

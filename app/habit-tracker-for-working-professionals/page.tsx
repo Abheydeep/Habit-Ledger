@@ -6,12 +6,12 @@ export const metadata: Metadata = {
   description:
     "A free habit tracker for working professionals to track water, steps, focused work, home meals, screen limits, sleep, and optional routines.",
   alternates: {
-    canonical: "/habit-tracker-for-working-professionals/"
+    canonical: "/habit-tracker-for-working-professionals"
   },
   openGraph: {
     title: "Habit Tracker for Working Professionals - The Win List",
     description: "Track workday core wins, focused work, meals, steps, and sleep without sign up.",
-    url: `${siteUrl}/habit-tracker-for-working-professionals/`,
+    url: `${siteUrl}/habit-tracker-for-working-professionals`,
     images: [{ url: ogImageUrl, width: 1200, height: 630, type: "image/png" }]
   }
 };

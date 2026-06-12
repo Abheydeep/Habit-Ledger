@@ -7,12 +7,12 @@ export const metadata: Metadata = {
   description:
     "Contact The Win List for feedback, bug reports, or questions about the free habit tracker app.",
   alternates: {
-    canonical: "/contact/"
+    canonical: "/contact"
   },
   openGraph: {
     title: "Contact The Win List",
     description: "Send feedback or report an issue with The Win List habit tracker app.",
-    url: `${siteUrl}/contact/`
+    url: `${siteUrl}/contact`
   }
 };
 

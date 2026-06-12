@@ -14,67 +14,67 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1
     },
     {
-      url: `${siteUrl}/habit-tracker/`,
+      url: `${siteUrl}/habit-tracker`,
       lastModified,
       changeFrequency: "weekly",
       priority: 0.95
     },
     {
-      url: `${siteUrl}/habit-tracker-no-sign-up/`,
+      url: `${siteUrl}/habit-tracker-no-sign-up`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.85
     },
     {
-      url: `${siteUrl}/offline-habit-tracker/`,
+      url: `${siteUrl}/offline-habit-tracker`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.85
     },
     {
-      url: `${siteUrl}/habit-tracker-for-students/`,
+      url: `${siteUrl}/habit-tracker-for-students`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.8
     },
     {
-      url: `${siteUrl}/habit-tracker-for-working-professionals/`,
+      url: `${siteUrl}/habit-tracker-for-working-professionals`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.8
     },
     {
-      url: `${siteUrl}/about/`,
+      url: `${siteUrl}/about`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.7
     },
     {
-      url: `${siteUrl}/contact/`,
+      url: `${siteUrl}/contact`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.6
     },
     {
-      url: `${siteUrl}/privacy-policy/`,
+      url: `${siteUrl}/privacy-policy`,
       lastModified,
       changeFrequency: "yearly",
       priority: 0.55
     },
     {
-      url: `${siteUrl}/terms/`,
+      url: `${siteUrl}/terms`,
       lastModified,
       changeFrequency: "yearly",
       priority: 0.5
     },
     {
-      url: `${siteUrl}/launch/`,
+      url: `${siteUrl}/launch`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.7
     },
     {
-      url: `${siteUrl}/reel/`,
+      url: `${siteUrl}/reel`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.6

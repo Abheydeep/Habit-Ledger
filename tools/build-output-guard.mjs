@@ -3,16 +3,30 @@ import { join } from "node:path";
 
 const outDir = "out";
 const indexPath = join(outDir, "index.html");
-const launchPath = join(outDir, "launch", "index.html");
-const habitTrackerPath = join(outDir, "habit-tracker", "index.html");
-const noSignUpPath = join(outDir, "habit-tracker-no-sign-up", "index.html");
-const offlinePath = join(outDir, "offline-habit-tracker", "index.html");
-const studentPath = join(outDir, "habit-tracker-for-students", "index.html");
-const professionalPath = join(outDir, "habit-tracker-for-working-professionals", "index.html");
-const aboutPath = join(outDir, "about", "index.html");
-const contactPath = join(outDir, "contact", "index.html");
-const privacyPath = join(outDir, "privacy-policy", "index.html");
-const termsPath = join(outDir, "terms", "index.html");
+const cleanRoutePaths = {
+  launch: join(outDir, "launch.html"),
+  habitTracker: join(outDir, "habit-tracker.html"),
+  noSignUp: join(outDir, "habit-tracker-no-sign-up.html"),
+  offline: join(outDir, "offline-habit-tracker.html"),
+  student: join(outDir, "habit-tracker-for-students.html"),
+  professional: join(outDir, "habit-tracker-for-working-professionals.html"),
+  about: join(outDir, "about.html"),
+  contact: join(outDir, "contact.html"),
+  privacy: join(outDir, "privacy-policy.html"),
+  terms: join(outDir, "terms.html")
+};
+const slashAliasPaths = {
+  launch: join(outDir, "launch", "index.html"),
+  habitTracker: join(outDir, "habit-tracker", "index.html"),
+  noSignUp: join(outDir, "habit-tracker-no-sign-up", "index.html"),
+  offline: join(outDir, "offline-habit-tracker", "index.html"),
+  student: join(outDir, "habit-tracker-for-students", "index.html"),
+  professional: join(outDir, "habit-tracker-for-working-professionals", "index.html"),
+  about: join(outDir, "about", "index.html"),
+  contact: join(outDir, "contact", "index.html"),
+  privacy: join(outDir, "privacy-policy", "index.html"),
+  terms: join(outDir, "terms", "index.html")
+};
 
 if (!existsSync(indexPath)) {
   console.error("Build output guard failed: out/index.html is missing. Run `npm run build` first.");
@@ -37,17 +51,28 @@ function readMatchingAssets(extension) {
     .join("\n");
 }
 
+function visibleWordCount(source) {
+  return source
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
 const html = readFileSync(indexPath, "utf8");
-const launchHtml = existsSync(launchPath) ? readFileSync(launchPath, "utf8") : "";
-const habitTrackerHtml = existsSync(habitTrackerPath) ? readFileSync(habitTrackerPath, "utf8") : "";
-const noSignUpHtml = existsSync(noSignUpPath) ? readFileSync(noSignUpPath, "utf8") : "";
-const offlineHtml = existsSync(offlinePath) ? readFileSync(offlinePath, "utf8") : "";
-const studentHtml = existsSync(studentPath) ? readFileSync(studentPath, "utf8") : "";
-const professionalHtml = existsSync(professionalPath) ? readFileSync(professionalPath, "utf8") : "";
-const aboutHtml = existsSync(aboutPath) ? readFileSync(aboutPath, "utf8") : "";
-const contactHtml = existsSync(contactPath) ? readFileSync(contactPath, "utf8") : "";
-const privacyHtml = existsSync(privacyPath) ? readFileSync(privacyPath, "utf8") : "";
-const termsHtml = existsSync(termsPath) ? readFileSync(termsPath, "utf8") : "";
+const launchHtml = existsSync(cleanRoutePaths.launch) ? readFileSync(cleanRoutePaths.launch, "utf8") : "";
+const habitTrackerHtml = existsSync(cleanRoutePaths.habitTracker) ? readFileSync(cleanRoutePaths.habitTracker, "utf8") : "";
+const noSignUpHtml = existsSync(cleanRoutePaths.noSignUp) ? readFileSync(cleanRoutePaths.noSignUp, "utf8") : "";
+const offlineHtml = existsSync(cleanRoutePaths.offline) ? readFileSync(cleanRoutePaths.offline, "utf8") : "";
+const studentHtml = existsSync(cleanRoutePaths.student) ? readFileSync(cleanRoutePaths.student, "utf8") : "";
+const professionalHtml = existsSync(cleanRoutePaths.professional) ? readFileSync(cleanRoutePaths.professional, "utf8") : "";
+const aboutHtml = existsSync(cleanRoutePaths.about) ? readFileSync(cleanRoutePaths.about, "utf8") : "";
+const contactHtml = existsSync(cleanRoutePaths.contact) ? readFileSync(cleanRoutePaths.contact, "utf8") : "";
+const privacyHtml = existsSync(cleanRoutePaths.privacy) ? readFileSync(cleanRoutePaths.privacy, "utf8") : "";
+const termsHtml = existsSync(cleanRoutePaths.terms) ? readFileSync(cleanRoutePaths.terms, "utf8") : "";
 const css = readMatchingAssets(".css");
 const js = readMatchingAssets(".js");
 const builtText = `${html}\n${css}\n${js}`;
@@ -61,7 +86,10 @@ const checks = [
       html.includes("https://www.mywinlist.com/") &&
       html.includes('"@type":"SoftwareApplication"') &&
       html.includes("/og-image.png") &&
-      html.includes("A simple habit tracker app that starts with today")
+      html.includes("A simple habit tracker app that starts with today") &&
+      html.includes("Who it is built for") &&
+      html.includes("Habit tracker questions") &&
+      visibleWordCount(html) >= 500
   },
   {
     name: "seo landing and trust pages ship",
@@ -70,13 +98,17 @@ const checks = [
       habitTrackerHtml.includes('"@type":"FAQPage"') &&
       noSignUpHtml.includes("Habit Tracker App With No Sign Up") &&
       offlineHtml.includes("Offline Habit Tracker You Can Add to Your Phone") &&
+      offlineHtml.includes("What stays available offline") &&
       studentHtml.includes("Free Habit Tracker for Students") &&
       professionalHtml.includes("Simple Habit Tracker for Working Professionals") &&
       aboutHtml.includes("I built The Win List") &&
       contactHtml.includes("GitHub repository") &&
       privacyHtml.includes("Local-first storage") &&
       termsHtml.includes("No professional advice") &&
-      existsSync(noSignUpPath) &&
+      habitTrackerHtml.includes('rel="canonical" href="https://www.mywinlist.com/habit-tracker"') &&
+      offlineHtml.includes('rel="canonical" href="https://www.mywinlist.com/offline-habit-tracker"') &&
+      existsSync(cleanRoutePaths.noSignUp) &&
+      Object.values(slashAliasPaths).every((path) => existsSync(path)) &&
       existsSync(join(outDir, "og-image.png"))
   },
   {

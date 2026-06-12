@@ -30,9 +30,11 @@ const adminConsole = readFileSync("components/AdminConsole.tsx", "utf8");
 const adminMetrics = readFileSync("lib/adminMetrics.ts", "utf8");
 const anonymousUsageMigration = readFileSync("supabase/migrations/20260510_anonymous_usage_metrics.sql", "utf8");
 const packageJson = readFileSync("package.json", "utf8");
+const nextConfig = readFileSync("next.config.ts", "utf8");
 const renderConfig = readFileSync("render.yaml", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release-verification.yml", "utf8");
 const buildOutputGuard = readFileSync("tools/build-output-guard.mjs", "utf8");
+const routeAliases = readFileSync("tools/create-route-aliases.mjs", "utf8");
 
 const checks = [
   {
@@ -219,10 +221,13 @@ const checks = [
       robots.includes('export const dynamic = "force-static"') &&
       robots.includes('disallow: ["/admin"]') &&
       sitemap.includes("https://www.mywinlist.com") &&
-      sitemap.includes("`${siteUrl}/habit-tracker/`") &&
-      sitemap.includes("`${siteUrl}/habit-tracker-no-sign-up/`") &&
-      sitemap.includes("`${siteUrl}/offline-habit-tracker/`") &&
-      sitemap.includes("`${siteUrl}/privacy-policy/`") &&
+      sitemap.includes("`${siteUrl}/habit-tracker`") &&
+      sitemap.includes("`${siteUrl}/habit-tracker-no-sign-up`") &&
+      sitemap.includes("`${siteUrl}/offline-habit-tracker`") &&
+      sitemap.includes("`${siteUrl}/privacy-policy`") &&
+      nextConfig.includes("trailingSlash: false") &&
+      packageJson.includes("tools/create-route-aliases.mjs") &&
+      buildOutputGuard.includes("cleanRoutePaths") &&
       sitemap.includes('export const dynamic = "force-static"') &&
       sitemap.includes('changeFrequency: "daily"') &&
       manifest.includes('"id": "/"') &&
@@ -231,7 +236,10 @@ const checks = [
       ogImage.includes("mywinlist.com") &&
       ogImage.includes("Free habit tracker app.") &&
       existsSync("public/og-image.png") &&
-      seoCss.includes(".homeSeo")
+      seoPages.includes("Who it is built for") &&
+      seoPages.includes("Habit tracker questions") &&
+      seoCss.includes(".homeSeoGrid") &&
+      routeAliases.includes('"habit-tracker"')
   },
   {
     name: "launch poster is a polished shareable website route",
@@ -250,11 +258,11 @@ const checks = [
       launchCss.includes("Mobile launch poster polish") &&
       launchCss.includes("@media (max-width: 640px)") &&
       launchCss.includes("overflow-wrap: anywhere") &&
-      sitemap.includes("`${siteUrl}/launch/`") &&
-      component.includes('href={`${APP_BASE_PATH}/launch/`}') &&
-      component.includes('href={`${APP_BASE_PATH}/reel/`}') &&
+      sitemap.includes("`${siteUrl}/launch`") &&
+      component.includes('href={`${APP_BASE_PATH}/launch`}') &&
+      component.includes('href={`${APP_BASE_PATH}/reel`}') &&
       renderConfig.includes("source: /launch") &&
-      renderConfig.includes("destination: /launch/") &&
+      renderConfig.includes("destination: /launch") &&
       component.includes("Launch poster")
   },
   {
