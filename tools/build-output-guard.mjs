@@ -6,8 +6,11 @@ const indexPath = join(outDir, "index.html");
 const cleanRoutePaths = {
   launch: join(outDir, "launch.html"),
   habitTracker: join(outDir, "habit-tracker.html"),
+  homemaker: join(outDir, "habit-tracker-for-homemakers.html"),
   noSignUp: join(outDir, "habit-tracker-no-sign-up.html"),
   offline: join(outDir, "offline-habit-tracker.html"),
+  pwa: join(outDir, "habit-tracker-pwa.html"),
+  restDay: join(outDir, "rest-day-habit-tracker.html"),
   student: join(outDir, "habit-tracker-for-students.html"),
   professional: join(outDir, "habit-tracker-for-working-professionals.html"),
   about: join(outDir, "about.html"),
@@ -18,8 +21,11 @@ const cleanRoutePaths = {
 const slashAliasPaths = {
   launch: join(outDir, "launch", "index.html"),
   habitTracker: join(outDir, "habit-tracker", "index.html"),
+  homemaker: join(outDir, "habit-tracker-for-homemakers", "index.html"),
   noSignUp: join(outDir, "habit-tracker-no-sign-up", "index.html"),
   offline: join(outDir, "offline-habit-tracker", "index.html"),
+  pwa: join(outDir, "habit-tracker-pwa", "index.html"),
+  restDay: join(outDir, "rest-day-habit-tracker", "index.html"),
   student: join(outDir, "habit-tracker-for-students", "index.html"),
   professional: join(outDir, "habit-tracker-for-working-professionals", "index.html"),
   about: join(outDir, "about", "index.html"),
@@ -65,8 +71,11 @@ function visibleWordCount(source) {
 const html = readFileSync(indexPath, "utf8");
 const launchHtml = existsSync(cleanRoutePaths.launch) ? readFileSync(cleanRoutePaths.launch, "utf8") : "";
 const habitTrackerHtml = existsSync(cleanRoutePaths.habitTracker) ? readFileSync(cleanRoutePaths.habitTracker, "utf8") : "";
+const homemakerHtml = existsSync(cleanRoutePaths.homemaker) ? readFileSync(cleanRoutePaths.homemaker, "utf8") : "";
 const noSignUpHtml = existsSync(cleanRoutePaths.noSignUp) ? readFileSync(cleanRoutePaths.noSignUp, "utf8") : "";
 const offlineHtml = existsSync(cleanRoutePaths.offline) ? readFileSync(cleanRoutePaths.offline, "utf8") : "";
+const pwaHtml = existsSync(cleanRoutePaths.pwa) ? readFileSync(cleanRoutePaths.pwa, "utf8") : "";
+const restDayHtml = existsSync(cleanRoutePaths.restDay) ? readFileSync(cleanRoutePaths.restDay, "utf8") : "";
 const studentHtml = existsSync(cleanRoutePaths.student) ? readFileSync(cleanRoutePaths.student, "utf8") : "";
 const professionalHtml = existsSync(cleanRoutePaths.professional) ? readFileSync(cleanRoutePaths.professional, "utf8") : "";
 const aboutHtml = existsSync(cleanRoutePaths.about) ? readFileSync(cleanRoutePaths.about, "utf8") : "";
@@ -85,6 +94,9 @@ const checks = [
       html.includes('rel="manifest"') &&
       html.includes("https://www.mywinlist.com/") &&
       html.includes('"@type":"SoftwareApplication"') &&
+      html.includes('"@type":"Organization"') &&
+      html.includes('"@type":"WebSite"') &&
+      html.includes('"@type":"FAQPage"') &&
       html.includes("/og-image.png") &&
       html.includes("A simple habit tracker app that starts with today") &&
       html.includes("Who it is built for") &&
@@ -96,17 +108,31 @@ const checks = [
     ok:
       habitTrackerHtml.includes("Free Habit Tracker App for Daily Routines") &&
       habitTrackerHtml.includes('"@type":"FAQPage"') &&
+      habitTrackerHtml.includes('"@type":"BreadcrumbList"') &&
       noSignUpHtml.includes("Habit Tracker App With No Sign Up") &&
+      noSignUpHtml.includes('"@type":"FAQPage"') &&
       offlineHtml.includes("Offline Habit Tracker You Can Add to Your Phone") &&
       offlineHtml.includes("What stays available offline") &&
+      offlineHtml.includes('"@type":"FAQPage"') &&
+      pwaHtml.includes("Habit Tracker PWA You Can Add to Your Phone") &&
+      pwaHtml.includes('"@type":"FAQPage"') &&
+      homemakerHtml.includes("Simple Habit Tracker for Homemakers") &&
+      homemakerHtml.includes('"@type":"FAQPage"') &&
+      restDayHtml.includes("Rest Day Habit Tracker Without Reset Drama") &&
+      restDayHtml.includes('"@type":"FAQPage"') &&
       studentHtml.includes("Free Habit Tracker for Students") &&
+      studentHtml.includes('"@type":"FAQPage"') &&
       professionalHtml.includes("Simple Habit Tracker for Working Professionals") &&
+      professionalHtml.includes('"@type":"FAQPage"') &&
       aboutHtml.includes("I built The Win List") &&
       contactHtml.includes("GitHub repository") &&
       privacyHtml.includes("Local-first storage") &&
       termsHtml.includes("No professional advice") &&
       habitTrackerHtml.includes('rel="canonical" href="https://www.mywinlist.com/habit-tracker"') &&
       offlineHtml.includes('rel="canonical" href="https://www.mywinlist.com/offline-habit-tracker"') &&
+      pwaHtml.includes('rel="canonical" href="https://www.mywinlist.com/habit-tracker-pwa"') &&
+      homemakerHtml.includes('rel="canonical" href="https://www.mywinlist.com/habit-tracker-for-homemakers"') &&
+      restDayHtml.includes('rel="canonical" href="https://www.mywinlist.com/rest-day-habit-tracker"') &&
       existsSync(cleanRoutePaths.noSignUp) &&
       Object.values(slashAliasPaths).every((path) => existsSync(path)) &&
       existsSync(join(outDir, "og-image.png"))

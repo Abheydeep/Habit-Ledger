@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JsonLd, SeoPage, appJsonLd, faqJsonLd, habitTrackerFaq, ogImageUrl, siteUrl } from "../../components/SeoPages";
+import { JsonLd, SeoPage, appJsonLd, habitTrackerFaq, ogImageUrl, siteUrl } from "../../components/SeoPages";
 
 export const metadata: Metadata = {
   title: "Free Habit Tracker App",
@@ -54,12 +54,12 @@ export default function HabitTrackerLandingPage() {
   return (
     <>
       <JsonLd data={appJsonLd} />
-      <JsonLd data={faqJsonLd(habitTrackerFaq)} />
       <SeoPage
         eyebrow="Free habit tracker app"
         title="Free Habit Tracker App for Daily Routines"
         intro="The Win List is a free habit tracker app for 5 core wins, optional routines, Mood logging, streaks, and offline-first progress. Start without sign up, install it on your phone, and keep the day finishable."
         sections={sections}
+        path="/habit-tracker"
         faq={habitTrackerFaq}
       />
     </>

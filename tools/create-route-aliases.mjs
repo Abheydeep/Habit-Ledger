@@ -6,13 +6,16 @@ const cleanRoutes = [
   "about",
   "contact",
   "habit-tracker",
+  "habit-tracker-for-homemakers",
   "habit-tracker-for-students",
   "habit-tracker-for-working-professionals",
   "habit-tracker-no-sign-up",
+  "habit-tracker-pwa",
   "launch",
   "offline-habit-tracker",
   "privacy-policy",
   "reel",
+  "rest-day-habit-tracker",
   "terms"
 ];
 

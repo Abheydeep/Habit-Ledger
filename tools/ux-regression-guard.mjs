@@ -15,8 +15,11 @@ const seoCss = readFileSync("components/SeoPages.module.css", "utf8");
 const habitTrackerLanding = readFileSync("app/habit-tracker/page.tsx", "utf8");
 const noSignUpPage = readFileSync("app/habit-tracker-no-sign-up/page.tsx", "utf8");
 const offlinePage = readFileSync("app/offline-habit-tracker/page.tsx", "utf8");
+const pwaPage = readFileSync("app/habit-tracker-pwa/page.tsx", "utf8");
 const studentPage = readFileSync("app/habit-tracker-for-students/page.tsx", "utf8");
 const professionalPage = readFileSync("app/habit-tracker-for-working-professionals/page.tsx", "utf8");
+const homemakerPage = readFileSync("app/habit-tracker-for-homemakers/page.tsx", "utf8");
+const restDayPage = readFileSync("app/rest-day-habit-tracker/page.tsx", "utf8");
 const aboutPage = readFileSync("app/about/page.tsx", "utf8");
 const contactPage = readFileSync("app/contact/page.tsx", "utf8");
 const privacyPage = readFileSync("app/privacy-policy/page.tsx", "utf8");
@@ -35,6 +38,7 @@ const renderConfig = readFileSync("render.yaml", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release-verification.yml", "utf8");
 const buildOutputGuard = readFileSync("tools/build-output-guard.mjs", "utf8");
 const routeAliases = readFileSync("tools/create-route-aliases.mjs", "utf8");
+const liveSeoCheck = readFileSync("tools/live-seo-check.mjs", "utf8");
 
 const checks = [
   {
@@ -200,18 +204,34 @@ const checks = [
       layout.includes("twitter") &&
       layout.includes("/og-image.png") &&
       page.includes("<JsonLd data={appJsonLd}") &&
+      page.includes("<JsonLd data={faqJsonLd(homeFaq)}") &&
       seoPages.includes('type="application/ld+json"') &&
       page.includes("<noscript>") &&
       page.includes("free habit tracker app at mywinlist.com") &&
       page.includes("<HomeSeoSection />") &&
       seoPages.includes('"@type": "SoftwareApplication"') &&
       seoPages.includes('"@type": "FAQPage"') &&
+      seoPages.includes('"@type": "Organization"') &&
+      seoPages.includes('"@type": "WebSite"') &&
+      seoPages.includes('"@type": "BreadcrumbList"') &&
+      seoPages.includes("export const homeFaq") &&
       seoPages.includes("Free habit tracker app") &&
       habitTrackerLanding.includes("Free Habit Tracker App for Daily Routines") &&
+      habitTrackerLanding.includes('path="/habit-tracker"') &&
       noSignUpPage.includes("Habit Tracker App With No Sign Up") &&
+      noSignUpPage.includes("Can I use The Win List without creating an account?") &&
       offlinePage.includes("Offline Habit Tracker You Can Add to Your Phone") &&
+      offlinePage.includes("Can a habit tracker work offline?") &&
+      pwaPage.includes("Habit Tracker PWA You Can Add to Your Phone") &&
+      pwaPage.includes("What is a habit tracker PWA?") &&
       studentPage.includes("Free Habit Tracker for Students") &&
+      studentPage.includes("What habits should students track first?") &&
       professionalPage.includes("Simple Habit Tracker for Working Professionals") &&
+      professionalPage.includes("What habits matter most for working professionals?") &&
+      homemakerPage.includes("Simple Habit Tracker for Homemakers") &&
+      homemakerPage.includes("What habits should homemakers track?") &&
+      restDayPage.includes("Rest Day Habit Tracker Without Reset Drama") &&
+      restDayPage.includes("What is the difference between Partial and Skipped?") &&
       aboutPage.includes("I built The Win List") &&
       contactPage.includes("GitHub repository") &&
       privacyPage.includes("Local-first storage") &&
@@ -224,10 +244,15 @@ const checks = [
       sitemap.includes("`${siteUrl}/habit-tracker`") &&
       sitemap.includes("`${siteUrl}/habit-tracker-no-sign-up`") &&
       sitemap.includes("`${siteUrl}/offline-habit-tracker`") &&
+      sitemap.includes("`${siteUrl}/habit-tracker-pwa`") &&
+      sitemap.includes("`${siteUrl}/habit-tracker-for-homemakers`") &&
+      sitemap.includes("`${siteUrl}/rest-day-habit-tracker`") &&
       sitemap.includes("`${siteUrl}/privacy-policy`") &&
+      sitemap.includes("const lastModified = new Date();") &&
       nextConfig.includes("trailingSlash: false") &&
       packageJson.includes("tools/create-route-aliases.mjs") &&
       buildOutputGuard.includes("cleanRoutePaths") &&
+      buildOutputGuard.includes("habit-tracker-pwa.html") &&
       sitemap.includes('export const dynamic = "force-static"') &&
       sitemap.includes('changeFrequency: "daily"') &&
       manifest.includes('"id": "/"') &&
@@ -239,9 +264,16 @@ const checks = [
       seoPages.includes("Who it is built for") &&
       seoPages.includes("Habit tracker questions") &&
       seoCss.includes(".homeSeoGrid") &&
+      seoCss.includes("content-visibility: auto") &&
       routeAliases.includes('"habit-tracker"') &&
+      routeAliases.includes('"habit-tracker-pwa"') &&
+      routeAliases.includes('"habit-tracker-for-homemakers"') &&
+      routeAliases.includes('"rest-day-habit-tracker"') &&
       renderConfig.includes("source: /habit-tracker\n        destination: /habit-tracker.html") &&
       renderConfig.includes("source: /offline-habit-tracker\n        destination: /offline-habit-tracker.html") &&
+      renderConfig.includes("source: /habit-tracker-pwa\n        destination: /habit-tracker-pwa.html") &&
+      renderConfig.includes("source: /habit-tracker-for-homemakers\n        destination: /habit-tracker-for-homemakers.html") &&
+      renderConfig.includes("source: /rest-day-habit-tracker\n        destination: /rest-day-habit-tracker.html") &&
       renderConfig.includes("source: /*\n        destination: /index.html")
   },
   {
@@ -609,8 +641,14 @@ const checks = [
     ok:
       packageJson.includes('"verify:release"') &&
       packageJson.includes('"build:guard"') &&
+      packageJson.includes('"seo:live"') &&
       renderConfig.includes("npm run verify:release") &&
       releaseWorkflow.includes("release/daily-driver-v1") &&
+      releaseWorkflow.includes("cron: \"17 4 * * *\"") &&
+      releaseWorkflow.includes("Live SEO Route Check") &&
+      releaseWorkflow.includes("npm run seo:live") &&
+      liveSeoCheck.includes("/offline-habit-tracker") &&
+      liveSeoCheck.includes("/habit-tracker-pwa") &&
       releaseWorkflow.includes("npm ci") &&
       releaseWorkflow.includes("npm run typecheck") &&
       releaseWorkflow.includes("npm run test:primary-wins") &&

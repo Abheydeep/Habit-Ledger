@@ -39,6 +39,24 @@ const sections = [
   }
 ];
 
+const faq = [
+  {
+    question: "What habits matter most for working professionals?",
+    answer:
+      "Useful workday wins include water, steps, a focused work block, a healthy meal, screen limits, and sleep. The Win List keeps the must-do set small."
+  },
+  {
+    question: "Can I keep workday habits separate from optional routines?",
+    answer:
+      "Yes. Core wins drive the daily score, while optional routines remain extra. That keeps a busy workday finishable."
+  },
+  {
+    question: "Is this a work productivity app or a habit tracker?",
+    answer:
+      "It is a habit tracker for the whole day, not just work output. Focus matters, but food, movement, water, rest, and phone boundaries matter too."
+  }
+];
+
 export default function ProfessionalHabitTrackerPage() {
   return (
     <>
@@ -48,6 +66,9 @@ export default function ProfessionalHabitTrackerPage() {
         title="Simple Habit Tracker for Working Professionals"
         intro="The Win List turns a busy workday into a small set of core wins: water, movement, food, focus, screen limits, and sleep, with optional routines kept light."
         sections={sections}
+        path="/habit-tracker-for-working-professionals"
+        breadcrumbParent={{ name: "Habit tracker", path: "/habit-tracker" }}
+        faq={faq}
         highlights={["Workday core wins", "90 min focused work", "Optional routines", "Works offline"]}
       />
     </>

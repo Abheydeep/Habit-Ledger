@@ -54,6 +54,24 @@ const sections = [
   }
 ];
 
+const faq = [
+  {
+    question: "Can a habit tracker work offline?",
+    answer:
+      "Yes. The Win List is offline-first after the initial load. Your core wins, optional routines, Mood choices, notes, and local settings stay available on the device."
+  },
+  {
+    question: "Do I need the App Store to install The Win List?",
+    answer:
+      "No. Open mywinlist.com in Safari or Chrome and use Add to Home Screen. It runs as a browser-based PWA without an App Store download."
+  },
+  {
+    question: "What happens when my connection comes back?",
+    answer:
+      "Local save remains the instant source of truth. If you choose optional cloud backup, sync can run later, but daily tracking does not wait for the network."
+  }
+];
+
 export default function OfflineHabitTrackerPage() {
   return (
     <>
@@ -63,6 +81,9 @@ export default function OfflineHabitTrackerPage() {
         title="Offline Habit Tracker You Can Add to Your Phone"
         intro="The Win List is an offline-first habit tracker PWA for core wins, optional routines, Mood, and first-win momentum. Install it to your phone and keep your daily routine close."
         sections={sections}
+        path="/offline-habit-tracker"
+        breadcrumbParent={{ name: "Habit tracker", path: "/habit-tracker" }}
+        faq={faq}
         highlights={["Installable PWA", "Works offline after first load", "Local reminders", "Saved locally. No login needed."]}
       />
     </>

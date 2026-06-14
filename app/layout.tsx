@@ -64,6 +64,8 @@ export const metadata: Metadata = {
     "habit tracker pwa",
     "habit tracker for students",
     "habit tracker for working professionals",
+    "habit tracker for homemakers",
+    "rest day habit tracker",
     "no signup habit tracker",
     "daily routine app",
     "core wins"

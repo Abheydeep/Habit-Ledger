@@ -58,7 +58,7 @@ export default function LaunchPosterPage() {
     <main className={styles.shell}>
       <nav className={styles.nav} aria-label="Launch poster navigation">
         <a className={styles.brandLink} href="/">
-          <img src="/icon.svg" alt="" />
+          <img src="/icon.svg" alt="" width="42" height="42" loading="eager" decoding="async" />
           The Win List
         </a>
         <div className={styles.navActions}>

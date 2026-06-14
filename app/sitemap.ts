@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 const siteUrl = "https://www.mywinlist.com";
-const lastModified = new Date("2026-06-12T00:00:00.000Z");
+const lastModified = new Date();
 
 export const dynamic = "force-static";
 
@@ -32,6 +32,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.85
     },
     {
+      url: `${siteUrl}/habit-tracker-pwa`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.82
+    },
+    {
       url: `${siteUrl}/habit-tracker-for-students`,
       lastModified,
       changeFrequency: "monthly",
@@ -42,6 +48,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "monthly",
       priority: 0.8
+    },
+    {
+      url: `${siteUrl}/habit-tracker-for-homemakers`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.78
+    },
+    {
+      url: `${siteUrl}/rest-day-habit-tracker`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.78
     },
     {
       url: `${siteUrl}/about`,

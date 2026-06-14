@@ -39,6 +39,24 @@ const sections = [
   }
 ];
 
+const faq = [
+  {
+    question: "What habits should students track first?",
+    answer:
+      "Start with wake time, water, movement, one focused study block, and sleep. The Win List keeps those as core wins and lets revision, reading, and screen limits stay optional."
+  },
+  {
+    question: "Does Partial count during exam season?",
+    answer:
+      "Yes. Partial is useful when the day is messy. It records that you showed up without pretending the win was complete."
+  },
+  {
+    question: "Can students use it without login?",
+    answer:
+      "Yes. The Win List works without sign up and saves locally, so students can start tracking from a phone or laptop immediately."
+  }
+];
+
 export default function StudentHabitTrackerPage() {
   return (
     <>
@@ -48,6 +66,9 @@ export default function StudentHabitTrackerPage() {
         title="Free Habit Tracker for Students"
         intro="The Win List helps students track the small daily wins that keep study, sleep, water, movement, and phone time from turning into a blur."
         sections={sections}
+        path="/habit-tracker-for-students"
+        breadcrumbParent={{ name: "Habit tracker", path: "/habit-tracker" }}
+        faq={faq}
         highlights={["Study focus", "Sleep routine", "Screen limits", "No sign up"]}
       />
     </>

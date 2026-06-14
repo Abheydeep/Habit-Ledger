@@ -86,7 +86,7 @@ const checks = [
     canonical: siteUrl,
     h1: "Free Habit Tracker App - The Win List",
     minWords: 500,
-    mustInclude: ["A simple habit tracker app that starts with today", "Habit tracker questions"]
+    mustInclude: ["A simple habit tracker app that starts with today", "Habit tracker questions", '"@type":"FAQPage"']
   },
   {
     path: "/habit-tracker",
@@ -105,6 +105,33 @@ const checks = [
     minWords: 500,
     mustInclude: ["What stays available offline", "Works when the connection is weak"],
     mustNotInclude: ["Loading your wins"]
+  },
+  {
+    path: "/habit-tracker-pwa",
+    title: "Habit Tracker PWA | The Win List",
+    canonical: `${siteUrl}/habit-tracker-pwa`,
+    h1: "Habit Tracker PWA You Can Add to Your Phone",
+    minWords: 500,
+    mustInclude: ["What is a habit tracker PWA?", '"@type":"FAQPage"'],
+    mustNotInclude: ["Loading your wins"]
+  },
+  {
+    path: "/habit-tracker-for-homemakers",
+    title: "Habit Tracker for Homemakers | The Win List",
+    canonical: `${siteUrl}/habit-tracker-for-homemakers`,
+    h1: "Simple Habit Tracker for Homemakers",
+    minWords: 500,
+    mustInclude: ["What habits should homemakers track?", '"@type":"FAQPage"'],
+    mustNotInclude: ["Loading your wins"]
+  },
+  {
+    path: "/rest-day-habit-tracker",
+    title: "Rest Day Habit Tracker | The Win List",
+    canonical: `${siteUrl}/rest-day-habit-tracker`,
+    h1: "Rest Day Habit Tracker Without Reset Drama",
+    minWords: 500,
+    mustInclude: ["What is the difference between Partial and Skipped?", '"@type":"FAQPage"'],
+    mustNotInclude: ["Loading your wins"]
   }
 ];
 
@@ -117,7 +144,14 @@ const { response: sitemapResponse, text: sitemap } = await fetchText("/sitemap.x
 if (sitemapResponse.status !== 200) {
   failures.push(`/sitemap.xml: expected HTTP 200, got ${sitemapResponse.status}`);
 }
-for (const loc of ["/habit-tracker", "/offline-habit-tracker", "/habit-tracker-no-sign-up"]) {
+for (const loc of [
+  "/habit-tracker",
+  "/offline-habit-tracker",
+  "/habit-tracker-no-sign-up",
+  "/habit-tracker-pwa",
+  "/habit-tracker-for-homemakers",
+  "/rest-day-habit-tracker"
+]) {
   if (!sitemap.includes(`<loc>${siteUrl}${loc}</loc>`)) {
     failures.push(`/sitemap.xml: missing ${siteUrl}${loc}`);
   }

@@ -1,10 +1,21 @@
 import { HabitTracker } from "../components/HabitTracker";
-import { HomeSeoSection, JsonLd, appJsonLd } from "../components/SeoPages";
+import {
+  HomeSeoSection,
+  JsonLd,
+  appJsonLd,
+  faqJsonLd,
+  homeFaq,
+  organizationJsonLd,
+  websiteJsonLd
+} from "../components/SeoPages";
 
 export default function HabitTrackerPage() {
   return (
     <>
       <JsonLd data={appJsonLd} />
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={websiteJsonLd} />
+      <JsonLd data={faqJsonLd(homeFaq)} />
       <noscript>
         <main>
           <h1>Free Habit Tracker App - The Win List</h1>

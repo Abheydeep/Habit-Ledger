@@ -9,8 +9,11 @@ export const publicRoutes = [
   { href: "/habit-tracker", label: "Habit tracker" },
   { href: "/habit-tracker-no-sign-up", label: "No sign up" },
   { href: "/offline-habit-tracker", label: "Offline" },
+  { href: "/habit-tracker-pwa", label: "PWA" },
   { href: "/habit-tracker-for-students", label: "Students" },
   { href: "/habit-tracker-for-working-professionals", label: "Professionals" },
+  { href: "/habit-tracker-for-homemakers", label: "Homemakers" },
+  { href: "/rest-day-habit-tracker", label: "Rest days" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
   { href: "/privacy-policy", label: "Privacy" },
@@ -49,7 +52,44 @@ export const appJsonLd = {
   featureList: productFeatures
 };
 
-export const habitTrackerFaq = [
+export const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: siteName,
+  url: siteUrl,
+  logo: {
+    "@type": "ImageObject",
+    url: `${siteUrl}/icon-512.png`,
+    width: 512,
+    height: 512
+  },
+  sameAs: ["https://github.com/Abheydeep/Habit-Ledger"]
+};
+
+export const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: siteName,
+  alternateName: "My Win List",
+  url: siteUrl,
+  publisher: {
+    "@type": "Organization",
+    name: siteName,
+    logo: {
+      "@type": "ImageObject",
+      url: `${siteUrl}/icon-512.png`,
+      width: 512,
+      height: 512
+    }
+  }
+};
+
+export type FaqItem = {
+  question: string;
+  answer: string;
+};
+
+export const habitTrackerFaq: FaqItem[] = [
   {
     question: "What is the best free habit tracker app?",
     answer:
@@ -97,9 +137,31 @@ export const habitTrackerFaq = [
   }
 ];
 
+export const homeFaq: FaqItem[] = [
+  {
+    question: "Is The Win List free?",
+    answer: "Yes. The app is free to use, requires no sign up, and saves your daily wins locally on this device."
+  },
+  {
+    question: "Can I use it offline?",
+    answer:
+      "Yes. After the first load, the app is designed as an offline-first PWA, so your daily routine stays available even when the connection is unreliable."
+  },
+  {
+    question: "How many habits should I start with?",
+    answer:
+      "Start small. The Win List is designed around core wins and optional routines, so you can keep the required day light while still tracking extra habits when you have energy."
+  }
+];
+
 type SeoSection = {
   title: string;
   body: string;
+};
+
+type BreadcrumbParent = {
+  name: string;
+  path: string;
 };
 
 type SeoPageProps = {
@@ -107,8 +169,10 @@ type SeoPageProps = {
   title: string;
   intro: string;
   sections: SeoSection[];
+  path: string;
   highlights?: string[];
-  faq?: typeof habitTrackerFaq;
+  faq?: FaqItem[];
+  breadcrumbParent?: BreadcrumbParent;
   ctaLabel?: string;
   ctaHref?: string;
 };
@@ -122,7 +186,7 @@ export function JsonLd({ data }: { data: object }) {
   );
 }
 
-export function faqJsonLd(faq: typeof habitTrackerFaq) {
+export function faqJsonLd(faq: FaqItem[]) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -137,11 +201,44 @@ export function faqJsonLd(faq: typeof habitTrackerFaq) {
   };
 }
 
+export function breadcrumbJsonLd(path: string, title: string, parent?: BreadcrumbParent) {
+  const items = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "The Win List",
+      item: `${siteUrl}/`
+    }
+  ];
+
+  if (parent) {
+    items.push({
+      "@type": "ListItem",
+      position: 2,
+      name: parent.name,
+      item: `${siteUrl}${parent.path}`
+    });
+  }
+
+  items.push({
+    "@type": "ListItem",
+    position: items.length + 1,
+    name: title,
+    item: `${siteUrl}${path}`
+  });
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items
+  };
+}
+
 export function MarketingNav() {
   return (
     <nav className={styles.nav} aria-label="The Win List navigation">
       <a className={styles.brand} href="/">
-        <img src="/icon.svg" alt="" />
+        <img src="/icon.svg" alt="" width="42" height="42" loading="eager" decoding="async" />
         <span>The Win List</span>
       </a>
       <div className={styles.navLinks}>
@@ -176,13 +273,19 @@ export function SeoPage({
   title,
   intro,
   sections,
+  path,
   highlights = productFeatures.slice(0, 4),
   faq,
+  breadcrumbParent,
   ctaLabel = "Open The Win List",
   ctaHref = "/"
 }: SeoPageProps) {
   return (
     <main className={styles.shell}>
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={websiteJsonLd} />
+      <JsonLd data={breadcrumbJsonLd(path, title, breadcrumbParent)} />
+      {faq ? <JsonLd data={faqJsonLd(faq)} /> : null}
       <MarketingNav />
       <section className={styles.hero}>
         <div>
@@ -297,24 +400,12 @@ export function HomeSeoSection() {
         </div>
         <div className={styles.homeSeoFaq} aria-label="The Win List FAQ">
           <h3>Habit tracker questions</h3>
-          <details>
-            <summary>Is The Win List free?</summary>
-            <p>Yes. The app is free to use, requires no sign up, and saves your daily wins locally on this device.</p>
-          </details>
-          <details>
-            <summary>Can I use it offline?</summary>
-            <p>
-              Yes. After the first load, the app is designed as an offline-first PWA, so your daily routine stays
-              available even when the connection is unreliable.
-            </p>
-          </details>
-          <details>
-            <summary>How many habits should I start with?</summary>
-            <p>
-              Start small. The Win List is designed around core wins and optional routines, so you can keep the required
-              day light while still tracking extra habits when you have energy.
-            </p>
-          </details>
+          {homeFaq.map((item) => (
+            <details key={item.question}>
+              <summary>{item.question}</summary>
+              <p>{item.answer}</p>
+            </details>
+          ))}
         </div>
         <div className={styles.homeSeoLinks}>
           <a href="/habit-tracker">Read how it works</a>

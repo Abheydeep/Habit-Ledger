@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - release/daily-driver-v1
+  schedule:
+    - cron: "17 4 * * *"
   workflow_dispatch:
 
 jobs:
@@ -41,3 +43,20 @@ jobs:
 
       - name: Build Output Guard
         run: npm run build:guard
+
+  live-seo:
+    name: Live SEO Route Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check Live SEO Routes
+        run: npm run seo:live

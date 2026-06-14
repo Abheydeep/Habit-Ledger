@@ -17,11 +17,20 @@ services:
         source: /offline-habit-tracker
         destination: /offline-habit-tracker.html
       - type: rewrite
+        source: /habit-tracker-pwa
+        destination: /habit-tracker-pwa.html
+      - type: rewrite
         source: /habit-tracker-for-students
         destination: /habit-tracker-for-students.html
       - type: rewrite
         source: /habit-tracker-for-working-professionals
         destination: /habit-tracker-for-working-professionals.html
+      - type: rewrite
+        source: /habit-tracker-for-homemakers
+        destination: /habit-tracker-for-homemakers.html
+      - type: rewrite
+        source: /rest-day-habit-tracker
+        destination: /rest-day-habit-tracker.html
       - type: rewrite
         source: /about
         destination: /about.html
